@@ -275,7 +275,7 @@ public final class EntFile {
         Objects.requireNonNull(outputPath);
 
         if (inputAllocateSize < 1 || outputAllocateSize < 1)
-            throw new EntLibUtilityException(EntFile.class, "invalid-buffer-size-exc");
+            throw new EntLibUtilityException(EntFile.class, "invalid-buffer-size-exc", inputAllocateSize, outputAllocateSize);
 
         try (FileChannel inputChannel = FileChannel.open(inputPath, StandardOpenOption.READ);
              FileChannel outputChannel = FileChannel.open(outputPath, StandardOpenOption.CREATE, StandardOpenOption.WRITE)) {

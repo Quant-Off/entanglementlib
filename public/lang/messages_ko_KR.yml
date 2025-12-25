@@ -1,3 +1,4 @@
+# 팩토리 클래스 로깅
 class-InternalFactory:
   loaded-configuration: "구성 'configuration.json'을(를) 성공적으로 로드했습니다. 상세: \n{}"
   setting-bc-provider: "BouncyCastle 라이브러리의 공급자를 설정했습니다: {}"
@@ -40,7 +41,7 @@ class-EntSSL:
 class-KeyStoreManager:
   key-store-loading-exc: "키스토어를 로드하는 도중 예외가 발생했습니다!"
   failed-keystore-init-exc: "다음 유형으로 KeyStore를 초기화하는 데 실패했습니다: {}"
-  failed-keystore-init-err-exc: "KeyStore 초기화에 실패했습니다"
+  failed-keystore-init-err-exc: "KeyStore 초기화에 실패했습니다!"
   loaded-keystore: "{}에서 키스토어를 로드했습니다"
   loaded-empty-keystore: "{}에서 KeyStore 파일을 찾을 수 없습니다. 빈 상태로 초기화되었습니다."
   loaded-truststore: "{}에서 트러스트스토어를 로드했습니다"
@@ -56,44 +57,34 @@ class-KeyStoreManager:
   delete-not-exists-alise-in-keystore-entry: "삭제할 키스토어 별칭을 찾을 수 없습니다: {}"
   delete-truststore-entry: "트러스트스토어에서 엔트리 별칭을 삭제했습니다: {}"
   delete-not-exists-alise-in-truststore-entry: "삭제할 트러스트스토어 별칭을 찾을 수 없습니다: {}"
-
+# 파일 유틸리티 로깅
 class-EntFile:
   relative-path-of-data-null-exc: "relativePath와 data는 null일 수 없습니다."
-  failed-parent-dir-exc: "상위 실제 경로를 확인하는 데 실패했습니다."
+  data-size-exc: "데이터 크기가 1GB 제한을 초과했습니다."
+  whitelist-exc: "상대 경로에 유효하지 않은 문자가 포함되어 있습니다."
   base-dir-not-valid-exc: "기본 디렉터리가 유효하지 않습니다."
+  failed-parent-dir-exc: "상위 실제 경로를 확인하는 데 실패했습니다."
   traversal-attempt-exc: "상위 디렉터리에서 경로 탐색 시도가 감지되었습니다."
   in-save-traversal-attempt-exc: "저장 작업 중 경로 탐색 시도가 감지되었습니다."
   file-already-exists-exc: "파일이 이미 존재하며 덮어쓰기가 비활성화되어 있습니다."
   failed-write-disk-exc: "디스크에 데이터를 쓰는 데 실패했습니다."
-  no-such-alg-exc: "SHA3-256 알고리즘 구현이 누락되었습니다."
   failed-set-perm: "파일 권한 설정에 실패했습니다: {}"
+  no-such-alg-exc: "SHA3-256 알고리즘 구현이 누락되었습니다."
   relative-path-null-exc: "relativePath는 null일 수 없습니다."
   relative-path-or-expected-hash-null-exc: "relativePath 또는 expectedHash는 null일 수 없습니다."
-  data-size-exc: "데이터 크기가 1GB 제한을 초과했습니다."
-  whitelist-exc: "상대 경로에 유효하지 않은 문자가 포함되어 있습니다."
+  not-support-jvm-exc: "이 JVM에서는 SHA3-256 알고리즘을 지원하지 않습니다."
+  load-hash-equal-exc: "파일 무결성 검사 실패: SHA3-256 해시가 일치하지 않습니다."
   not-valid-or-accessible-exc: "기본 디렉터리가 유효하지 않거나 접근할 수 없습니다."
   load-traversal-attempt-exc: "경로 탐색 시도가 감지되었습니다."
   load-file-not-found-or readable-exc: "파일을 찾을 수 없거나 읽을 수 없습니다."
-  not-support-jvm-exc: "이 JVM에서는 SHA3-256 알고리즘을 지원하지 않습니다."
-  load-hash-equal-exc: "파일 무결성 검사 실패: SHA3-256 해시가 일치하지 않습니다."
-class-SSLManager:
-  ssl-context-created-tls13: "TLS 1.3 프로토콜로 SSLContext가 생성되었습니다."
-  tls13-not-available-fallback: "TLS 1.3을 사용할 수 없어 TLS 1.2로 폴백합니다."
-  ssl-context-created-tls12: "TLS 1.2 프로토콜로 SSLContext가 생성되었습니다."
-  ssl-context-creation-warn: "프로토콜 '{}'로 SSLContext 생성 중 경고가 발생했습니다!"
-  ssl-context-not-initialized-exc: "SSLContext가 초기화되지 않았습니다!"
-  server-socket-factory-created: "SSLServerSocketFactory가 생성되었습니다."
-  socket-factory-created: "SSLSocketFactory가 생성되었습니다."
-  get-accepted-issuers-exc: "신뢰할 수 있는 발급자 목록을 가져오는 중 예외가 발생했습니다!"
-  empty-cert-chain-exc: "인증서 체인이 비어있습니다!"
-  cert-validation-auth-type: "인증서 검증 중입니다... 인증 타입: {}"
-  cert-not-trusted-exc: "인증서 '{}' 을(를) 신뢰할 수 없습니다!"
-  cert-validation-exc: "인증서 검증 중 예외가 발생했습니다!"
-  ssl-manager-closed: "SSLManager 리소스가 정리되었습니다."
+  invalid-buffer-size-exc: "버퍼(입력: {}, 출력: {}) 사이즈가 유효하지 않습니다!"
+# 비동기 유틸리티 로깅
 class-Async:
   future-join-in-exc: "비동기 작업 중 예외가 발생했습니다!"
+# 문자열 유틸리티 로깅
 class-StringUtil:
   replace-arg-not-even-exc: "전달되는 가변 인자의 총 개수는 반드시 짝수여야 합니다!"
   truncate-length-exc: "길이는 maxLength > 0 조건을 충족해야 합니다!"
+# 구성 클래스 로깅 (호출부 예외)
 class-PublicConfiguration:
   deserialize-exc: "구성 파일 역직렬화 중 예외가 발생했습니다!"

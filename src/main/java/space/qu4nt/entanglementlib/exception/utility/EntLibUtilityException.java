@@ -41,4 +41,18 @@ public class EntLibUtilityException extends EntLibSecurityException {
     public <T> EntLibUtilityException(Class<T> clazz, @NotNull String fullKey, @NotNull Throwable cause) {
         super(clazz, fullKey, cause);
     }
+
+    /**
+     * 언어 파일의 특정 키를 받아 메시지를 출력합니다.
+     * 가변 변수를 받아 {@code {}} 플레이스홀더를 변수로 처리합니다.
+     * <p>
+     * 클래스 매개변수는 메시지 구역을 식별하기 위한 키입니다.
+     *
+     * @param clazz   메시지 구역 식별 클래스
+     * @param fullKey 메시지 키
+     * @param args    플레이스홀더 변경 인자
+     */
+    public <T> EntLibUtilityException(Class<T> clazz, @NotNull String fullKey, Object... args) {
+        super(clazz, fullKey, args);
+    }
 }
