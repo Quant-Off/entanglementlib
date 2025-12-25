@@ -1,7 +1,7 @@
 # EntanglementLib
 
 [![Version](https://img.shields.io/badge/version-1.0.0-blue.svg)](https://github.com/Quant-Off/entanglementlib)
-[![License](https://img.shields.io/badge/license-Apache%202.0-green.svg)](LICENSE)
+[![License](https://img.shields.io/badge/license-PolyForm%20Noncommercial%20License%201.0.0-green.svg)](LICENSE)
 [![Language](https://img.shields.io/badge/language-Java-orange.svg)](#)
 
 얽힘 라이브러리(EntanglementLib) 는 양자 내성 암호(Post-Quantum Cryptography, PQC) 기술을 기반으로 설계된 고성능 보안 및 유틸리티 라이브러리입니다. 본 라이브러리는 진화하는 디지털 위협 환경에 대응하여 최고 수준의 보안과 시스템 안정성을 제공하는 것을 목표로 합니다.
