@@ -85,14 +85,16 @@ public final class SLHDSA implements DigitalSignService {
 
     // 생성자: String 입력 시 즉시 바이트 변환 후 String 참조 유지 안 함
     private SLHDSA(final @NotNull SLHDSAType type, @NotNull String plain) {
-        log.debug(Language.args("class-EntLibCryptoService.debug-created-instance", "SLH-DSA"));
+        log.debug(LanguageInstanceBased.create(EntLibCryptoService.class)
+                .argsNonTopKey("debug-created-instance", "SLH-DSA"));
         this.type = type;
         this.plainBytes = plain.getBytes(StandardCharsets.UTF_8);
     }
 
     // 생성자: byte[] 입력 시 방어적 복사 수행
     private SLHDSA(final @NotNull SLHDSAType type, byte @NotNull [] plainBytes) {
-        log.debug(Language.args("class-EntLibCryptoService.debug-created-instance", "SLH-DSA"));
+        log.debug(LanguageInstanceBased.create(EntLibCryptoService.class)
+                .argsNonTopKey("debug-created-instance", "SLH-DSA"));
         this.type = type;
         this.plainBytes = Arrays.copyOf(plainBytes, plainBytes.length);
     }
