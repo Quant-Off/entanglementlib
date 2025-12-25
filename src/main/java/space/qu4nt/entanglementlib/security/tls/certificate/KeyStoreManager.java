@@ -183,7 +183,6 @@ public class KeyStoreManager {
      *
      * @param certificate 확인할 인증서
      * @return 신뢰할 수 있으면 true, 그렇지 않으면 false
-     * @throws KeyStoreException 트러스트스토어 작업 실패 시
      */
     public boolean isTrusted(@NotNull X509Certificate certificate) {
         Objects.requireNonNull(certificate);
