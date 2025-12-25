@@ -14,6 +14,12 @@ import java.util.Collections;
 import java.util.List;
 import java.util.ResourceBundle;
 
+/**
+ * 구성 파일에서 값을 읽어오는 유틸리티 클래스입니다.
+ *
+ * @author Q. T. Felix
+ * @since 1.0.0
+ */
 public final class Configer {
 
     private static final ObjectMapper MAPPER = new ObjectMapper();
@@ -141,6 +147,17 @@ public final class Configer {
         return MAPPER.readValue(json, type);
     }
 
+    /**
+     * 구성에서 {@code Enum} 타입 값을 불러오는 메소드입니다.
+     *
+     * @param bundle       기반 리소스 번들
+     * @param key          불러오고자 하는 값의 경로
+     * @param elementClass Enum 클래스 타입
+     * @param def          키를 찾을 수 없거나 값이 유효하지 않은 경우의 반환값
+     * @param <T>          Enum 타입
+     * @return 경로에 위치한 Enum 값, 키를 찾을 수 없거나 유효하지 않으면 전달된 기본 값
+     * @throws IllegalArgumentException 기본 값이 {@code null}이고 유효하지 않은 Enum 값일 경우 발생
+     */
     @Nullable
     public static <T extends Enum<T>> T getEnumType(final @NotNull ResourceBundle bundle,
                                                     final String key,
@@ -159,6 +176,15 @@ public final class Configer {
         return def;
     }
 
+    /**
+     * 구성에서 {@code Enum} 타입 값을 불러오는 메소드입니다.
+     *
+     * @param bundle       기반 리소스 번들
+     * @param key          불러오고자 하는 값의 경로
+     * @param elementClass Enum 클래스 타입
+     * @param <T>          Enum 타입
+     * @return 경로에 위치한 Enum 값, 키를 찾을 수 없거나 유효하지 않으면 {@code null}
+     */
     @Nullable
     public static <T extends Enum<T>> T getEnumType(final @NotNull ResourceBundle bundle,
                                                     final String key,

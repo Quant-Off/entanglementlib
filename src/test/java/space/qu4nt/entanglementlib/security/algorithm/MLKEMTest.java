@@ -6,17 +6,19 @@
 package space.qu4nt.entanglementlib.security.algorithm;
 
 import lombok.extern.slf4j.Slf4j;
-import org.junit.jupiter.api.*;
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
 import space.qu4nt.entanglementlib.util.wrapper.Hex;
 import space.qu4nt.entanglementlib.util.wrapper.Pair;
 
 import javax.crypto.SecretKey;
-import java.security.*;
+import java.security.KeyPair;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 /**
- * 뭐하는 테스트 클래스임?
+ * {@link MLKEM} 테스트 클래스입니다.
  *
  * @author Q. T. Felix
  * @since 1.0.0

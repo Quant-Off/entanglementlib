@@ -7,13 +7,10 @@ package space.qu4nt.entanglementlib.security.tls.certificate;
 
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
-import space.qu4nt.entanglementlib.security.EntKeyPair;
 import space.qu4nt.entanglementlib.InternalFactory;
+import space.qu4nt.entanglementlib.security.EntKeyPair;
 import space.qu4nt.entanglementlib.security.algorithm.MLDSA;
 import space.qu4nt.entanglementlib.security.algorithm.MLDSAType;
-import space.qu4nt.entanglementlib.security.tls.certificate.Certificator;
-import space.qu4nt.entanglementlib.security.tls.certificate.EntSSL;
-import space.qu4nt.entanglementlib.security.tls.certificate.KeyStoreManager;
 
 import javax.net.ssl.*;
 import java.io.IOException;
@@ -25,7 +22,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
 /**
- * 뭐하는 테스트 클래스임?
+ * {@link EntSSL}을 사용한 SSL 테스트 클래스입니다.
  *
  * @author Q. T. Felix
  * @since 1.0.0

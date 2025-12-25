@@ -9,7 +9,8 @@ import com.fasterxml.jackson.annotation.JsonInclude;
 import lombok.*;
 
 /**
- * 뭐하는 클래스임?
+ * {@code public} 디렉토리에 정의된 구성 파일 {@code configuration.json}을
+ * 역/직렬화 하기 위해 사용되는 클래스입니다.
  *
  * @author Q. T. Felix
  * @since 1.0.0
