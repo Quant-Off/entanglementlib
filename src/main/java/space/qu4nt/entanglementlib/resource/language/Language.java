@@ -34,7 +34,9 @@ import static space.qu4nt.entanglementlib.util.StringUtil.placeholderFormat;
  * <p>
  * 언어 파일은 {@code .yml} 또는 {@code .yaml} 형식으로 저장되며,
  * {@code messages_<locale>} 이름을 유지하세요. <i>locale</i> 플레이스 홀더는
- * ISO 3166-1 에 따른 국가 코드, ISO 639-1 에 따른 언어 코드 양식을 준수하세요.
+ * <a href="https://wikipedia.org/wiki/ISO_3166-1">ISO 3166-1</a> 에 따른 국가 코드,
+ * <a href="https://en.wikipedia.org/wiki/List_of_ISO_639_language_codes">ISO 639-1</a>
+ * 에 따른 언어 코드 양식을 준수하세요.
  *
  * @author Q. T. Felix
  * @since 1.0.0
@@ -55,9 +57,7 @@ public final class Language {
     public static String msg(final SupportedLanguage language, String key, @NotNull String def) {
         final ResourceBundle bundle = ResourceCaller
                 .getCustomResourceInPublicInnerDir(SupportedFormat.YAML, "lang", language.getFilename(), StandardCharsets.UTF_8);
-        if (bundle.containsKey(key))
-            return bundle.getString(key);
-        return def;
+        return msg(bundle, key, def);
     }
 
     /**
@@ -97,6 +97,32 @@ public final class Language {
     public static String msg(@NotNull String key) {
         return msg(InternalFactory.getPublicConfig().getLanguage(),
                 key, key);
+    }
+
+    /**
+     * 입력받은 리소스 번들에서 메시지 키에 할당된 메시지를 반환하는 메소드입니다.
+     *
+     * @param bundle 리소스 번들
+     * @param key    메시지 파일 속 참조할 메시지의 키
+     * @param def    메시지 파일 속 참조할 메시지의 키가 존재하지 않은 경우 반환할 메시지
+     * @return 할당된 메시지
+     */
+    public static String msg(@NotNull ResourceBundle bundle, String key, @NotNull String def) {
+        if (bundle.containsKey(key))
+            return bundle.getString(key);
+        return def;
+    }
+
+    /**
+     * 입력받은 리소스 번들에서 메시지 키에 할당된 메시지를 반환하는 메소드입니다.
+     * 키를 찾을 수 없는 경우, 키 경로가 표시됩니다.
+     *
+     * @param bundle 리소스 번들
+     * @param key    메시지 파일 속 참조할 메시지의 키
+     * @return 할당된 메시지, 찾을 수 없는 경우 키 경로 문자열
+     */
+    public static String msg(@NotNull ResourceBundle bundle, String key) {
+        return msg(bundle, key, key);
     }
 
     // ARGS
@@ -160,6 +186,36 @@ public final class Language {
     public static String args(@NotNull String key, Object... args) {
         return args(InternalFactory.getPublicConfig().getLanguage(),
                 key, args);
+    }
+
+    /**
+     * 입력받은 리소스 번들에서 메시지 키에 할당된 메시지(raw)를 호출하여 플레이스홀더를
+     * 변환하여 반환하는 메소드입니다.
+     *
+     * @param bundle 리소스 번들
+     * @param key    메시지 파일 속 참조할 메시지의 키
+     * @param def    메시지 파일 속 참조할 메시지의 키가 존재하지 않은 경우 반환할 메시지
+     * @param args   플레이스홀더 변경 인자
+     * @return 할당 후 변환된 메시지
+     */
+    public static String args(@NotNull ResourceBundle bundle, String key, @NotNull String def, Object... args) {
+        String message = msg(bundle, key, def);
+        if (args == null || args.length == 0)
+            return message;
+        return placeholderFormat(message, args);
+    }
+
+    /**
+     * 입력받은 리소스 번들에서 메시지 키에 할당된 메시지(raw)를 호출하여 플레이스홀더를
+     * 변환하여 반환하는 메소드입니다. 키를 찾을 수 없는 경우, 키 경로가 표시됩니다.
+     *
+     * @param bundle 리소스 번들
+     * @param key    메시지 파일 속 참조할 메시지의 키
+     * @param args   플레이스홀더 변경 인자
+     * @return 할당 후 변환된 메시지, 키를 찾을 수 없는 경우 키 경로 문자열
+     */
+    public static String args(@NotNull ResourceBundle bundle, String key, Object... args) {
+        return args(bundle, key, key, args);
     }
 
     // THROW
@@ -227,6 +283,44 @@ public final class Language {
     public static String thr(@NotNull String key, @NotNull Throwable cause, Object... args) {
         return thr(InternalFactory.getPublicConfig().getLanguage(),
                 key, cause, args);
+    }
+
+    /**
+     * 입력받은 리소스 번들에서 메시지 키에 할당된 메시지(raw)를 호출하여 예외와
+     * 플레이스 홀더를 변환하여 반환하는 메소드입니다.
+     *
+     * @param bundle 리소스 번들
+     * @param key    메시지 파일 속 참조할 메시지의 키
+     * @param def    메시지 파일 속 참조할 메시지의 키가 존재하지 않은 경우 반환할 메시지
+     * @param cause  예외
+     * @param args   플레이스홀더 변경 인자
+     * @return 할당 후 변환된 메시지
+     */
+    public static String thr(@NotNull ResourceBundle bundle, String key, @NotNull String def, @NotNull Throwable cause, Object... args) {
+        String message = args(bundle, key, def, args);
+        // 예외 메시지 추가
+        if (cause != null) {
+            String causeMessage = cause.getMessage();
+            if (causeMessage == null) {
+                causeMessage = "unknown error";
+            }
+            message += " : " + causeMessage;
+        }
+        return message;
+    }
+
+    /**
+     * 입력받은 리소스 번들에서 메시지 키에 할당된 메시지(raw)를 호출하여 예외와
+     * 플레이스 홀더를 변환하여 반환하는 메소드입니다. 키를 찾을 수 없는 경우, 키 경로가 표시됩니다.
+     *
+     * @param bundle 리소스 번들
+     * @param key    메시지 파일 속 참조할 메시지의 키
+     * @param cause  예외
+     * @param args   플레이스홀더 변경 인자
+     * @return 할당 후 변환된 메시지, 키를 찾을 수 없는 경우 키 경로 문자열
+     */
+    public static String thr(@NotNull ResourceBundle bundle, String key, @NotNull Throwable cause, Object... args) {
+        return thr(bundle, key, key, cause, args);
     }
 
 }

@@ -12,7 +12,9 @@ import lombok.Getter;
  * 국적에 맞는 열거 상수를 추가한 뒤, 공용 리소스 디렉토리에 {@code messages_en_US.yml}와 같이
  * 언어 파일을 생성하세요.
  * <p>
- * ISO 3166-1 에 따른 국가 코드, ISO 639-1 에 따른 언어 코드 양식을 준수하세요.
+ * <a href="https://wikipedia.org/wiki/ISO_3166-1">ISO 3166-1</a> 에 따른 국가 코드,
+ * <a href="https://en.wikipedia.org/wiki/List_of_ISO_639_language_codes">ISO 639-1</a>
+ * 에 따른 언어 코드 양식을 준수하세요.
  *
  * @author Q. T. Felix
  * @since 1.0.0
