@@ -4,15 +4,32 @@
 [![License](https://img.shields.io/badge/license-PolyForm%20Noncommercial%20License%201.0.0-green.svg)](LICENSE)
 [![Language](https://img.shields.io/badge/language-Java-orange.svg)](#)
 
-얽힘 라이브러리(EntanglementLib) 는 양자 내성 암호(Post-Quantum Cryptography, PQC) 기술을 기반으로 설계된 고성능 보안 및 유틸리티 라이브러리입니다. 본 라이브러리는 진화하는 디지털 위협 환경에 대응하여 최고 수준의 보안과 시스템 안정성을 제공하는 것을 목표로 합니다.
+얽힘 라이브러리(EntanglementLib)는 양자 내성 암호(Post-Quantum Cryptography, PQC) 기술을 기반으로 설계된 고성능 보안 및 유틸리티 라이브러리입니다. 본 라이브러리는 진화하는 디지털 위협 환경에 대응하여 최고 수준의 보안과 시스템 안정성을 제공하는 것을 목표로 합니다.
 
 ## 핵심 철학
 
-`EntanglementLib`의 모든 설계는 보안성(security) 을 최우선 원칙으로 합니다. 라이브러리는 잠재적 보안 취약점을 원천적으로 방지하고, 데이터 무결성을 보장하도록 구현되었습니다. 두 번째 핵심 가치는 안정성(stability) 으로, 예측 가능하고 일관된 성능을 보장하기 위해 메모리 효율성을 극대화하고 체계적인 오류 처리 메커니즘을 갖추었습니다.
+얽힘 라이브러리의 모든 설계는 보안성(security) 을 최우선 원칙으로 합니다. 라이브러리는 잠재적 보안 취약점을 원천적으로 방지하고, 데이터 무결성을 보장하도록 구현되었습니다. 두 번째 핵심 가치는 안정성(stability) 으로, 예측 가능하고 일관된 성능을 보장하기 위해 메모리 효율성을 극대화하고 체계적인 오류 처리 메커니즘을 갖추었습니다.
+
+## 강점
+
+얽힘 라이브러리는 다음의 강점을 보유하고 있습니다.
+
+1. 잔류 데이터 방지 (Anti-Data Remanence) 및 메모리 소거
+   - 자바의 메모리 관리 모델인 가비지 컬렉터(Garbage Collection, GC)가 보안에 취약할 수 있다는 점을 정확히 파악하고 이를 기술적으로 극복하기 위한 기술이 탑재되었습니다.
+   - 모든 민감 정보 생성 로직엔 사용 후 즉시 메모리를 덮어쓰는 Wiping 패턴 또는 리플렉션을 통한 영소거(zeroing) 기능이 탑재되어 있습니다.
+   - 알고리즘을 제공하는 클래스는 `AutoCloseable`을 구현하여 `try-with-resources` 블록을 강제하고, 스코프를 벗어나는 즉시 키와 평문을 파기하도록 설계되었습니다.
+2. 방어적 복사 (Defensive Copying)
+   - 생성자와 Getter 메소드에서 배열을 단순히 참조 할당하지 않고 `clone()` 또는 `Arrays.copyOf()`를 수행하여 외부에서의 악의적인 변경이나 실수로 인한 데이터 오염을 방지합니다.
+3. 최신 PQC 표준 준수
+   - FIPS 203, 204, 205에 따른 ML-KEM, ML-DSA, SLH-DSA(Sphincs+) 등의 NIST 표준화가 완료된 최신 알고리즘을 `BouncyCastle 1.83`을 통해 빠르게 적용했습니다.
+4. 아키텍처 및 디자인 패턴
+   - 팩토리 패턴 및 인터페이스를 분리했습니다. `InternalFactory`클래스를 통해 구현체를 숨기고, `EntLibCryptoService`, `KeyEncapsulateService` 등의 인터페이스로 기능을 노출하여 얽힘 라이브러리의 확장성과 유지보수성을 높였습니다.
+5. 예외 처리
+   - 표준 예외를 그대로 던지지 않고 `EntLibSecureIllegalStateException`, `EntLibAlgorithmSettingException` 등의 커스텀 예외 클래스로 래핑하여 명확한 문맥(context)을 제공했습니다.
 
 ## 주요 기능
 
-`EntanglementLib`는 강력한 암호화 기능과 개발 생산성 향상을 위한 유틸리티를 포함합니다.
+얽힘 라이브러리는 강력한 암호화 기능과 개발 생산성 향상을 위한 유틸리티를 포함합니다.
 
 | 모듈            | 기술 명세                                                                                                                                                                                                                                                                                                                                                                                                                 |
 |---------------|-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
@@ -50,12 +67,21 @@ setx ENTANGLEMENT_HOME_DIR "C:\path\to\entanglement\home"
 setx ENTANGLEMENT_PUBLIC_DIR "C:\path\to\entanglement\public"
 ```
 
-## 기여자
+## TODO 및 기여
 
-`EntanglementLib`는 팀 퀀트(Quant)에 의해 개발 및 관리되고 있습니다.
+`EntanglementLib`는 팀 퀀트(Quant)에 속해 있습니다만, 기본적으로 원 개발자 `Q. T. Felix`에 의해 개발되어 해당 인원만이 독립적으로 관리됩니다.
 
-- 총괄: Q. T. Felix
+이 프로젝트는 아직 많이 부족합니다. 얽힘 라이브러리는 미래에 금융 및 보안 인프라 프로덕션에서 사용할 수 있도록 다음의 TODO를 명확히 하고자 합니다.
+
+- [ ] Java 모듈 시스템(JPMS)과 리플렉션의 충돌 문제 해결
+  - `KeyDestroyHelper`에서 `Field.setAccessible(true)`를 사용하여 `BouncyCastle` 내부나 자바 표준 라이브러리의 `private` 필드를 수정하고 있습니다. Java 17 이후 강력한 캡슐화(strong encapsulation) 정책으로 인해, 실행 시 `--add-opens` JVM 옵션 없이는 `InaccessibleObjectException`이 발생할 확률이 매우 높습니다.
+- [ ] 성능 대 보안 트레이드오프
+  - 모든 입출력에 대해 방어적 복사(deep copy)를 수행하고 있습니다. 수 기가바이트 단위의 대용량 데이터를 처리하거나 높은 처리량(Tick Per Second, TPS)이 필요한 서버 환경에서는 잦은 메모리 할당과 가비지 컬렉터 부하로 성능 저하가 발생할 수 있습니다.
+- [ ] 난수 및 Nonce 관리
+  - `ChaCha20Poly1305`에서 `InternalFactory.SAFE_RANDOM`을 사용해 논스값 `Nonce`를 생성합니다. 같은 키로 `Nonce`가 재사용되면 `ChaCha20Poly1305`의 보안성은 완전히 무너집니다.
+
+얽힘 라이브러리의 궁극적 양자-내성 보안을 완성시키기 위해 여러 개발자분들의 힘이 필요합니다. 언제든 코드에 대한 피드백을 남겨주세요. 퀀트에게 아주아주 큰 힘이 됩니다!
 
 ## 라이선스
 
-본 프로젝트는 Apache License 2.0을 따릅니다. 자세한 내용은 [LICENSE](LICENSE) 파일을 참고하세요.
+본 프로젝트는 `PolyForm Noncommercial License 1.0.0`을 따릅니다. 자세한 내용은 [LICENSE](LICENSE) 파일을 참고하세요.
