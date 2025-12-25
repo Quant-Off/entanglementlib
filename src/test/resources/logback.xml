@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  ~ Copyright © 2025 Quant.
+  ~ Under License "PolyForm Noncommercial License 1.0.0".
+  -->
+
+<configuration>
+    <logger name="org.bouncycastle" level="TRACE" />
+
+    <appender name="STDOUT" class="ch.qos.logback.core.ConsoleAppender">
+        <encoder>
+            <pattern>[%d{HH:mm:ss.SSS}] %boldCyan(%-15.-15thread) <!--%red(%10.10X{jda.shard})-->%boldGreen(%-15.-30logger{0}) %highlight(%-6level) %msg%n
+            </pattern>
+        </encoder>
+    </appender>
+
+    <root level="trace">
+        <appender-ref ref="STDOUT"/>
+    </root>
+</configuration>

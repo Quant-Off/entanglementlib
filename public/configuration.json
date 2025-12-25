@@ -1,0 +1,15 @@
+{
+  "language": "ko_KR",
+  "secure": {
+    "enabledExperimental": false,
+    "tls": {
+      "protocol": "TLSv1.3",
+      "cert": {
+        "enabledPQC": true,
+        "root": "slh-dsa-sha2-256s",
+        "server": "ml-dsa-87"
+      },
+      "maxHandshakeMessageSize": 131072
+    }
+  }
+}
