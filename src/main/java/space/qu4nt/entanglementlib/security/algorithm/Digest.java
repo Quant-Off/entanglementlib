@@ -10,6 +10,8 @@ import space.qu4nt.entanglementlib.util.StringUtil;
 
 /**
  * 지원되는 다이제스트 알고리즘을 열거한 클래스입니다.
+ * <p>
+ * {@code SHA3} 시리즈는 다른 프로덕션에서 호환되지 않을 수 있습니다.
  *
  * @author Q. T. Felix
  * @since 1.0.0
@@ -17,15 +19,27 @@ import space.qu4nt.entanglementlib.util.StringUtil;
 @Getter
 public enum Digest {
 
+    //
+    // Not Recommended - start
+    //
+
     /**
      * MD5
+     * @deprecated MD5는 절대 권장되지 않습니다. {@link #SHA_224} 이상의 다이제스트를 사용하세요.
      */
+    @Deprecated
     MD5,
 
     /**
      * SHA_1
+      @deprecated SHA_1는 절대 권장되지 않습니다. {@link #SHA_224} 이상의 다이제스트를 사용하세요.
      */
+    @Deprecated
     SHA_1,
+
+    //
+    // Not Recommended - end
+    //
 
     /**
      * SHA_224
@@ -61,6 +75,6 @@ public enum Digest {
      */
     SHA3_512;
 
-    private final String name = StringUtil.replace(name(), "_", "-");
+    private final String name = StringUtil.replace(name(), "_", "-").startsWith("SHA-") ? StringUtil.replace(name(), "_", "") : StringUtil.replace(name(), "_", "-");
 
 }

@@ -75,13 +75,23 @@ setx ENTANGLEMENT_PUBLIC_DIR "C:\path\to\entanglement\public"
 
 - [ ] Java 모듈 시스템(JPMS)과 리플렉션의 충돌 문제 해결
   - `KeyDestroyHelper`에서 `Field.setAccessible(true)`를 사용하여 `BouncyCastle` 내부나 자바 표준 라이브러리의 `private` 필드를 수정하고 있습니다. Java 17 이후 강력한 캡슐화(strong encapsulation) 정책으로 인해, 실행 시 `--add-opens` JVM 옵션 없이는 `InaccessibleObjectException`이 발생할 확률이 매우 높습니다.
+  - JVM 옵션 `--add-opens java.base/java.security=ALL-UNNAMED`를 추가하여 JPMS 보안 경고를 우회할 수 있습니다.
 - [ ] 성능 대 보안 트레이드오프
   - 모든 입출력에 대해 방어적 복사(deep copy)를 수행하고 있습니다. 수 기가바이트 단위의 대용량 데이터를 처리하거나 높은 처리량(Tick Per Second, TPS)이 필요한 서버 환경에서는 잦은 메모리 할당과 가비지 컬렉터 부하로 성능 저하가 발생할 수 있습니다.
+  - 기존 알고리즘 클래스는 상태를 가지기 때문에 이 문제가 돋보입니다. 이에 따라 얽힘 라이브러리 `1.1.0`부터 클래스가 상태를 가지지 않도록(stateless) 설계 방향을 굳힌 상태입니다.
 - [ ] 난수 및 Nonce 관리
-  - `ChaCha20Poly1305`에서 `InternalFactory.SAFE_RANDOM`을 사용해 논스값 `Nonce`를 생성합니다. 같은 키로 `Nonce`가 재사용되면 `ChaCha20Poly1305`의 보안성은 완전히 무너집니다.
+  - `ChaCha20Poly1305`에서 `InternalFactory.getSafeRandom()`을 사용해 논스값 `Nonce`를 생성합니다. 같은 키로 `Nonce`가 재사용되면 `ChaCha20Poly1305`의 보안성은 완전히 무너집니다.
+- [ ] 공급자 유동화 및 팩토리 최적화
+  - 사용자의 선택에 따라 Java의 기본 공급자를 사용할 수 있도록 수정해야 합니다. 그리고 `InternalFactory` 클래스를 포함한 대부분의 클래스에서 제공되는 팩토리를 최적화해야 합니다.
 
 얽힘 라이브러리의 궁극적 양자-내성 보안을 완성시키기 위해 여러 개발자분들의 힘이 필요합니다. 언제든 코드에 대한 피드백을 남겨주세요. 퀀트에게 아주아주 큰 힘이 됩니다!
 
 ## 라이선스
 
 본 프로젝트는 `PolyForm Noncommercial License 1.0.0`을 따릅니다. 자세한 내용은 [LICENSE](LICENSE) 파일을 참고하세요.
+
+---
+
+# 변경 사항
+
+변경 사항은 [CHANGE.md](CHANGE) 문서에서 확인하실 수 있습니다.

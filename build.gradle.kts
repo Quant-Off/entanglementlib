@@ -1,3 +1,8 @@
+/*
+ * Copyright © 2025 Quant.
+ * Under License "PolyForm Noncommercial License 1.0.0".
+ */
+
 plugins {
     id("java")
     id("com.vanniktech.maven.publish") version "0.28.0"
@@ -8,7 +13,7 @@ val quantPublicDir: String by project
 val commonGroupId: String by project
 val bouncyCastleVer = "1.83"
 
-val entLibVersion = "1.0.0"
+val entLibVersion = "1.1.0"
 
 group = commonGroupId
 version = entLibVersion
@@ -98,8 +103,8 @@ mavenPublishing {
 
         licenses {
             license {
-                name = "MIT License"
-                url = "https://mit-license.org/"
+                name = "PolyForm Noncommercial License 1.0.0"
+                url = "https://polyformproject.org/licenses/noncommercial/1.0.0/"
             }
         }
 

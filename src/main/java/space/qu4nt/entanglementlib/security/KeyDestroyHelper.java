@@ -10,6 +10,8 @@ import org.jetbrains.annotations.NotNull;
 import space.qu4nt.entanglementlib.resource.language.LanguageInstanceBased;
 import space.qu4nt.entanglementlib.util.wrapper.Hex;
 
+import javax.crypto.spec.SecretKeySpec;
+import javax.security.auth.DestroyFailedException;
 import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
 import java.math.BigInteger;
@@ -64,6 +66,17 @@ public final class KeyDestroyHelper {
 
     private static void recursiveZeroing(Object targetObject, Set<Object> visited, boolean shallow) {
         if (targetObject == null) return;
+
+        // JPMS 보안 강화로 인해 리플렉션 불가능
+        // TODO: 대칭 키 객체 소거 방안 찾기
+        if (targetObject instanceof SecretKeySpec s) {
+            try {
+                s.destroy();
+            } catch (DestroyFailedException e) {
+                zeroing(s.getEncoded()); // 대안이 생기기 전 까진 복사본이라도 소거
+            }
+            return;
+        }
 
         // 이미 방문한 객체인지 확인 (무한 루프 방지)
         if (visited.contains(targetObject)) return;

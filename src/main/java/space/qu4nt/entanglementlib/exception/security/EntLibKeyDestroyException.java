@@ -16,6 +16,15 @@ import org.jetbrains.annotations.NotNull;
 public class EntLibKeyDestroyException extends EntLibSecurityException {
 
     /**
+     * 단순 예외를 전달하여 발생시킵니다.
+     *
+     * @param cause 발생 예외
+     */
+    public EntLibKeyDestroyException(Throwable cause) {
+        super(cause);
+    }
+
+    /**
      * 언어 파일의 특정 키를 받아 메시지를 출력합니다.
      * <p>
      * 클래스 매개변수는 메시지 구역을 식별하기 위한 키입니다.
