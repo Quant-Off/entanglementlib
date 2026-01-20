@@ -33,7 +33,7 @@ TCP는 신뢰성 있는 데이터 전송을 담당하는 **전송 계층 프로�
 
 ```java
 import space.qu4nt.entanglementlib.security.tls.certificate.KeyStoreManager;
-import space.qu4nt.entanglementlib.util.io.Password;
+import space.qu4nt.entanglementlib.util.security.Password;
 
 class Main {
    public static void main(String[] args) {
@@ -83,7 +83,7 @@ class Main {
 ```java
 import space.qu4nt.entanglementlib.security.tls.certificate.EntSSL;
 import space.qu4nt.entanglementlib.security.tls.certificate.KeyStoreManager;
-import space.qu4nt.entanglementlib.util.io.Password;
+import space.qu4nt.entanglementlib.util.security.Password;
 
 import javax.net.ssl.SSLContext;
 
@@ -114,7 +114,7 @@ class Main {
 사용자가 `ML-DSA` 알고리즘의 `65` 파라미터를 사용하여 TCP서버를 열고자 하는 경우 다음과 같이 할 수 있습니다.
 
 ```java
-import space.qu4nt.entanglementlib.security.EntKeyPair;
+import space.qu4nt.entanglementlib.security.EntLibKeyPair;
 import space.qu4nt.entanglementlib.security.algorithm.MLDSA;
 import space.qu4nt.entanglementlib.security.algorithm.MLDSAType;
 import space.qu4nt.entanglementlib.security.tls.EntTCP;
@@ -125,7 +125,7 @@ class Main {
    public static void main(String[] args) {
       // 서버 오픈에 사용될 객체
       MLDSA mldsa = MLDSA.create(MLDSAType.ML_DSA_65, "server");
-      EntKeyPair serverPair = mldsa.generateEntKeyPair();
+      EntLibKeyPair serverPair = mldsa.generateEntKeyPair();
 
       // 루트 CA 인증서 생성
       X509Certificate rootCert = ...;
@@ -150,7 +150,7 @@ class Main {
 먼저 인증서 발급 대상의 정보를 담은 `SubjectString` 객체를 생성하고, `Certificator`의 정적 메소드를 호출하여 인증서를 생성합니다.
 
 ```java
-import space.qu4nt.entanglementlib.security.EntKeyPair;
+import space.qu4nt.entanglementlib.security.EntLibKeyPair;
 import space.qu4nt.entanglementlib.security.algorithm.MLDSA;
 import space.qu4nt.entanglementlib.security.algorithm.MLDSAType;
 import space.qu4nt.entanglementlib.security.tls.certificate.Certificator;
@@ -162,10 +162,10 @@ class Main {
    public static void main(String[] args) {
       // 1. 키 쌍 생성
       MLDSA rootMldsa = MLDSA.create(MLDSAType.ML_DSA_65, "root");
-      EntKeyPair rootPair = rootMldsa.generateEntKeyPair();
+      EntLibKeyPair rootPair = rootMldsa.generateEntKeyPair();
 
       MLDSA serverMldsa = MLDSA.create(MLDSAType.ML_DSA_65, "server");
-      EntKeyPair serverPair = serverMldsa.generateEntKeyPair();
+      EntLibKeyPair serverPair = serverMldsa.generateEntKeyPair();
 
       // 2. 주체 정보(SubjectString) 생성
       SubjectString rootSubject = SubjectString.builder()

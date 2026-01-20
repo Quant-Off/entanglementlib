@@ -1,6 +1,23 @@
 /*
- * Copyright © 2025 Quant.
- * Under License "PolyForm Noncommercial License 1.0.0".
+ * Copyright (c) 2025-2026 Quant
+ *
+ * Permission is hereby granted, free of charge, to any person obtaining a
+ * copy of this software and associated documentation files (the “Software”),
+ * to deal in the Software without restriction, including without limitation
+ * the rights to use, copy, modify, merge, publish, distribute, sublicense,
+ * and/or sell copies of the Software, and to permit persons to whom the
+ * Software is furnished to do so, subject to the following conditions:
+ *
+ * The above copyright notice and this permission notice shall be included
+ * in all copies or substantial portions of the Software.
+ *
+ * THE SOFTWARE IS PROVIDED “AS IS”, WITHOUT WARRANTY OF ANY KIND, EXPRESS
+ * OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
+ * MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.
+ * IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY
+ * CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,
+ * TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE
+ * SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 
 package space.qu4nt.entanglementlib.security.tls;
@@ -11,7 +28,7 @@ import org.jetbrains.annotations.NotNull;
 import space.qu4nt.entanglementlib.InternalFactory;
 import space.qu4nt.entanglementlib.security.tls.certificate.EntSSL;
 import space.qu4nt.entanglementlib.security.tls.certificate.KeyStoreManager;
-import space.qu4nt.entanglementlib.util.io.Password;
+import space.qu4nt.entanglementlib.util.security.Password;
 
 import javax.net.ssl.*;
 import java.io.IOException;
@@ -259,11 +276,11 @@ public class EntTCP {
         keyStoreManager.setTruststoreCertificateEntry("ca-alias", trustedCaCert);
 
         // TrustManagerFactory 생성
-        TrustManagerFactory tmf = TrustManagerFactory.getInstance("PKIX", InternalFactory._bcJSSEProvider);
+        TrustManagerFactory tmf = TrustManagerFactory.getInstance("PKIX", InternalFactory.getBCJSSEProvider());
         tmf.init(keyStoreManager.getTrustStore());
 
         // 클라이언트용 SSLContext 생성 및 초기화
-        SSLContext sslContext = SSLContext.getInstance("TLSv1.3", InternalFactory._bcJSSEProvider);
+        SSLContext sslContext = SSLContext.getInstance("TLSv1.3", InternalFactory.getBCJSSEProvider());
         sslContext.init(null, tmf.getTrustManagers(), null);
 
         // SSLSocketFactory를 사용하여 소켓 생성 및 연결

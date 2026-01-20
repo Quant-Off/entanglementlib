@@ -1,16 +1,34 @@
 /*
- * Copyright © 2025 Quant.
- * Under License "PolyForm Noncommercial License 1.0.0".
+ * Copyright (c) 2025-2026 Quant
+ *
+ * Permission is hereby granted, free of charge, to any person obtaining a
+ * copy of this software and associated documentation files (the “Software”),
+ * to deal in the Software without restriction, including without limitation
+ * the rights to use, copy, modify, merge, publish, distribute, sublicense,
+ * and/or sell copies of the Software, and to permit persons to whom the
+ * Software is furnished to do so, subject to the following conditions:
+ *
+ * The above copyright notice and this permission notice shall be included
+ * in all copies or substantial portions of the Software.
+ *
+ * THE SOFTWARE IS PROVIDED “AS IS”, WITHOUT WARRANTY OF ANY KIND, EXPRESS
+ * OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
+ * MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.
+ * IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY
+ * CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,
+ * TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE
+ * SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 
 package space.qu4nt.entanglementlib;
 
+import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import space.qu4nt.entanglementlib.exception.EntanglementLibEnvironmentException;
+import space.qu4nt.entanglementlib.exception.EntanglementLibNoSuchEnvException;
 import space.qu4nt.entanglementlib.util.StringUtil;
 
 import java.util.Optional;
@@ -23,8 +41,8 @@ import java.util.Optional;
  * @author Q. T. Felix
  * @since 1.0.0
  */
-@Getter
-@Setter
+@Getter(AccessLevel.PACKAGE)
+@Setter(AccessLevel.PACKAGE)
 @NoArgsConstructor
 sealed abstract class WrapEnv permits EntanglementLibEnvs {
 
@@ -56,12 +74,12 @@ sealed abstract class WrapEnv permits EntanglementLibEnvs {
     }
 
     /**
-     * 예외를 발생시키는 메소드입니다.
+     * 런타임 예외를 발생시키는 메소드입니다.
      *
      * @param env 예외에 보여질 누락된 환경 변수 이름
      */
     static void error(String env) {
-        throw new EntanglementLibEnvironmentException("No such environment variable: " + env);
+        throw new EntanglementLibNoSuchEnvException(env);
     }
 
 }

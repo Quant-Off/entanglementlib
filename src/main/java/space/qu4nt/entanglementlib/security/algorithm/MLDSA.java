@@ -1,6 +1,23 @@
 /*
- * Copyright © 2025 Quant.
- * Under License "PolyForm Noncommercial License 1.0.0".
+ * Copyright (c) 2025-2026 Quant
+ *
+ * Permission is hereby granted, free of charge, to any person obtaining a
+ * copy of this software and associated documentation files (the “Software”),
+ * to deal in the Software without restriction, including without limitation
+ * the rights to use, copy, modify, merge, publish, distribute, sublicense,
+ * and/or sell copies of the Software, and to permit persons to whom the
+ * Software is furnished to do so, subject to the following conditions:
+ *
+ * The above copyright notice and this permission notice shall be included
+ * in all copies or substantial portions of the Software.
+ *
+ * THE SOFTWARE IS PROVIDED “AS IS”, WITHOUT WARRANTY OF ANY KIND, EXPRESS
+ * OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
+ * MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.
+ * IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY
+ * CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,
+ * TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE
+ * SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 
 package space.qu4nt.entanglementlib.security.algorithm;
@@ -9,12 +26,14 @@ import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 import org.bouncycastle.jcajce.provider.asymmetric.mldsa.BCMLDSAPrivateKey;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import space.qu4nt.entanglementlib.InternalFactory;
 import space.qu4nt.entanglementlib.exception.security.EntLibAlgorithmSettingException;
 import space.qu4nt.entanglementlib.exception.security.EntLibSecureIllegalStateException;
 import space.qu4nt.entanglementlib.exception.security.EntLibSignatureException;
 import space.qu4nt.entanglementlib.resource.language.LanguageInstanceBased;
-import space.qu4nt.entanglementlib.security.EntKeyPair;
+import space.qu4nt.entanglementlib.security.EntLibKey;
+import space.qu4nt.entanglementlib.security.EntLibKeyPair;
 import space.qu4nt.entanglementlib.security.KeyDestroyHelper;
 import space.qu4nt.entanglementlib.util.wrapper.Hex;
 
@@ -51,7 +70,7 @@ public final class MLDSA implements DigitalSignService {
     private final MLDSAType type;
     private byte[] plainBytes;
 
-    private EntKeyPair pair;
+    private EntLibKeyPair pair;
     private byte[] signature;
 
     private boolean closed = false;
@@ -121,10 +140,10 @@ public final class MLDSA implements DigitalSignService {
     }
 
     @Override
-    public @NotNull EntKeyPair generateEntKeyPair()
+    public @NotNull EntLibKeyPair generateEntKeyPair(@Nullable EntLibKey.CustomWiper<KeyPair> callback)
             throws NoSuchAlgorithmException, NoSuchProviderException {
         checkClosed();
-        this.pair = new EntKeyPair(InternalFactory.Key.keygenWithPQC(type));
+        this.pair = new EntLibKeyPair(InternalFactory.Key.keygenWithPQC(type));
         return pair;
     }
 
@@ -154,11 +173,11 @@ public final class MLDSA implements DigitalSignService {
      * @throws NoSuchProviderException  지정된 프로바이더를 사용할 수 없는 경우
      */
     @Override
-    public byte[] sign(final @NotNull PrivateKey sk, int chunkSize)
+    public byte[] sign(@Nullable String provider, final @NotNull PrivateKey sk, int chunkSize)
             throws InvalidKeyException, SignatureException, NoSuchAlgorithmException, NoSuchProviderException {
         checkClosed();
         // 서명 생성 및 내부 저장
-        byte[] generatedSig = InternalFactory.Sign.sign(type, sk, plainBytes, chunkSize);
+        byte[] generatedSig = InternalFactory.Sign.signWithProvider(type.getAlgorithmName(), InternalFactory.getBCNormalProvider(), sk, plainBytes, chunkSize);
         // 방어적 복사를 통해 저장 (InternalFactory 구현에 따라 다를 수 있으나 안전하게 복사)
         this.signature = Arrays.copyOf(generatedSig, generatedSig.length);
         return this.signature.clone();
@@ -178,15 +197,14 @@ public final class MLDSA implements DigitalSignService {
      * @throws SignatureException       서명 검증 중 오류가 발생한 경우
      */
     @Override
-    public boolean verify(final @NotNull PublicKey pk, int chunkSize)
+    public boolean verify(@Nullable String provider, final @NotNull PublicKey pk, int chunkSize)
             throws NoSuchAlgorithmException, NoSuchProviderException, InvalidKeyException, SignatureException {
         checkClosed();
         if (this.signature == null)
             throw new EntLibSignatureException(DigitalSignService.class, "no-signature-found-exc");
-        return InternalFactory.Sign.verify(type, pk, plainBytes, signature, chunkSize);
+        return InternalFactory.Sign.verifyWithProvider(type.getAlgorithmName(), InternalFactory.getBCNormalProvider(), pk, plainBytes, signature, chunkSize);
     }
 
-    @Override
     public void close() {
         if (closed) return;
 

@@ -1,20 +1,40 @@
 /*
- * Copyright © 2025 Quant.
- * Under License "PolyForm Noncommercial License 1.0.0".
+ * Copyright (c) 2025-2026 Quant
+ *
+ * Permission is hereby granted, free of charge, to any person obtaining a
+ * copy of this software and associated documentation files (the “Software”),
+ * to deal in the Software without restriction, including without limitation
+ * the rights to use, copy, modify, merge, publish, distribute, sublicense,
+ * and/or sell copies of the Software, and to permit persons to whom the
+ * Software is furnished to do so, subject to the following conditions:
+ *
+ * The above copyright notice and this permission notice shall be included
+ * in all copies or substantial portions of the Software.
+ *
+ * THE SOFTWARE IS PROVIDED “AS IS”, WITHOUT WARRANTY OF ANY KIND, EXPRESS
+ * OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
+ * MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.
+ * IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY
+ * CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,
+ * TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE
+ * SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 
 package space.qu4nt.entanglementlib.security.algorithm;
 
+import lombok.Builder;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 import org.bouncycastle.jcajce.provider.asymmetric.rsa.BCRSAPrivateCrtKey;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import space.qu4nt.entanglementlib.InternalFactory;
 import space.qu4nt.entanglementlib.exception.security.EntLibAlgorithmSettingException;
 import space.qu4nt.entanglementlib.exception.security.EntLibSecureIllegalStateException;
 import space.qu4nt.entanglementlib.exception.security.EntLibSignatureException;
 import space.qu4nt.entanglementlib.resource.language.LanguageInstanceBased;
-import space.qu4nt.entanglementlib.security.EntKeyPair;
+import space.qu4nt.entanglementlib.security.EntLibKey;
+import space.qu4nt.entanglementlib.security.EntLibKeyPair;
 import space.qu4nt.entanglementlib.security.KeyDestroyHelper;
 
 import java.nio.charset.StandardCharsets;
@@ -38,10 +58,12 @@ public final class RSA implements DigitalSignService {
 
     @Getter
     private final ClassicalType type;
+    @Getter
+    private final @Nullable Digest digest;
 
     private byte[] plainBytes;
 
-    private EntKeyPair pair;
+    private EntLibKeyPair pair;
     private byte[] signature;
 
     private boolean closed = false;
@@ -60,10 +82,12 @@ public final class RSA implements DigitalSignService {
         @Getter
         private final ClassicalType type;
         @Getter
+        private final Digest digest;
+        @Getter
         private final int chunkSize;
 
-        @lombok.Builder
-        public Setting(String plain, byte[] plainByteArr, ClassicalType type, int chunkSize) {
+        @Builder
+        public Setting(String plain, byte[] plainByteArr, ClassicalType type, @Nullable Digest digest, int chunkSize) {
             if (plainByteArr != null) {
                 this.plainByteArr = plainByteArr.clone(); // 방어적 복사
             } else if (plain != null) {
@@ -73,6 +97,7 @@ public final class RSA implements DigitalSignService {
             }
             this.type = (type == null || !type.getMethod().equals(CryptoMethod.ASYMMETRIC)) ?
                     ClassicalType.RSA2048 : type;
+            this.digest = digest;
             this.chunkSize = chunkSize;
         }
 
@@ -82,26 +107,48 @@ public final class RSA implements DigitalSignService {
         }
     }
 
-    private RSA(final @NotNull ClassicalType type, @NotNull String plain) {
+    private RSA(final @NotNull ClassicalType type, @Nullable Digest digest, @NotNull String plain) {
         log.debug(LanguageInstanceBased.create(EntLibCryptoService.class)
                 .argsNonTopKey("debug-created-instance", "RSA"));
         this.type = type;
+        this.digest = digest;
+        if (this.digest != null)
+            type.fixAlgorithmName(digest.getName() + "withRSA");
         this.plainBytes = plain.getBytes(StandardCharsets.UTF_8);
     }
 
-    private RSA(final @NotNull ClassicalType type, byte @NotNull [] plainBytes) {
+    private RSA(final @NotNull ClassicalType type, @NotNull String plain) {
+        this(type, null, plain);
+    }
+
+    private RSA(final @NotNull ClassicalType type, @Nullable Digest digest, byte @NotNull [] plainBytes) {
         log.debug(LanguageInstanceBased.create(EntLibCryptoService.class)
                 .argsNonTopKey("debug-created-instance", "RSA"));
         this.type = type;
+        this.digest = digest;
+        if (this.digest != null)
+            type.fixAlgorithmName(digest.getName() + "withRSA");
         this.plainBytes = Arrays.copyOf(plainBytes, plainBytes.length);
     }
 
+    private RSA(final @NotNull ClassicalType type, byte @NotNull [] plainBytes) {
+        this(type, null, plainBytes);
+    }
+
+    public static RSA create(final @NotNull ClassicalType type, @Nullable Digest digest, @NotNull String plain) {
+        return new RSA(type, digest, plain);
+    }
+
     public static RSA create(final @NotNull ClassicalType type, @NotNull String plain) {
-        return new RSA(type, plain);
+        return create(type, null, plain);
+    }
+
+    public static RSA create(final @NotNull ClassicalType type, @Nullable Digest digest, byte @NotNull [] plainBytes) {
+        return new RSA(type, digest, plainBytes);
     }
 
     public static RSA create(final @NotNull ClassicalType type, byte @NotNull [] plainBytes) {
-        return new RSA(type, plainBytes);
+        return create(type, null, plainBytes);
     }
 
     public static RSA create(@NotNull Setting setting) {
@@ -109,14 +156,14 @@ public final class RSA implements DigitalSignService {
     }
 
     @Override
-    public @NotNull EntKeyPair generateEntKeyPair()
+    public @NotNull EntLibKeyPair generateEntKeyPair(@Nullable EntLibKey.CustomWiper<KeyPair> callback)
             throws InvalidAlgorithmParameterException, NoSuchAlgorithmException, NoSuchProviderException {
         checkClosed();
-        this.pair = new EntKeyPair(InternalFactory.Key.keygenWithKeySize("RSA", switch (type) {
+        this.pair = InternalFactory.Key.keyPairGen("RSA", switch (type) {
             case RSA1024 -> 1024;
             case RSA4096 -> 4096;
             default -> 2048;
-        }));
+        }, null);
         return pair;
     }
 
@@ -133,24 +180,29 @@ public final class RSA implements DigitalSignService {
     }
 
     @Override
-    public byte[] sign(@NotNull PrivateKey sk, int chunkSize)
+    public byte[] sign(@Nullable String provider, @NotNull PrivateKey sk, int chunkSize)
             throws InvalidKeyException, SignatureException, NoSuchAlgorithmException, NoSuchProviderException {
         checkClosed();
-        byte[] generatedSig = InternalFactory.Sign.sign(type, sk, plainBytes, chunkSize);
+        byte[] generatedSig;
+        if (provider == null)
+            generatedSig = InternalFactory.Sign.signWithProvider(type.getAlgorithmName(), null, sk, plainBytes, chunkSize);
+        else
+            generatedSig = InternalFactory.Sign.signWithProvider(type.getAlgorithmName(), provider, sk, plainBytes, chunkSize);
         this.signature = Arrays.copyOf(generatedSig, generatedSig.length);
         return this.signature.clone();
     }
 
     @Override
-    public boolean verify(@NotNull PublicKey pk, int chunkSize)
+    public boolean verify(@Nullable String provider, @NotNull PublicKey pk, int chunkSize)
             throws NoSuchAlgorithmException, NoSuchProviderException, InvalidKeyException, SignatureException {
         checkClosed();
         if (this.signature == null)
             throw new EntLibSignatureException(DigitalSignService.class, "no-signature-found-exc");
-        return InternalFactory.Sign.verify(type, pk, plainBytes, signature, chunkSize);
+        if (provider == null)
+            return InternalFactory.Sign.verifyWithProvider(type.getAlgorithmName(), null, pk, plainBytes, signature, chunkSize);
+        return InternalFactory.Sign.verifyWithProvider(type.getAlgorithmName(), provider, pk, plainBytes, signature, chunkSize);
     }
 
-    @Override
     public void close() throws Exception {
         if (closed) return;
 

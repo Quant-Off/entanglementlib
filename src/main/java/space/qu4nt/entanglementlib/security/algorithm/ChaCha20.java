@@ -1,6 +1,23 @@
 /*
- * Copyright © 2025 Quant.
- * Under License "PolyForm Noncommercial License 1.0.0".
+ * Copyright (c) 2025-2026 Quant
+ *
+ * Permission is hereby granted, free of charge, to any person obtaining a
+ * copy of this software and associated documentation files (the “Software”),
+ * to deal in the Software without restriction, including without limitation
+ * the rights to use, copy, modify, merge, publish, distribute, sublicense,
+ * and/or sell copies of the Software, and to permit persons to whom the
+ * Software is furnished to do so, subject to the following conditions:
+ *
+ * The above copyright notice and this permission notice shall be included
+ * in all copies or substantial portions of the Software.
+ *
+ * THE SOFTWARE IS PROVIDED “AS IS”, WITHOUT WARRANTY OF ANY KIND, EXPRESS
+ * OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
+ * MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.
+ * IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY
+ * CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,
+ * TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE
+ * SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 
 package space.qu4nt.entanglementlib.security.algorithm;
@@ -15,8 +32,9 @@ import space.qu4nt.entanglementlib.exception.security.EntLibAlgorithmSettingExce
 import space.qu4nt.entanglementlib.exception.security.EntLibSecureIllegalStateException;
 import space.qu4nt.entanglementlib.exception.security.EntLibStreamingException;
 import space.qu4nt.entanglementlib.resource.language.LanguageInstanceBased;
-import space.qu4nt.entanglementlib.security.EntKeyPair;
-import space.qu4nt.entanglementlib.security.EntLibParameterSpec;
+import space.qu4nt.entanglementlib.security.EntLibKey;
+import space.qu4nt.entanglementlib.security.EntLibKeyPair;
+import space.qu4nt.entanglementlib.security.EntLibSecretKey;
 import space.qu4nt.entanglementlib.security.KeyDestroyHelper;
 import space.qu4nt.entanglementlib.util.chunk.ByteArrayChunkProcessor;
 import space.qu4nt.entanglementlib.util.wrapper.Hex;
@@ -27,28 +45,33 @@ import java.io.ByteArrayOutputStream;
 import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
-import java.security.InvalidAlgorithmParameterException;
-import java.security.InvalidKeyException;
-import java.security.NoSuchAlgorithmException;
-import java.security.NoSuchProviderException;
+import java.security.*;
 import java.util.Arrays;
 
 /**
+ * ChaCha20 대칭키 스트리밍 알고리즘을 사용하기 위한 클래스입니다.
+ * 불변 객체(String) 사용에 따른 메모리 잔류 취약점을 해결하기 위해 평문을 받지 않습니다.
+ * <p>
+ * 보안 강화를 위해 모든 바이트 배열 입출력에 대해 방어적 복사를 수행합니다.
+ * <p>
+ * {@link AutoCloseable}을 구현하여 작업 종료 시 평문, 개인 키를 즉시 영소거 및 파기합니다.
+ * try-with-resources 블럭에서의 작업을 권장합니다.
+ *
  * @author Q. T. Felix
  * @since 1.0.0
  */
 @Slf4j
 public final class ChaCha20 implements SymmetricCryptoService, StreamingCryptoService {
 
-    private static final LanguageInstanceBased<ChaCha20> lang = LanguageInstanceBased.create(ChaCha20.class);
     private static final int DEF_COUNTER = 7;
 
+    @Getter
     private final ClassicalType type = ClassicalType.CHACHA20;
     private byte[] plainBytes;
 
     private final byte[] nonce;
 
-    private SecretKey key;
+    private EntLibSecretKey key;
     private byte @Nullable [] ciphertext;
 
     @Getter
@@ -74,8 +97,6 @@ public final class ChaCha20 implements SymmetricCryptoService, StreamingCryptoSe
     public static final class ChaCha20Setting {
 
         private final byte[] plainBytes;
-        @Getter
-        private final ClassicalType type;
         private final byte[] nonce;
         @Getter
         private final int chunkSize;
@@ -98,9 +119,8 @@ public final class ChaCha20 implements SymmetricCryptoService, StreamingCryptoSe
             } else {
                 throw new EntLibAlgorithmSettingException(EntLibCryptoService.class, "plaintext-or-byte-array-exc");
             }
-            this.type = ClassicalType.CHACHA20;
             this.nonce = new byte[nonceSize < 8 || nonceSize > 12 ? 12 : nonceSize];
-            InternalFactory.SAFE_RANDOM.nextBytes(nonce);
+            InternalFactory.getSafeRandom().nextBytes(nonce);
             this.chunkSize = chunkSize;
             this.encryptedOutput = encryptedOutput;
             this.decryptedOutput = decryptedOutput;
@@ -117,7 +137,7 @@ public final class ChaCha20 implements SymmetricCryptoService, StreamingCryptoSe
     }
 
     private ChaCha20(byte[] nonce, @NotNull String plain, @Nullable Path encryptedOutput, @Nullable Path decryptedOutput) {
-        log.debug(lang.setClass(EntLibCryptoService.class)
+        log.debug(LanguageInstanceBased.create(EntLibCryptoService.class)
                 .argsNonTopKey("debug-created-instance", "ChaCha20"));
         this.nonce = nonce;
         this.plainBytes = plain.getBytes(StandardCharsets.UTF_8);
@@ -126,7 +146,7 @@ public final class ChaCha20 implements SymmetricCryptoService, StreamingCryptoSe
     }
 
     private ChaCha20(byte[] nonce, byte @NotNull [] plainBytes, @Nullable Path encryptedOutput, @Nullable Path decryptedOutput) {
-        log.debug(lang.setClass(EntLibCryptoService.class)
+        log.debug(LanguageInstanceBased.create(EntLibCryptoService.class)
                 .argsNonTopKey("debug-created-instance", "ChaCha20"));
         this.nonce = nonce;
         this.plainBytes = Arrays.copyOf(plainBytes, plainBytes.length);
@@ -147,27 +167,21 @@ public final class ChaCha20 implements SymmetricCryptoService, StreamingCryptoSe
     }
 
     @Override
-    public @NotNull EntKeyPair generateEntKeyPair()
+    public @NotNull EntLibKeyPair generateEntKeyPair(@Nullable EntLibKey.CustomWiper<KeyPair> callback)
             throws InvalidAlgorithmParameterException, NoSuchAlgorithmException, NoSuchProviderException {
         throw new EntLibAlgorithmSettingException(EntLibCryptoService.class, "not-support-key-type-exc");
     }
 
     @Override
-    public @NotNull SecretKey generateSecretKey() throws NoSuchAlgorithmException {
+    public @NotNull EntLibSecretKey generateSecretKey(@Nullable EntLibKey.CustomWiper<SecretKey> callback) throws NoSuchAlgorithmException, NoSuchProviderException {
         checkClosed();
-        this.key = InternalFactory.Key.secretKeygen(type.getAlgorithmName(), 256);
+        this.key = InternalFactory.Key.secretKeygen(type.getAlgorithmName(), 256, null);
         return key;
     }
 
-    @Override
     public byte @NotNull [] getPlainBytes() {
         checkClosed();
         return plainBytes.clone();
-    }
-
-    @Override
-    public EntLibParameterSpec getType() {
-        return ClassicalType.CHACHA20;
     }
 
     public byte @NotNull [] getCiphertext() {
@@ -176,7 +190,7 @@ public final class ChaCha20 implements SymmetricCryptoService, StreamingCryptoSe
     }
 
     @Override
-    public byte[] encrypt(@NotNull SecretKey secretKey, byte @NotNull [] plainBytes, @Nullable Padding padding, int chunkSize)
+    public byte[] encrypt(@NotNull SecretKey secretKey, byte @NotNull [] plainBytes, byte @Nullable [] iv, byte[] aad, int chunkSize)
             throws Exception {
         checkClosed();
         Cipher cipher = Cipher.getInstance(type.getAlgorithmName());
@@ -202,13 +216,8 @@ public final class ChaCha20 implements SymmetricCryptoService, StreamingCryptoSe
         return this.ciphertext.clone();
     }
 
-    public byte[] encrypt(@NotNull SecretKey secretKey, byte @NotNull [] plainBytes, int chunkSize)
-            throws Exception {
-        return encrypt(secretKey, plainBytes, null, chunkSize);
-    }
-
     @Override
-    public byte[] decrypt(@NotNull SecretKey secretKey, byte @NotNull [] cipherBytes, @Nullable Padding padding, int chunkSize)
+    public byte[] decrypt(@NotNull SecretKey secretKey, byte @NotNull [] cipherBytes, byte @Nullable [] iv, byte[] aad, int chunkSize)
             throws Exception {
         checkClosed();
         Cipher cipher = Cipher.getInstance(type.getAlgorithmName());
@@ -231,11 +240,6 @@ public final class ChaCha20 implements SymmetricCryptoService, StreamingCryptoSe
         } else {
             return cipher.doFinal(cipherBytes);
         }
-    }
-
-    public byte[] decrypt(@NotNull SecretKey secretKey, byte @NotNull [] cipherBytes, int chunkSize)
-            throws Exception {
-        return decrypt(secretKey, cipherBytes, null, chunkSize);
     }
 
     @Override
@@ -275,7 +279,6 @@ public final class ChaCha20 implements SymmetricCryptoService, StreamingCryptoSe
         return cipher.doFinal(inputBuffer, outputBuffer);
     }
 
-    @Override
     public void close() throws Exception {
         if (closed) return;
 

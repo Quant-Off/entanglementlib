@@ -1,6 +1,23 @@
 /*
- * Copyright © 2025 Quant.
- * Under License "PolyForm Noncommercial License 1.0.0".
+ * Copyright (c) 2025-2026 Quant
+ *
+ * Permission is hereby granted, free of charge, to any person obtaining a
+ * copy of this software and associated documentation files (the “Software”),
+ * to deal in the Software without restriction, including without limitation
+ * the rights to use, copy, modify, merge, publish, distribute, sublicense,
+ * and/or sell copies of the Software, and to permit persons to whom the
+ * Software is furnished to do so, subject to the following conditions:
+ *
+ * The above copyright notice and this permission notice shall be included
+ * in all copies or substantial portions of the Software.
+ *
+ * THE SOFTWARE IS PROVIDED “AS IS”, WITHOUT WARRANTY OF ANY KIND, EXPRESS
+ * OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
+ * MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.
+ * IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY
+ * CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,
+ * TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE
+ * SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 
 package space.qu4nt.entanglementlib.security.algorithm;
@@ -9,11 +26,13 @@ import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 import org.bouncycastle.jcajce.provider.asymmetric.mlkem.BCMLKEMPrivateKey;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import space.qu4nt.entanglementlib.InternalFactory;
 import space.qu4nt.entanglementlib.exception.security.EntLibAlgorithmSettingException;
 import space.qu4nt.entanglementlib.exception.security.EntLibSecureIllegalStateException;
 import space.qu4nt.entanglementlib.resource.language.LanguageInstanceBased;
-import space.qu4nt.entanglementlib.security.EntKeyPair;
+import space.qu4nt.entanglementlib.security.EntLibKey;
+import space.qu4nt.entanglementlib.security.EntLibKeyPair;
 import space.qu4nt.entanglementlib.security.KeyDestroyHelper;
 import space.qu4nt.entanglementlib.util.wrapper.Hex;
 import space.qu4nt.entanglementlib.util.wrapper.Pair;
@@ -43,7 +62,7 @@ public final class MLKEM implements KeyEncapsulateService {
     private final MLKEMType type;
     private byte[] plainBytes;
 
-    private EntKeyPair pair;
+    private EntLibKeyPair pair;
     private Pair<byte[], SecretKey> capsule;
 
     private boolean closed = false;
@@ -105,14 +124,13 @@ public final class MLKEM implements KeyEncapsulateService {
     }
 
     @Override
-    public @NotNull EntKeyPair generateEntKeyPair()
+    public @NotNull EntLibKeyPair generateEntKeyPair(@Nullable EntLibKey.CustomWiper<KeyPair> callback)
             throws InvalidAlgorithmParameterException, NoSuchAlgorithmException, NoSuchProviderException {
         checkClosed();
-        this.pair = new EntKeyPair(InternalFactory.Key.keygenWithPQC(type));
+        this.pair = new EntLibKeyPair(InternalFactory.Key.keygenWithPQC(type));
         return pair;
     }
 
-    @Override
     public byte @NotNull [] getPlainBytes() {
         checkClosed();
         return plainBytes.clone();
@@ -131,7 +149,6 @@ public final class MLKEM implements KeyEncapsulateService {
         return InternalFactory.KEM.decapsulate(type, secretKey, sk, ciphertext);
     }
 
-    @Override
     public void close() throws Exception {
         if (closed) return;
 
