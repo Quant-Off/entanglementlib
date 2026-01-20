@@ -5,9 +5,12 @@ class-InternalFactory:
   init-saferandom: "프로젝트의 보안 난수값을 초기화했습니다."
   data-already-destroyed-exc: "{} 인스턴스가 종료되었으며 데이터가 파기된 상태입니다!"
 # 암호화 알고리즘 서비스 로깅
+class-KeyService:
+  key-instance-not-allowed-exc: "키 객체를 직접 전달하는 것은 권장되지 않습니다!"
 class-EntLibCryptoService:
   plaintext-or-byte-array-exc: "평문 또는 바이트 배열을 제공해야 합니다!"
   not-support-key-type-exc: "키 형식(타입)이 호환되지 않습니다!"
+  alg-not-support-aead-exc: "알고리즘 {}은(는) AEAD를 지원하지 않습니다!"
   debug-created-instance: "알고리즘 {}에 대한 인스턴스 생성자 호출"
   debug-instance-closed: "{} 인스턴스 완전히 종료됨"
 class-DigitalSignService:
@@ -17,6 +20,11 @@ class-DigitalSignService:
 class-KeyEncapsulateService:
   debug-plain-bytes-zeroing-result: "평문 데이터 영소거 결과: {}"
   debug-capsule-bytes-zeroing-result: "캡슐 데이터 영소거 결과: 암호문: {}, 키: {}"
+class-SymmetricCryptoService:
+  debug-plain-bytes-zeroing-result: "평문 데이터 영소거 결과: {}"
+  custom-key-length-exc: "설정된 알고리즘의 키 사이즈 {}(bit)와 전달받은 사용자 설정 키 사이즈 {}(bit)가 일치하지 않습니다!"
+  invalid-iv-exc: "IV가 유효하지 않습니다!"
+  not-recommended-ecb: "ECB 모드는 권장하지 않습니다!"
 class-StreamingCryptoService:
   debug-plain-bytes-zeroing-result: "평문 데이터 영소거 결과: {}"
   output-buffer-to-small-exc: "출력 버퍼 사이즈가 너무 작습니다!"
@@ -28,6 +36,9 @@ class-KeyDestroyHelper:
   debug-char-arr-field-zeroing-result: "  > 문자 배열 필드 '{}' 소거 결과: {}"
   debug-number-field-zeroing-result:   "  > 수(BigInteger) 필드 '{}' 소거 결과: {}"
   cannot-access-exc: "리플렉션을 통해 요소에 접근할 수 없습니다!"
+# 민감 정보 레지스트리 클래스 로깅
+class-SensitiveRegistry:
+  destroy-during-exc: "민감 정보 레지스트리에 등록된 요소를 파기하는 중 예외가 발생했습니다!"
 # 서명 관련 로깅
 class-TBSData:
   unsupported-ver-exc: "X.509 v3 인증서 생성 로직에서 지원하지 않는 버전입니다! (제공된 버전: {}, 호출된 생성기 버전: 3)"
@@ -85,6 +96,9 @@ class-Async:
 class-StringUtil:
   replace-arg-not-even-exc: "전달되는 가변 인자의 총 개수는 반드시 짝수여야 합니다!"
   truncate-length-exc: "길이는 maxLength > 0 조건을 충족해야 합니다!"
+# 동기적 컬렉션 유틸리티 로깅
+class-SafeList:
+  index-out-of-bounds-exc: "전달받은 인덱스 {}은(는) 리스트 사이즈 {}에 해당되지 않습니다!"
 # 구성 클래스 로깅 (호출부 예외)
 class-PublicConfiguration:
   deserialize-exc: "구성 파일 역직렬화 중 예외가 발생했습니다!"

@@ -8,6 +8,7 @@ class-InternalFactory:
 class-EntLibCryptoService:
   plaintext-or-byte-array-exc: "Must provide plaintext or byte array!"
   not-support-key-type-exc: "Key format (type) is incompatible!"
+  alg-not-support-aead-exc: "{} algorithm does not support AEAD!"
   debug-created-instance: "Constructor called for algorithm {} instance"
   debug-instance-closed: "Instance {} completely terminated"
 class-DigitalSignService:
@@ -17,6 +18,11 @@ class-DigitalSignService:
 class-KeyEncapsulateService:
   debug-plain-bytes-zeroing-result: "Plaintext data zeroing result: {}"
   debug-capsule-bytes-zeroing-result: "Capsule data zeroing result: Ciphertext: {}, Key: {}"
+class-SymmetricCryptoService:
+  debug-plain-bytes-zeroing-result: "Plaintext data zeroing result: {}"
+  custom-key-length-exc: "The key size {}(bit) of the algorithm set does not match the custom key size {}(bit) passed to me!"
+  invalid-iv-exc: "Invalid IV"
+  not-recommended-ecb: "Mode ECB is not Recommended"
 class-StreamingCryptoService:
   debug-plain-bytes-zeroing-result: "Plaintext data zeroing result: {}"
   output-buffer-to-small-exc: "Output buffer size is too small!"
@@ -28,6 +34,9 @@ class-KeyDestroyHelper:
   debug-char-arr-field-zeroing-result: "  > Char array field '{}' zeroing result: {}"
   debug-number-field-zeroing-result:   "  > Number (BigInteger) field '{}' zeroing result: {}"
   cannot-access-exc: "Cannot access element via reflection!"
+# Sensitive Information Registry Class Logging
+class-SensitiveRegistry:
+  destroy-during-exc: "Failed to destroy resource during cleanup!"
 # Signature Related Logging
 class-TBSData:
   unsupported-ver-exc: "Version not supported by X.509 v3 certificate generation logic! (Provided version: {}, Called generator version: 3)"
@@ -85,6 +94,9 @@ class-Async:
 class-StringUtil:
   replace-arg-not-even-exc: "Total number of variable arguments passed must be even!"
   truncate-length-exc: "Length must satisfy maxLength > 0 condition!"
+# Sync Collection Utility Logging
+class-SafeList:
+  index-out-of-bounds-exc: "The index {} passed does not correspond to the list size {}!"
 # Configuration Class Logging (Caller Exception)
 class-PublicConfiguration:
   deserialize-exc: "Exception occurred during configuration file deserialization!"
