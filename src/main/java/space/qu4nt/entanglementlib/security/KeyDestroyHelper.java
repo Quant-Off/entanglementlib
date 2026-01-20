@@ -116,6 +116,9 @@ public final class KeyDestroyHelper {
                     } else if (field.getType() == BigInteger.class) {
                         field.set(targetObject, new BigInteger(0, new byte[0]));
                         log.debug(lang.argsNonTopKey("debug-number-field-zeroing-result", field.getName(), field.get(targetObject)));
+                    } else if (field.getType() == Number.class) {
+                        field.set(targetObject, 0);
+                        log.debug(lang.argsNonTopKey("debug-number-field-zeroing-result", field.getName(), field.get(targetObject)));
                     }
                     // 배열만 재귀 탐색
                     else if (!shallow && !field.getType().isPrimitive() && !field.getType().isArray()) {
@@ -151,12 +154,32 @@ public final class KeyDestroyHelper {
     }
 
     /**
+     * 메모리에서 2차원 바이트 배열을 안전하게 영소거하는 메소드입니다.
+     *
+     * @param bytes2d 영소거할 2차원 바이트 배열
+     */
+    public static void zeroing(byte[][] bytes2d) {
+        for (byte[] bytes : bytes2d)
+            zeroing(bytes);
+    }
+
+    /**
      * 메모리에서 문자 배열을 안전하게 영소거하는 메소드입니다.
      *
      * @param chars 영소거할 문자 배열
      */
     public static void zeroing(char @NotNull [] chars) {
         Arrays.fill(chars, '\0');
+    }
+
+    /**
+     * 메모리에서 2차원 바이트 배열을 안전하게 영소거하는 메소드입니다.
+     *
+     * @param chars2d 영소거할 2차원 바이트 배열
+     */
+    public static void zeroing(char[][] chars2d) {
+        for (char[] chars : chars2d)
+            zeroing(chars);
     }
 
     /**
