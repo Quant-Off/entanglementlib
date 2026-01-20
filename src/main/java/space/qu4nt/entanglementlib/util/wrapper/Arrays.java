@@ -20,18 +20,35 @@
  * SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 
-package space.qu4nt.entanglementlib.experimental.security.builder;
-
-import org.jetbrains.annotations.ApiStatus;
-import org.jetbrains.annotations.NotNull;
+package space.qu4nt.entanglementlib.util.wrapper;
 
 /**
- * {@code AEAD} 지원을 위한 클래스입니다.
- *
  * @author Q. T. Felix
  * @since 1.1.0
  */
-@ApiStatus.Experimental
-public record AEADAdditional(byte @NotNull [] aad) {
+public final class Arrays {
 
+    public static byte[] concatenate(byte[][] bytes2d) {
+        return org.bouncycastle.util.Arrays.concatenate(bytes2d);
+    }
+
+    public static byte[] concatenate(byte[] bytes, byte[] bytes1) {
+        return org.bouncycastle.util.Arrays.concatenate(bytes, bytes1);
+    }
+
+    public static byte[] concatenate(byte[] bytes, byte[] bytes1, byte[] bytes2) {
+        return org.bouncycastle.util.Arrays.concatenate(bytes, bytes1, bytes2);
+    }
+
+    public static byte[] concatenate(byte[] bytes, byte[] bytes1, byte[] bytes2, byte[] bytes3) {
+        return org.bouncycastle.util.Arrays.concatenate(bytes, bytes1, bytes2, bytes3);
+    }
+
+    public static int[] concatenate(int[] ints, int[] ints1) {
+        return org.bouncycastle.util.Arrays.concatenate(ints, ints1);
+    }
+
+    public static short[] concatenate(short[] shorts, short[] shorts1) {
+        return org.bouncycastle.util.Arrays.concatenate(shorts, shorts1);
+    }
 }

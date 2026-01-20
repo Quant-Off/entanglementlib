@@ -1,6 +1,23 @@
 /*
- * Copyright © 2025 Quant.
- * Under License "PolyForm Noncommercial License 1.0.0".
+ * Copyright (c) 2025-2026 Quant
+ *
+ * Permission is hereby granted, free of charge, to any person obtaining a
+ * copy of this software and associated documentation files (the “Software”),
+ * to deal in the Software without restriction, including without limitation
+ * the rights to use, copy, modify, merge, publish, distribute, sublicense,
+ * and/or sell copies of the Software, and to permit persons to whom the
+ * Software is furnished to do so, subject to the following conditions:
+ *
+ * The above copyright notice and this permission notice shall be included
+ * in all copies or substantial portions of the Software.
+ *
+ * THE SOFTWARE IS PROVIDED “AS IS”, WITHOUT WARRANTY OF ANY KIND, EXPRESS
+ * OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
+ * MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.
+ * IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY
+ * CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,
+ * TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE
+ * SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 
 package space.qu4nt.entanglementlib.util.io;
@@ -17,6 +34,7 @@ import java.io.RandomAccessFile;
 import java.nio.MappedByteBuffer;
 import java.nio.channels.Channels;
 import java.nio.channels.FileChannel;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
@@ -41,6 +59,23 @@ public final class Hash {
             md.update(data, 0, data.length);
         }
         return Hex.toHexString(md.digest());
+    }
+
+    /**
+     * 문자 배열의 해시값을 산출하는 메소드입니다.
+     * 문자열은 {@code UTF-8}로 인코딩되어 처리됩니다.
+     *
+     * @param data   해시를 산출할 문자 배열
+     * @param digest 사용할 해시 알고리즘
+     * @return 소문자 16진수 해시 문자열
+     * @throws NoSuchAlgorithmException 지원하지 않는 알고리즘 요청 시
+     */
+    public static String hash(final char @NotNull [] data, Digest digest) throws NoSuchAlgorithmException {
+        Objects.requireNonNull(data);
+        Objects.requireNonNull(digest);
+
+        byte[] bytes = new String(data).getBytes(StandardCharsets.UTF_8);
+        return hash(bytes, digest, 0);
     }
 
     /**

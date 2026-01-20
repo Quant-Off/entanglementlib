@@ -1,6 +1,23 @@
 /*
- * Copyright © 2025 Quant.
- * Under License "PolyForm Noncommercial License 1.0.0".
+ * Copyright (c) 2025-2026 Quant
+ *
+ * Permission is hereby granted, free of charge, to any person obtaining a
+ * copy of this software and associated documentation files (the “Software”),
+ * to deal in the Software without restriction, including without limitation
+ * the rights to use, copy, modify, merge, publish, distribute, sublicense,
+ * and/or sell copies of the Software, and to permit persons to whom the
+ * Software is furnished to do so, subject to the following conditions:
+ *
+ * The above copyright notice and this permission notice shall be included
+ * in all copies or substantial portions of the Software.
+ *
+ * THE SOFTWARE IS PROVIDED “AS IS”, WITHOUT WARRANTY OF ANY KIND, EXPRESS
+ * OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
+ * MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.
+ * IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY
+ * CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,
+ * TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE
+ * SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 
 package space.qu4nt.entanglementlib;
@@ -13,6 +30,7 @@ import org.bouncycastle.pqc.jcajce.provider.BouncyCastlePQCProvider;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import space.qu4nt.entanglementlib.exception.critical.EntLibNativeError;
 import space.qu4nt.entanglementlib.resource.config.PublicConfiguration;
 import space.qu4nt.entanglementlib.resource.language.LanguageInstanceBased;
 import space.qu4nt.entanglementlib.security.EntLibKeyPair;
@@ -26,23 +44,24 @@ import tools.jackson.databind.ObjectMapper;
 import javax.crypto.KeyGenerator;
 import javax.crypto.SecretKey;
 import java.io.IOException;
+import java.lang.foreign.*;
+import java.lang.invoke.MethodHandle;
 import java.lang.reflect.Field;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
+import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.security.*;
 import java.util.*;
 
-/**
- * 환경 변수 할당 및 암호화 연산을 중앙에서 처리하기 위한 내부 클래스입니다.
- * <p>
- * {@code BouncyCastle} 라이브러리 공급자를 {@code JCA}에 등록하거나 서명, KEM 등의 알고리즘 연산을 간편화할 때 사용됩니다.
- * 필요한 경우 {@link #_bcNormalProvider} 또는 {@link #_bcPQCProvider} 상수를 통해 라이브러리 공급자 이름을 사용하거나
- * {@code JCA}에 공급자를 등록할 수 있습니다.
- *
- * @author Q. T. Felix
- * @since 1.0.0
- */
+/// 환경 변수 할당 및 암호화 연산을 중앙에서 처리하기 위한 내부 클래스입니다.
+///
+/// `BouncyCastle` 라이브러리 공급자를 `JCA`에 등록하거나 서명, KEM 등의 알고리즘 연산을 간편화할 때 사용됩니다.
+/// 필요한 경우 [#_bcNormalProvider] 또는 [#_bcPQCProvider] 상수를 통해 라이브러리 공급자 이름을 사용하거나
+/// `JCA`에 공급자를 등록할 수 있습니다.
+///
+/// @author Q. T. Felix
+/// @since 1.0.0
 @ApiStatus.Internal
 @Slf4j
 public final class InternalFactory extends EntanglementLibEnvs {
@@ -74,7 +93,7 @@ public final class InternalFactory extends EntanglementLibEnvs {
      * <p>
      * 보안 난수를 생성하기 위해 해당 상수만을 사용해야 합니다.
      * <p>
-     * {@code BouncyCastle} 라이브러리가 자동으로 최적의 소스(/dev/urandom, Fortuna/PRNG, Auto-seeding 등)를 선택합니다.
+     * {@code BouncyCastle} 라이브러리가 자동으로 최적의 소스를 선택합니다.
      */
     private static final SecureRandom SAFE_RANDOM;
 
@@ -87,6 +106,51 @@ public final class InternalFactory extends EntanglementLibEnvs {
         SAFE_RANDOM = CryptoServicesRegistrar.getSecureRandom();
         log.debug(lang.msg("init-saferandom"));
     }
+
+    //
+    // EntLib-Native - start
+    //
+
+    /**
+     * {@code entlib-native} 소거 함수(entanglement_secure_wipe)에 대한 {@link MethodHandle}입니다.
+     */
+    @Nullable
+    private static final MethodHandle WIPE_HANDLE;
+
+    static {
+        // Linker API를 사용하여 네이티브 함수 바인딩
+        String libName = System.mapLibraryName("entlib_native");
+        final Path lib = Path.of(envEntLibNativeDir(), libName).toAbsolutePath();
+        SymbolLookup lookup = SymbolLookup.libraryLookup(lib, Arena.global());
+        Linker linker = Linker.nativeLinker();
+
+        // Rust 함수 시그니처 정의
+        FunctionDescriptor descriptor = FunctionDescriptor.ofVoid(
+                ValueLayout.ADDRESS,   // ptr (*mut u8)
+                ValueLayout.JAVA_LONG  // len (usize는 64비트 플랫폼 기준 long)
+        );
+
+        WIPE_HANDLE = lookup.find("entanglement_secure_wipe")
+                .map(symbol -> linker.downcallHandle(symbol, descriptor))
+                .orElse(null);
+    }
+
+    /// Rust 네이티브 소거 함수를 호출하는 메소드입니다.
+    ///
+    /// [#WIPE_HANDLE]값이 `null`일 경우 [EntLibNativeError]에러를
+    /// 발생시킵니다. 호출자는 발생한 에러를 Java 레벨 키 소거 로직으로
+    /// 핸들링해야 합니다.
+    @NotNull
+    @CallerResponsibility
+    public static MethodHandle callNativeWipeHandle() {
+        if (WIPE_HANDLE == null)
+            throw new EntLibNativeError("네이티브 보안 소거 함수(entanglement_secure_wipe)를 찾을 수 없습니다! Java 레벨의 소거로 대체합니다.");
+        return WIPE_HANDLE;
+    }
+
+    //
+    // EntLib-Native - end
+    //
 
     static void registerInternalEntanglementLib() {
         setupSecurityProviders();
@@ -444,6 +508,7 @@ public final class InternalFactory extends EntanglementLibEnvs {
         }
     }
 
+    @ApiStatus.Internal
     public static void providerInformation() throws IOException {
         Map<String, Map<String, List<String>>> providerInfo = new LinkedHashMap<>();
 
@@ -467,7 +532,7 @@ public final class InternalFactory extends EntanglementLibEnvs {
                     if (map != null) {
                         map.forEach((k, v) -> {
                             if (!"Software".equals(v)) {
-                                algoDetails.append("\n    - ").append(k).append(": ").append(v);
+//                                algoDetails.append("\n    - ").append(k).append(": ").append(v);
                             }
                         });
                     }
@@ -494,6 +559,7 @@ public final class InternalFactory extends EntanglementLibEnvs {
         Files.writeString(Paths.get(InternalFactory.envEntanglementPublicDir()).resolve("security-providers.txt"), stringTower.toString(), StandardCharsets.UTF_8);
     }
 
+    @ApiStatus.Internal
     public static void main(String[] args) throws IOException {
         setupSecurityProviders();
         providerInformation();

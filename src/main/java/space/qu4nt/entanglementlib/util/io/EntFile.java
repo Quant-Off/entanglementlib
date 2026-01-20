@@ -1,6 +1,23 @@
 /*
- * Copyright © 2025 Quant.
- * Under License "PolyForm Noncommercial License 1.0.0".
+ * Copyright (c) 2025-2026 Quant
+ *
+ * Permission is hereby granted, free of charge, to any person obtaining a
+ * copy of this software and associated documentation files (the “Software”),
+ * to deal in the Software without restriction, including without limitation
+ * the rights to use, copy, modify, merge, publish, distribute, sublicense,
+ * and/or sell copies of the Software, and to permit persons to whom the
+ * Software is furnished to do so, subject to the following conditions:
+ *
+ * The above copyright notice and this permission notice shall be included
+ * in all copies or substantial portions of the Software.
+ *
+ * THE SOFTWARE IS PROVIDED “AS IS”, WITHOUT WARRANTY OF ANY KIND, EXPRESS
+ * OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
+ * MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.
+ * IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY
+ * CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,
+ * TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE
+ * SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 
 package space.qu4nt.entanglementlib.util.io;
@@ -255,6 +272,9 @@ public final class EntFile {
     /**
      * 파일 스트리밍을 통해 데이터를 버퍼 단위로 처리하는 메소드입니다.
      * 입력 파일에서 데이터를 읽어와 콜백 함수를 통해 처리한 후 출력 파일에 씁니다.
+     * <p>
+     * 이 메소드는 입/출력 파일의 길이를 예상하지 않습니다. 스택 오버플로우 오류를
+     * 예방하기 위해 호출자는 입/출력 파일의 길이를 알고 있어야 합니다.
      *
      * @param inputPath            입력 파일의 경로
      * @param outputPath           출력 파일의 경로
