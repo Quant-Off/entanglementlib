@@ -3,7 +3,6 @@
 build/
 logs/
 .env
-.temp.env
 .env.local
 !gradle/wrapper/gradle-wrapper.jar
 !**/src/main/**/build/
