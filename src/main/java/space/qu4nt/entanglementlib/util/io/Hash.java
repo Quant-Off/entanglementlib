@@ -17,6 +17,7 @@ import java.io.RandomAccessFile;
 import java.nio.MappedByteBuffer;
 import java.nio.channels.Channels;
 import java.nio.channels.FileChannel;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
@@ -41,6 +42,23 @@ public final class Hash {
             md.update(data, 0, data.length);
         }
         return Hex.toHexString(md.digest());
+    }
+
+    /**
+     * 문자 배열의 해시값을 산출하는 메소드입니다.
+     * 문자열은 {@code UTF-8}로 인코딩되어 처리됩니다.
+     *
+     * @param data   해시를 산출할 문자 배열
+     * @param digest 사용할 해시 알고리즘
+     * @return 소문자 16진수 해시 문자열
+     * @throws NoSuchAlgorithmException 지원하지 않는 알고리즘 요청 시
+     */
+    public static String hash(final char @NotNull [] data, Digest digest) throws NoSuchAlgorithmException {
+        Objects.requireNonNull(data);
+        Objects.requireNonNull(digest);
+
+        byte[] bytes = new String(data).getBytes(StandardCharsets.UTF_8);
+        return hash(bytes, digest, 0);
     }
 
     /**

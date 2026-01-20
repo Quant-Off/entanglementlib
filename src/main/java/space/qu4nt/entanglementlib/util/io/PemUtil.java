@@ -95,8 +95,8 @@ public final class PemUtil {
 
             // PKCS#8 형식으로 개인키를 암호화하기 위한 설정
             OutputEncryptor encryptor = new JcePKCSPBEOutputEncryptorBuilder(PKCS8Generator.AES_256_CBC)
-                    .setProvider(InternalFactory._bcNormalProvider)
-                    .setRandom(InternalFactory.SAFE_RANDOM)
+                    .setProvider(InternalFactory.getBCNormalProvider())
+                    .setRandom(InternalFactory.getSafeRandom())
                     .setIterationCount(100_000)
                     .build(password);
 
@@ -136,7 +136,7 @@ public final class PemUtil {
         try (FileReader fileReader = new FileReader(pathPair.getFirst().toFile());
              PEMParser pemParser = new PEMParser(fileReader)) {
             SubjectPublicKeyInfo publicKeyInfo = (SubjectPublicKeyInfo) pemParser.readObject();
-            JcaPEMKeyConverter converter = new JcaPEMKeyConverter().setProvider(InternalFactory._bcNormalProvider);
+            JcaPEMKeyConverter converter = new JcaPEMKeyConverter().setProvider(InternalFactory.getBCNormalProvider());
             return converter.getPublicKey(publicKeyInfo);
         } catch (IOException e) {
             throw new RuntimeException(e);
@@ -157,13 +157,13 @@ public final class PemUtil {
 
             // 암호화된 키를 복호화하기 위한 제공자 빌더(AES256 복호화에 필요한 정보 포함)
             InputDecryptorProvider decryptorProvider = new JceOpenSSLPKCS8DecryptorProviderBuilder()
-                    .setProvider(InternalFactory._bcNormalProvider)
+                    .setProvider(InternalFactory.getBCNormalProvider())
                     .build(password);
 
             // 개인 키 정보 복호화
             PrivateKeyInfo privateKeyInfo = pkcs8PrivateKeyInfo.decryptPrivateKeyInfo(decryptorProvider);
 
-            final JcaPEMKeyConverter converter = new JcaPEMKeyConverter().setProvider(InternalFactory._bcNormalProvider);
+            final JcaPEMKeyConverter converter = new JcaPEMKeyConverter().setProvider(InternalFactory.getBCNormalProvider());
             return converter.getPrivateKey(privateKeyInfo);
         } catch (IOException | OperatorCreationException | PKCSException e) {
             throw new RuntimeException(e);

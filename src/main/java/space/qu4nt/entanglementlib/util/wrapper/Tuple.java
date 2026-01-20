@@ -34,5 +34,4 @@ public class Tuple<F, S, T> {
         this.second = second;
         this.third = third;
     }
-
 }
