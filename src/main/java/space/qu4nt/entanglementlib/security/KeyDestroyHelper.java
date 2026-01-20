@@ -1,6 +1,23 @@
 /*
- * Copyright © 2025 Quant.
- * Under License "PolyForm Noncommercial License 1.0.0".
+ * Copyright (c) 2025-2026 Quant
+ *
+ * Permission is hereby granted, free of charge, to any person obtaining a
+ * copy of this software and associated documentation files (the “Software”),
+ * to deal in the Software without restriction, including without limitation
+ * the rights to use, copy, modify, merge, publish, distribute, sublicense,
+ * and/or sell copies of the Software, and to permit persons to whom the
+ * Software is furnished to do so, subject to the following conditions:
+ *
+ * The above copyright notice and this permission notice shall be included
+ * in all copies or substantial portions of the Software.
+ *
+ * THE SOFTWARE IS PROVIDED “AS IS”, WITHOUT WARRANTY OF ANY KIND, EXPRESS
+ * OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
+ * MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.
+ * IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY
+ * CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,
+ * TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE
+ * SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 
 package space.qu4nt.entanglementlib.security;
@@ -12,6 +29,7 @@ import space.qu4nt.entanglementlib.util.wrapper.Hex;
 
 import javax.crypto.spec.SecretKeySpec;
 import javax.security.auth.DestroyFailedException;
+import java.lang.foreign.MemorySegment;
 import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
 import java.math.BigInteger;
@@ -41,7 +59,9 @@ public final class KeyDestroyHelper {
      * JPMS 보안 시스템이 강화되어 리플렉션으로도 접근할 수 없습니다.
      *
      * @param targetObject 소거할 내부 키 파라미터 객체
+     *                     @deprecated 1.1.0 이상 버전부턴 모든 메모리 관련 기능이 {@code entlib-native}를 통해 구현됩니다.
      */
+    @Deprecated
     public static void destroy(Object targetObject) {
         if (targetObject == null) return;
 
@@ -56,7 +76,9 @@ public final class KeyDestroyHelper {
      *
      * @param targetObject 소거할 내부 키 파라미터 객체
      * @param shallow      얕은 소거 여부, 재귀 탐색을 원치 않으면 true, 그렇지 않으면 false
+     *                     @deprecated 1.1.0 이상 버전부턴 모든 메모리 관련 기능이 {@code entlib-native}를 통해 구현됩니다.
      */
+    @Deprecated
     public static void destroy(Object targetObject, boolean shallow) {
         if (targetObject == null) return;
 
@@ -64,6 +86,10 @@ public final class KeyDestroyHelper {
         recursiveZeroing(targetObject, visited, shallow);
     }
 
+    /**
+     * @deprecated 1.1.0 이상 버전부턴 모든 메모리 관련 기능이 {@code entlib-native}를 통해 구현됩니다.
+     */
+    @Deprecated
     private static void recursiveZeroing(Object targetObject, Set<Object> visited, boolean shallow) {
         if (targetObject == null) return;
 
@@ -116,6 +142,9 @@ public final class KeyDestroyHelper {
                     } else if (field.getType() == BigInteger.class) {
                         field.set(targetObject, new BigInteger(0, new byte[0]));
                         log.debug(lang.argsNonTopKey("debug-number-field-zeroing-result", field.getName(), field.get(targetObject)));
+                    } else if (field.getType() == Number.class) {
+                        field.set(targetObject, 0);
+                        log.debug(lang.argsNonTopKey("debug-number-field-zeroing-result", field.getName(), field.get(targetObject)));
                     }
                     // 배열만 재귀 탐색
                     else if (!shallow && !field.getType().isPrimitive() && !field.getType().isArray()) {
@@ -132,6 +161,7 @@ public final class KeyDestroyHelper {
     }
 
     // 탐색을 멈출 타입 정의 (String, Number 등 불변 객체거나 내부 필드가 의미 없는 경우)
+    @Deprecated
     private static boolean isSkippingType(Class<?> clazz) {
         if (clazz == null) return true;
         String name = clazz.getName();
@@ -151,12 +181,36 @@ public final class KeyDestroyHelper {
     }
 
     /**
+     * 메모리에서 2차원 바이트 배열을 안전하게 영소거하는 메소드입니다.
+     *
+     * @param bytes2d 영소거할 2차원 바이트 배열
+     */
+    public static void zeroing(byte[][] bytes2d) {
+        for (byte[] bytes : bytes2d)
+            zeroing(bytes);
+    }
+
+    /**
      * 메모리에서 문자 배열을 안전하게 영소거하는 메소드입니다.
      *
      * @param chars 영소거할 문자 배열
      */
     public static void zeroing(char @NotNull [] chars) {
         Arrays.fill(chars, '\0');
+    }
+
+    /**
+     * 메모리에서 2차원 바이트 배열을 안전하게 영소거하는 메소드입니다.
+     *
+     * @param chars2d 영소거할 2차원 바이트 배열
+     */
+    public static void zeroing(char[][] chars2d) {
+        for (char[] chars : chars2d)
+            zeroing(chars);
+    }
+
+    public static void zeroing(final MemorySegment memorySegment) {
+        memorySegment.fill((byte) 0);
     }
 
     /**

@@ -1,6 +1,23 @@
 /*
- * Copyright © 2025 Quant.
- * Under License "PolyForm Noncommercial License 1.0.0".
+ * Copyright (c) 2025-2026 Quant
+ *
+ * Permission is hereby granted, free of charge, to any person obtaining a
+ * copy of this software and associated documentation files (the “Software”),
+ * to deal in the Software without restriction, including without limitation
+ * the rights to use, copy, modify, merge, publish, distribute, sublicense,
+ * and/or sell copies of the Software, and to permit persons to whom the
+ * Software is furnished to do so, subject to the following conditions:
+ *
+ * The above copyright notice and this permission notice shall be included
+ * in all copies or substantial portions of the Software.
+ *
+ * THE SOFTWARE IS PROVIDED “AS IS”, WITHOUT WARRANTY OF ANY KIND, EXPRESS
+ * OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
+ * MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.
+ * IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY
+ * CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,
+ * TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE
+ * SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 
 package space.qu4nt.entanglementlib.experimental.security;
@@ -10,7 +27,6 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import space.qu4nt.entanglementlib.experimental.security.builder.AEADAdditional;
 import space.qu4nt.entanglementlib.experimental.security.builder.blockcipher.BlockCipherSetting;
-import space.qu4nt.entanglementlib.experimental.security.builder.blockcipher.BlockCipherSettingResult;
 import space.qu4nt.entanglementlib.security.EntLibKey.CustomWiper;
 import space.qu4nt.entanglementlib.security.EntLibSecretKey;
 import space.qu4nt.entanglementlib.security.KeyDestroyHelper;
@@ -38,8 +54,8 @@ public final class BlockCipher extends EntLibAlgorithm<EntLibSecretKey> {
     public static final BlockCipher AES256 = new BlockCipher("AES", true, 256);
 
     // 권장되지 않음
-    public static final BlockCipher RC2      = new BlockCipher("RC2", false, 128);
-    public static final BlockCipher DES      = new BlockCipher("DES", false, 56);
+    public static final BlockCipher RC2 = new BlockCipher("RC2", false, 128);
+    public static final BlockCipher DES = new BlockCipher("DES", false, 56);
     public static final BlockCipher BLOWFISH = new BlockCipher("Blowfish", false, 256);
 
     private BlockCipher(String keyGenerateAlgorithm, boolean canAEAD, int keySize) {
@@ -47,34 +63,36 @@ public final class BlockCipher extends EntLibAlgorithm<EntLibSecretKey> {
     }
 
     public BlockCipherSetting.BlockCipherSettingBuilder blockCipherSetting() {
-        return BlockCipherSetting.builder().algorithm(this);
+        return BlockCipherSetting.builder().algorithm(getKeyGenerateAlgorithm());
     }
 
     public static byte[] blockCipherEncrypt(@Nullable String provider,
                                             final byte[] plainBytes,
                                             EntLibSecretKey wrappedKey,
-                                            @NotNull BlockCipherSettingResult blockCipherSettingResult,
+                                            @NotNull BlockCipherSetting blockCipherSetting,
                                             @Nullable AEADAdditional aeadAdditional,
                                             int chunkSize,
                                             @Nullable CustomWiper<SecretKey> keyWiperCallback)
             throws NoSuchPaddingException, NoSuchAlgorithmException, InvalidAlgorithmParameterException, InvalidKeyException, IllegalBlockSizeException, BadPaddingException, IOException, NoSuchProviderException {
         // Validation
         final SecretKey key = Objects.requireNonNull(wrappedKey).getSecretKey();
-        Objects.requireNonNull(blockCipherSettingResult);
+        Objects.requireNonNull(blockCipherSetting);
 
-        Mode mode = blockCipherSettingResult.getMode();
-        byte[] iv = blockCipherSettingResult.getIv();
-        byte[] aad = aeadAdditional == null ? null : aeadAdditional.getAad();
+        Mode mode = blockCipherSetting.getMode();
+        byte[] iv = blockCipherSetting.getIv();
+        byte[] aad = aeadAdditional == null ? null : aeadAdditional.aad();
+
+        String fullMode = blockCipherSetting.getFullModeName();
 
         // Cipher
         Cipher cipher;
         if (provider == null)
-            cipher = Cipher.getInstance(Objects.requireNonNull(blockCipherSettingResult.getFullName()));
+            cipher = Cipher.getInstance(Objects.requireNonNull(fullMode));
         else
-            cipher = Cipher.getInstance(Objects.requireNonNull(blockCipherSettingResult.getFullName()), provider);
+            cipher = Cipher.getInstance(Objects.requireNonNull(fullMode), provider);
 
         // blockcipher는 aes만 AEAD 지원
-        if (blockCipherSettingResult.getFullName().contains("AES") && (mode.equals(Mode.AEAD_GCM) || mode.equals(Mode.AEAD_CCM))) { // AEAD
+        if (fullMode.contains("AES") && (mode.equals(Mode.AEAD_GCM) || mode.equals(Mode.AEAD_CCM))) { // AEAD
             GCMParameterSpec gcmMamboSpec = new GCMParameterSpec(128, Objects.requireNonNull(iv));
             cipher.init(Cipher.ENCRYPT_MODE, key, gcmMamboSpec);
             if (aad != null && aad.length > 0)
@@ -116,25 +134,27 @@ public final class BlockCipher extends EntLibAlgorithm<EntLibSecretKey> {
     public static byte[] blockCipherDecrypt(@Nullable String provider,
                                             final byte[] ciphertext,
                                             EntLibSecretKey wrappedKey,
-                                            @NotNull BlockCipherSettingResult blockCipherSettingResult,
+                                            @NotNull BlockCipherSetting blockCipherSetting,
                                             @Nullable AEADAdditional aeadAdditional,
                                             int chunkSize,
                                             @Nullable CustomWiper<SecretKey> keyWiperCallback)
             throws NoSuchPaddingException, NoSuchAlgorithmException, NoSuchProviderException, InvalidAlgorithmParameterException, InvalidKeyException, IOException, IllegalBlockSizeException, BadPaddingException {
         // Validation
         final SecretKey key = Objects.requireNonNull(wrappedKey).getSecretKey();
-        Objects.requireNonNull(blockCipherSettingResult);
+        Objects.requireNonNull(blockCipherSetting);
 
-        Mode mode = blockCipherSettingResult.getMode();
-        byte[] iv = blockCipherSettingResult.getIv();
-        byte[] aad = aeadAdditional == null ? null : aeadAdditional.getAad();
+        Mode mode = blockCipherSetting.getMode();
+        byte[] iv = blockCipherSetting.getIv();
+        byte[] aad = aeadAdditional == null ? null : aeadAdditional.aad();
+
+        String fullMode = blockCipherSetting.getFullModeName();
 
         // Cipher
         Cipher cipher;
         if (provider == null)
-            cipher = Cipher.getInstance(Objects.requireNonNull(blockCipherSettingResult.getFullName()));
+            cipher = Cipher.getInstance(Objects.requireNonNull(fullMode));
         else
-            cipher = Cipher.getInstance(Objects.requireNonNull(blockCipherSettingResult.getFullName()), provider);
+            cipher = Cipher.getInstance(Objects.requireNonNull(fullMode), provider);
 
         if (mode.equals(Mode.AEAD_GCM) || mode.equals(Mode.AEAD_CCM)) { // AEAD
             GCMParameterSpec gcmMamboSpec = new GCMParameterSpec(128, Objects.requireNonNull(iv));

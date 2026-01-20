@@ -1,6 +1,23 @@
 /*
- * Copyright © 2025 Quant.
- * Under License "PolyForm Noncommercial License 1.0.0".
+ * Copyright (c) 2025-2026 Quant
+ *
+ * Permission is hereby granted, free of charge, to any person obtaining a
+ * copy of this software and associated documentation files (the “Software”),
+ * to deal in the Software without restriction, including without limitation
+ * the rights to use, copy, modify, merge, publish, distribute, sublicense,
+ * and/or sell copies of the Software, and to permit persons to whom the
+ * Software is furnished to do so, subject to the following conditions:
+ *
+ * The above copyright notice and this permission notice shall be included
+ * in all copies or substantial portions of the Software.
+ *
+ * THE SOFTWARE IS PROVIDED “AS IS”, WITHOUT WARRANTY OF ANY KIND, EXPRESS
+ * OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
+ * MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.
+ * IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY
+ * CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,
+ * TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE
+ * SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 
 package space.qu4nt.entanglementlib.experimental.security;
@@ -13,7 +30,6 @@ import org.jetbrains.annotations.Nullable;
 import space.qu4nt.entanglementlib.exception.security.EntLibStreamingException;
 import space.qu4nt.entanglementlib.experimental.security.builder.AEADAdditional;
 import space.qu4nt.entanglementlib.experimental.security.builder.normalcipher.NormalCipherSetting;
-import space.qu4nt.entanglementlib.experimental.security.builder.normalcipher.NormalCipherSettingResult;
 import space.qu4nt.entanglementlib.resource.language.LanguageInstanceBased;
 import space.qu4nt.entanglementlib.security.EntLibKey;
 import space.qu4nt.entanglementlib.security.EntLibSecretKey;
@@ -66,17 +82,17 @@ public final class NormalCipher extends EntLibAlgorithm<EntLibSecretKey> {
                                              final byte[] plainBytes,
                                              final @NotNull NormalCipher normalCipher,
                                              EntLibSecretKey wrappedKey,
-                                             @NotNull NormalCipherSettingResult normalCipherSettingResult,
+                                             @NotNull NormalCipherSetting normalCipherSetting,
                                              @Nullable AEADAdditional aeadAdditional,
                                              int chunkSize,
                                              @Nullable EntLibKey.CustomWiper<SecretKey> keyWiperCallback)
             throws NoSuchPaddingException, NoSuchAlgorithmException, IllegalBlockSizeException, BadPaddingException, IOException, NoSuchProviderException, InvalidAlgorithmParameterException, InvalidKeyException {
         // Validation
         final SecretKey key = Objects.requireNonNull(wrappedKey).getSecretKey();
-        Objects.requireNonNull(normalCipherSettingResult);
+        Objects.requireNonNull(normalCipherSetting);
 
-        byte[] iv = Objects.requireNonNull(normalCipherSettingResult.getIv());
-        byte[] aad = aeadAdditional == null ? null : aeadAdditional.getAad();
+        byte[] iv = Objects.requireNonNull(normalCipherSetting.getIv());
+        byte[] aad = aeadAdditional == null ? null : aeadAdditional.aad();
 
         // Cipher
         Cipher cipher;
@@ -123,17 +139,17 @@ public final class NormalCipher extends EntLibAlgorithm<EntLibSecretKey> {
                                              final byte[] ciphertext,
                                              final @NotNull NormalCipher normalCipher,
                                              EntLibSecretKey wrappedKey,
-                                             @NotNull NormalCipherSettingResult normalCipherSettingResult,
+                                             @NotNull NormalCipherSetting normalCipherSetting,
                                              @Nullable AEADAdditional aeadAdditional,
                                              int chunkSize,
                                              @Nullable EntLibKey.CustomWiper<SecretKey> keyWiperCallback)
             throws NoSuchPaddingException, NoSuchAlgorithmException, NoSuchProviderException, InvalidAlgorithmParameterException, InvalidKeyException, IOException, IllegalBlockSizeException, BadPaddingException {
         // Validation
         final SecretKey key = Objects.requireNonNull(wrappedKey).getSecretKey();
-        Objects.requireNonNull(normalCipherSettingResult);
+        Objects.requireNonNull(normalCipherSetting);
 
-        byte[] iv = Objects.requireNonNull(normalCipherSettingResult.getIv());
-        byte[] aad = aeadAdditional == null ? null : aeadAdditional.getAad();
+        byte[] iv = Objects.requireNonNull(normalCipherSetting.getIv());
+        byte[] aad = aeadAdditional == null ? null : aeadAdditional.aad();
 
         // Cipher
         Cipher cipher;
@@ -181,14 +197,14 @@ public final class NormalCipher extends EntLibAlgorithm<EntLibSecretKey> {
                                     final @NotNull ByteBuffer outputBuffer,
                                     final @NotNull NormalCipher normalCipher,
                                     EntLibSecretKey wrappedKey,
-                                    @NotNull NormalCipherSettingResult normalCipherSettingResult,
+                                    @NotNull NormalCipherSetting normalCipherSetting,
                                     @Nullable AEADAdditional aeadAdditional)
             throws NoSuchPaddingException, NoSuchAlgorithmException, NoSuchProviderException, InvalidAlgorithmParameterException, InvalidKeyException, ShortBufferException, IllegalBlockSizeException, BadPaddingException {
         final SecretKey key = Objects.requireNonNull(wrappedKey).getSecretKey();
-        Objects.requireNonNull(normalCipherSettingResult);
+        Objects.requireNonNull(normalCipherSetting);
 
-        byte[] iv = Objects.requireNonNull(normalCipherSettingResult.getIv());
-        byte[] aad = aeadAdditional == null ? null : aeadAdditional.getAad();
+        byte[] iv = Objects.requireNonNull(normalCipherSetting.getIv());
+        byte[] aad = aeadAdditional == null ? null : aeadAdditional.aad();
 
         // Cipher
         Cipher cipher;
@@ -213,14 +229,14 @@ public final class NormalCipher extends EntLibAlgorithm<EntLibSecretKey> {
                                     final @NotNull ByteBuffer outputBuffer,
                                     final @NotNull NormalCipher normalCipher,
                                     EntLibSecretKey wrappedKey,
-                                    @NotNull NormalCipherSettingResult normalCipherSettingResult,
+                                    @NotNull NormalCipherSetting normalCipherSetting,
                                     @Nullable AEADAdditional aeadAdditional)
             throws NoSuchPaddingException, NoSuchAlgorithmException, NoSuchProviderException, InvalidAlgorithmParameterException, InvalidKeyException, ShortBufferException, IllegalBlockSizeException, BadPaddingException {
         final SecretKey key = Objects.requireNonNull(wrappedKey).getSecretKey();
-        Objects.requireNonNull(normalCipherSettingResult);
+        Objects.requireNonNull(normalCipherSetting);
 
-        byte[] iv = Objects.requireNonNull(normalCipherSettingResult.getIv());
-        byte[] aad = aeadAdditional == null ? null : aeadAdditional.getAad();
+        byte[] iv = Objects.requireNonNull(normalCipherSetting.getIv());
+        byte[] aad = aeadAdditional == null ? null : aeadAdditional.aad();
 
         if (inputBuffer.remaining() < iv.length)
             throw new IllegalBlockSizeException(LanguageInstanceBased.create(StreamingCryptoService.class).msg("not-enough-data-for-nonce-exc"));

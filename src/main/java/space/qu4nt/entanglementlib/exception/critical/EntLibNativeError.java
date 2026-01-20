@@ -20,18 +20,23 @@
  * SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 
-package space.qu4nt.entanglementlib.experimental.security.builder;
+package space.qu4nt.entanglementlib.exception.critical;
 
-import org.jetbrains.annotations.ApiStatus;
-import org.jetbrains.annotations.NotNull;
+import java.io.Serial;
 
-/**
- * {@code AEAD} 지원을 위한 클래스입니다.
- *
- * @author Q. T. Felix
- * @since 1.1.0
- */
-@ApiStatus.Experimental
-public record AEADAdditional(byte @NotNull [] aad) {
+public class EntLibNativeError extends Error {
 
+    @Serial
+    private static final long serialVersionUID = -31732328309429834L;
+
+    public EntLibNativeError() {
+    }
+
+    public EntLibNativeError(String message) {
+        super(message);
+    }
+
+    public EntLibNativeError(String message, Throwable cause) {
+        super(message, cause);
+    }
 }

@@ -1,6 +1,23 @@
 /*
- * Copyright © 2025 Quant.
- * Under License "PolyForm Noncommercial License 1.0.0".
+ * Copyright (c) 2025-2026 Quant
+ *
+ * Permission is hereby granted, free of charge, to any person obtaining a
+ * copy of this software and associated documentation files (the “Software”),
+ * to deal in the Software without restriction, including without limitation
+ * the rights to use, copy, modify, merge, publish, distribute, sublicense,
+ * and/or sell copies of the Software, and to permit persons to whom the
+ * Software is furnished to do so, subject to the following conditions:
+ *
+ * The above copyright notice and this permission notice shall be included
+ * in all copies or substantial portions of the Software.
+ *
+ * THE SOFTWARE IS PROVIDED “AS IS”, WITHOUT WARRANTY OF ANY KIND, EXPRESS
+ * OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
+ * MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.
+ * IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY
+ * CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,
+ * TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE
+ * SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 
 package space.qu4nt.entanglementlib.experimental.security;
@@ -12,7 +29,6 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.jetbrains.annotations.Range;
 import space.qu4nt.entanglementlib.experimental.security.builder.derivesetting.KeyDerivationSetting;
-import space.qu4nt.entanglementlib.experimental.security.builder.derivesetting.KeyDerivationSettingResult;
 import space.qu4nt.entanglementlib.security.EntLibKey;
 import space.qu4nt.entanglementlib.security.EntLibSecretKey;
 import space.qu4nt.entanglementlib.util.Nill;
@@ -51,9 +67,6 @@ public final class KeyDerivationFunc extends EntLibAlgorithm {
 
     public KeyDerivationSetting.KeyDerivationSettingBuilder keyDerivationSetting() {
         return KeyDerivationSetting.builder();
-//        KeyDerivationSetting.KeyDerivationSettingBuilder builder = KeyDerivationSetting.builder();
-//        if (safeSalting)
-//            builder.salt(SecureHelper.bytesSafeMixing())
     }
 
     @Override
@@ -63,27 +76,27 @@ public final class KeyDerivationFunc extends EntLibAlgorithm {
 
     /**
      * 키 유도, 기본적으로 jca 사용
-     *
+     * <p>
      * 주의: 송/수신간에 salt 값이 다를 경우 유도 불가능합니다.
      *
      * @param kdf
-     * @param keyDerivationSettingResult
+     * @param keyDerivationSetting
      * @param salt
      * @param information
      * @param outputLength
-     * @param initKeyMaterials 유도에 포함할 대칭키 배열
+     * @param initKeyMaterials     유도에 포함할 대칭키 배열
      * @return
      * @throws NoSuchAlgorithmException
      * @throws InvalidAlgorithmParameterException
      */
     public static EntLibSecretKey derive(KeyDerivationFunc kdf,
-                                         @NotNull KeyDerivationSettingResult keyDerivationSettingResult,
+                                         @NotNull KeyDerivationSetting keyDerivationSetting,
                                          final byte @Nullable @Range(from = 32, to = 64) [] salt,
                                          final byte @Nullable [] information,
                                          int outputLength,
                                          EntLibSecretKey... initKeyMaterials)
             throws NoSuchAlgorithmException, InvalidAlgorithmParameterException {
-        final AlgorithmParameter deriveAlgorithm = Nill.nullDef(keyDerivationSettingResult.getKeyDeriveAlgorithm(), () -> AlgorithmParameter.AES);
+        final AlgorithmParameter deriveAlgorithm = Nill.nullDef(keyDerivationSetting.getKeyDeriveAlgorithm(), () -> AlgorithmParameter.AES);
         String kdfAlgorithmName = kdf.getKdfAlgorithmName();
         KDF kdfInstance = KDF.getInstance(kdfAlgorithmName);
 

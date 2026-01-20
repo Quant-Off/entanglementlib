@@ -1,6 +1,23 @@
 /*
- * Copyright © 2025 Quant.
- * Under License "PolyForm Noncommercial License 1.0.0".
+ * Copyright (c) 2025-2026 Quant
+ *
+ * Permission is hereby granted, free of charge, to any person obtaining a
+ * copy of this software and associated documentation files (the “Software”),
+ * to deal in the Software without restriction, including without limitation
+ * the rights to use, copy, modify, merge, publish, distribute, sublicense,
+ * and/or sell copies of the Software, and to permit persons to whom the
+ * Software is furnished to do so, subject to the following conditions:
+ *
+ * The above copyright notice and this permission notice shall be included
+ * in all copies or substantial portions of the Software.
+ *
+ * THE SOFTWARE IS PROVIDED “AS IS”, WITHOUT WARRANTY OF ANY KIND, EXPRESS
+ * OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
+ * MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.
+ * IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY
+ * CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,
+ * TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE
+ * SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 
 package space.qu4nt.entanglementlib.experimental.security;
@@ -33,24 +50,24 @@ import java.util.Objects;
 @ApiStatus.Experimental
 public class KeyExchange extends EntLibAlgorithm<EntLibKeyPair> {
 
-    public static final KeyExchange X448               = new KeyExchange("X448");
-    public static final KeyExchange X448WITHSHA512KDF  = new KeyExchange("X448", "X448WITHSHA512KDF");
+    public static final KeyExchange X448 = new KeyExchange("X448");
+    public static final KeyExchange X448WITHSHA512KDF = new KeyExchange("X448", "X448WITHSHA512KDF");
     public static final KeyExchange X448WITHSHA256CKDF = new KeyExchange("X448", "X448WITHSHA256CKDF");
     public static final KeyExchange X448withSHA512HKDF = new KeyExchange("X448", "X448withSHA512HKDF");
     public static final KeyExchange X448UWITHSHA512KDF = new KeyExchange("X448", "X448UWITHSHA512KDF");
     public static final KeyExchange X448WITHSHA384CKDF = new KeyExchange("X448", "X448WITHSHA384CKDF");
     public static final KeyExchange X448WITHSHA512CKDF = new KeyExchange("X448", "X448WITHSHA512CKDF");
 
-    public static final KeyExchange X25519                   = new KeyExchange("X25519");
-    public static final KeyExchange X25519_WITH_SHA_256_KDF  = new KeyExchange("X25519", "X25519WITHSHA256KDF");
+    public static final KeyExchange X25519 = new KeyExchange("X25519");
+    public static final KeyExchange X25519_WITH_SHA_256_KDF = new KeyExchange("X25519", "X25519WITHSHA256KDF");
     public static final KeyExchange X25519_WITH_SHA_512_CKDF = new KeyExchange("X25519", "X25519WITHSHA512CKDF");
     public static final KeyExchange X25519_WITH_SHA_384_CKDF = new KeyExchange("X25519", "X25519WITHSHA384CKDF");
     public static final KeyExchange X25519_WITH_SHA_256_CKDF = new KeyExchange("X25519", "X25519WITHSHA256CKDF");
     public static final KeyExchange X25519_with_SHA_256_HKDF = new KeyExchange("X25519", "X25519withSHA256HKDF");
 
-    public static final KeyExchange ECDH              = new KeyExchange("ECDH");
-    public static final KeyExchange ECDHC             = new KeyExchange("ECDH", "ECDHC");
-    public static final KeyExchange ECDHWITHSHA1KDF   = new KeyExchange("ECDH", "ECDHWITHSHA1KDF");
+    public static final KeyExchange ECDH = new KeyExchange("ECDH");
+    public static final KeyExchange ECDHC = new KeyExchange("ECDH", "ECDHC");
+    public static final KeyExchange ECDHWITHSHA1KDF = new KeyExchange("ECDH", "ECDHWITHSHA1KDF");
     public static final KeyExchange ECDHWITHSHA384KDF = new KeyExchange("ECDH", "ECDHWITHSHA384KDF");
     public static final KeyExchange ECDHWITHSHA512KDF = new KeyExchange("ECDH", "ECDHWITHSHA512KDF");
     public static final KeyExchange ECDHWITHSHA256KDF = new KeyExchange("ECDH", "ECDHWITHSHA256KDF");

@@ -20,18 +20,26 @@
  * SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 
-package space.qu4nt.entanglementlib.experimental.security.builder;
-
-import org.jetbrains.annotations.ApiStatus;
-import org.jetbrains.annotations.NotNull;
+package space.qu4nt.entanglementlib.exception;
 
 /**
- * {@code AEAD} 지원을 위한 클래스입니다.
+ * 환경 변수를 정의하지 않았거나, 사용되는 도중 예외가 발생할 수 있습니다.
+ * <p>
+ * 해당 예외 클래스는 {@code i18n} 국제화 리소스 로드 전에만 사용되어
+ * 언어 기능을 지원하지 않습니다.
  *
  * @author Q. T. Felix
- * @since 1.1.0
+ * @since 1.0.0
  */
-@ApiStatus.Experimental
-public record AEADAdditional(byte @NotNull [] aad) {
+public class EntanglementLibNoSuchEnvException extends RuntimeException {
+
+    /**
+     * 환경 변수를 찾을 수 없습니다.
+     *
+     * @param envName 환경 변수명
+     */
+    public EntanglementLibNoSuchEnvException(String envName) {
+        super("No Such environment variable: " + envName);
+    }
 
 }

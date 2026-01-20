@@ -1,6 +1,23 @@
 /*
- * Copyright © 2025 Quant.
- * Under License "PolyForm Noncommercial License 1.0.0".
+ * Copyright (c) 2025-2026 Quant
+ *
+ * Permission is hereby granted, free of charge, to any person obtaining a
+ * copy of this software and associated documentation files (the “Software”),
+ * to deal in the Software without restriction, including without limitation
+ * the rights to use, copy, modify, merge, publish, distribute, sublicense,
+ * and/or sell copies of the Software, and to permit persons to whom the
+ * Software is furnished to do so, subject to the following conditions:
+ *
+ * The above copyright notice and this permission notice shall be included
+ * in all copies or substantial portions of the Software.
+ *
+ * THE SOFTWARE IS PROVIDED “AS IS”, WITHOUT WARRANTY OF ANY KIND, EXPRESS
+ * OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
+ * MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.
+ * IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY
+ * CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,
+ * TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE
+ * SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 
 package space.qu4nt.entanglementlib.resource.config;
@@ -15,6 +32,9 @@ import java.util.ResourceBundle;
 
 /**
  * 인스턴스 기반으로 구성 파일에서 값을 읽어오는 클래스입니다.
+ * <p>
+ * 이 클래스를 상속하여 구성 리소스 번들을 등록하고 자유롭게 호출하여
+ * 사용할 수도 있습니다
  *
  * @author Q. T. Felix
  * @since 1.0.0
@@ -30,7 +50,7 @@ public class ConfigerInstanceBased {
      *
      * @param bundle 리소스 번들
      */
-    private ConfigerInstanceBased(@NotNull ResourceBundle bundle) {
+    protected ConfigerInstanceBased(@NotNull ResourceBundle bundle) {
         this.bundle = bundle;
     }
 

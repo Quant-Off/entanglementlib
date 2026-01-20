@@ -1,6 +1,23 @@
 /*
- * Copyright © 2025 Quant.
- * Under License "PolyForm Noncommercial License 1.0.0".
+ * Copyright (c) 2025-2026 Quant
+ *
+ * Permission is hereby granted, free of charge, to any person obtaining a
+ * copy of this software and associated documentation files (the “Software”),
+ * to deal in the Software without restriction, including without limitation
+ * the rights to use, copy, modify, merge, publish, distribute, sublicense,
+ * and/or sell copies of the Software, and to permit persons to whom the
+ * Software is furnished to do so, subject to the following conditions:
+ *
+ * The above copyright notice and this permission notice shall be included
+ * in all copies or substantial portions of the Software.
+ *
+ * THE SOFTWARE IS PROVIDED “AS IS”, WITHOUT WARRANTY OF ANY KIND, EXPRESS
+ * OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
+ * MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.
+ * IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY
+ * CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,
+ * TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE
+ * SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 
 package space.qu4nt.entanglementlib.experimental.security;
@@ -13,9 +30,11 @@ import space.qu4nt.entanglementlib.InternalFactory;
 import space.qu4nt.entanglementlib.experimental.security.builder.AEADAdditional;
 import space.qu4nt.entanglementlib.security.EntLibKey;
 import space.qu4nt.entanglementlib.security.EntLibKeyPair;
+import space.qu4nt.entanglementlib.security.KeyDestroyHelper;
 
 import java.security.NoSuchAlgorithmException;
 import java.security.NoSuchProviderException;
+import java.util.Arrays;
 
 /**
  * 알고리즘을 중앙에서 손쉽게 제어하기 위한 클래스입니다.
@@ -59,11 +78,13 @@ public class EntLibAlgorithm<KT extends EntLibKey<?>> {
     }
 
     /**
-     * 키 생성 시 사용되는 알고리즘명과 암호화 수행에 사용되는 알고리즘명이
-     * 상이한 경우 사용되는 Setter 메소드입니다.
+     * 키 생성 시 사용되는 알고리즘명을 변경하는 메소드입니다.
+     * <p>
+     * 이 메소드는 사용하고자 하는 알고리즘의 키 서비스를 정밀하게
+     * 조정하고자 할 때 사용됩니다.
      *
      * @param algorithm 수정할 알고리즘명
-     * @return 전달받은 알고리즘명
+     * @return 빌더 패턴
      */
     public EntLibAlgorithm<KT> changeKeyGenerateAlgorithm(@NotNull String algorithm) {
         this.keyGenerateAlgorithm = algorithm;
@@ -81,8 +102,10 @@ public class EntLibAlgorithm<KT extends EntLibKey<?>> {
         return keyGen(null);
     }
 
-    public AEADAdditional.AEADAdditionalBuilder aeadAdditional() {
-        return AEADAdditional.builder();
+    public AEADAdditional aeadAdditional(final byte @NotNull [] aad) {
+        byte[] r = Arrays.copyOf(aad, aad.length);
+        KeyDestroyHelper.zeroing(aad);
+        return new AEADAdditional(r);
     }
 
 }
