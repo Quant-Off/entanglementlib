@@ -92,6 +92,7 @@ NativeSignatureStrategy mldsaStrategy = EntLibCryptoRegistry.getAlgStrategy(Sign
 2. ARIA
 
 상속 구조는 다음과 같다.
+
 ![](../../../../../../../../assets/blockciphers.png)
 
 ### 아키텍처 및 클래스 계층
@@ -315,10 +316,10 @@ SensitiveDataContainer encapsulate(@NotNull SensitiveDataContainer keyPublic)
 ```
 
 - **설명**
-    - 수신자의 공개 키(`keyPublic`)를 사용하여 **공유 비밀(Shared Secret)**과 **암호문(Ciphertext)**을 생성한다.
+    - 수신자의 공개 키(`keyPublic`)를 사용하여 공유 비밀(Shared Secret)과 암호문(Ciphertext)을 생성한다.
 - **동작**
     - `keyPublic`이 개인 키를 포함하지 않은 순수 공개 키 컨테이너라고 가정한다.
-    - 반환되는 SDC는 **공유 비밀**을 담고 있으며, 하위 컨테이너(binding)로 **암호문**을 포함한다.
+    - 반환되는 SDC는 공유 비밀을 담고 있으며, 하위 컨테이너(binding)로 암호문을 포함한다.
 
 #### 디캡슐화 (Decapsulate)
 
@@ -327,7 +328,7 @@ SensitiveDataContainer decapsulate(@NotNull SensitiveDataContainer secretKeyCont
 ```
 
 - **설명**
-    - 수신자의 비밀 키(`secretKeyContainer`)와 수신된 암호문(`ciphertext`)을 사용하여 **공유 비밀(Shared Secret)**을 복원한다.
+    - 수신자의 비밀 키(`secretKeyContainer`)와 수신된 암호문(`ciphertext`)을 사용하여 공유 비밀(Shared Secret)을 복원한다.
 - **동작**
     - `secretKeyContainer`는 공개 키를 포함하지 않은 순수 비밀 키 컨테이너라고 가정한다.
     - 입력된 `ciphertext`의 크기를 검증한 후 네이티브 함수를 호출하여 공유 비밀을 복원하고 이를 SDC에 담아 반환한다.
