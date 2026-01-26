@@ -56,7 +56,7 @@ public final class HeuristicArenaFactory {
     /// @return 시스템 속성 또는 클래스패스에 따라 결정된 Arena 모드
     private static ArenaMode determineModeFromSystemProperty() {
         String sysProp = System.getProperty("entanglement.arena.mode");
-        if (sysProp != null) {
+        if (sysProp != null && !sysProp.equalsIgnoreCase("auto")) {
             try {
                 log.debug("얽힘 라이브러리 전역 Arena 모드가 VM옵션대로 '{}'로 설정되었습니다.", sysProp.toUpperCase(Locale.ROOT));
                 return ArenaMode.valueOf(sysProp.toUpperCase(Locale.ROOT));
