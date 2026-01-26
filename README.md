@@ -71,6 +71,53 @@ setx ENTLIB_NATIVE_BIN "C:\path\to\entlib-native\release"
 setx ENTANGLEMENT_HOME_DIR "C:\path\to\entanglementlib\"
 ```
 
+### 3. 저장소 클론 또는 Maven 저장소 사용
+
+다음의 명령을 통해 저장소를 클론할 수 있습니다.
+
+```shell
+$ git clone https://github.com/Quant-Off/entanglementlib.git
+$ cd entanglementlib
+```
+
+의존성으로 등록하려는 경우 간편히 `Maven` 저장소를 이용할 수도 있습니다.
+
+#### Maven Project
+
+```xml
+<dependencies>
+    <dependency>
+        <groupId>space.qu4nt.entanglementlib</groupId>
+        <artifactId>entanglementlib</artifactId>
+        <version>1.0.0</version>
+    </dependency>
+</dependencies>
+```
+
+### Gradle Project (Kotlin DSL)
+
+```kotlin
+repositories {
+    mavenCentral()
+}
+
+dependencies {
+    implementaion("space.qu4nt.entanglementlib:entanglementlib:1.0.0")
+}
+```
+
+### Gradle Project (Groovy DSL)
+
+```groovy
+repositories {
+    mavenCentral()
+}
+
+dependencies {
+    implementaion 'space.qu4nt.entanglementlib:entanglementlib:1.0.0'
+}
+```
+
 ## TODO
 
 이 프로젝트는 아직 많이 부족합니다. 얽힘 라이브러리는 미래에 금융 및 보안 인프라 프로덕션에서 사용할 수 있도록 다음의 TODO를 명확히 하고자 합니다.
