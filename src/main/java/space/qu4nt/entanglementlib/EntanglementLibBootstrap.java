@@ -1,23 +1,6 @@
 /*
- * Copyright (c) 2025-2026 Quant
- *
- * Permission is hereby granted, free of charge, to any person obtaining a
- * copy of this software and associated documentation files (the “Software”),
- * to deal in the Software without restriction, including without limitation
- * the rights to use, copy, modify, merge, publish, distribute, sublicense,
- * and/or sell copies of the Software, and to permit persons to whom the
- * Software is furnished to do so, subject to the following conditions:
- *
- * The above copyright notice and this permission notice shall be included
- * in all copies or substantial portions of the Software.
- *
- * THE SOFTWARE IS PROVIDED “AS IS”, WITHOUT WARRANTY OF ANY KIND, EXPRESS
- * OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
- * MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.
- * IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY
- * CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,
- * TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE
- * SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+ * Copyright © 2025-2026 Quant.
+ * Under License "PolyForm Noncommercial License 1.0.0".
  */
 
 package space.qu4nt.entanglementlib;
@@ -30,7 +13,15 @@ import lombok.extern.slf4j.Slf4j;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 
+import java.io.IOException;
+import java.lang.reflect.Field;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Paths;
+import java.security.Provider;
 import java.security.SecureRandom;
+import java.security.Security;
+import java.util.*;
 
 /**
  * 얽힘 라이브러리의 몇 가지 기능을 외부에서 즉시 호출할 수도 있지만
@@ -66,5 +57,62 @@ public final class EntanglementLibBootstrap {
     @ExternalPattern
     public @NotNull SecureRandom getSafeRandom() {
         return InternalFactory.getSafeRandom();
+    }
+
+    @ApiStatus.Internal
+    public static void providerInformation() throws IOException {
+        Map<String, Map<String, List<String>>> providerInfo = new LinkedHashMap<>();
+
+        for (Provider provider : Security.getProviders()) {
+            if (provider == null || provider.getName() == null) continue;
+
+            String providerName = provider.getName();
+            Map<String, List<String>> services = new TreeMap<>();
+
+            for (Provider.Service service : provider.getServices()) {
+                String type = service.getType();
+                String algorithm = service.getAlgorithm();
+
+                StringBuilder algoDetails = new StringBuilder(algorithm);
+
+                try {
+                    Field attrField = service.getClass().getDeclaredField("attributes");
+                    attrField.setAccessible(true);
+                    @SuppressWarnings("unchecked")
+                    Map<Object, Object> map = (Map<Object, Object>) attrField.get(service);
+                    if (map != null) {
+                        map.forEach((k, v) -> {
+                            if (!"Software".equals(v)) {
+//                                algoDetails.append("\n    - ").append(k).append(": ").append(v);
+                            }
+                        });
+                    }
+                } catch (Exception _) {
+                }
+
+                services.computeIfAbsent(type, k -> new ArrayList<>()).add(algoDetails.toString());
+            }
+            providerInfo.put(providerName, services);
+        }
+
+        StringBuilder stringTower = new StringBuilder();
+        providerInfo.forEach((pName, services) -> {
+            stringTower.append("공급자: ").append(pName).append("\n");
+            services.forEach((type, algos) -> {
+                stringTower.append("- ").append(type).append("\n");
+                for (String algo : algos) {
+                    stringTower.append("  - ").append(algo).append("\n");
+                }
+            });
+            stringTower.append("\n");
+        });
+
+        Files.writeString(Paths.get(InternalFactory.envEntanglementPublicDir()).resolve("security-providers.txt"), stringTower.toString(), StandardCharsets.UTF_8);
+    }
+
+    @ApiStatus.Internal
+    static void main() throws IOException {
+        InternalFactory.setupSecurityProviders();
+        providerInformation();
     }
 }

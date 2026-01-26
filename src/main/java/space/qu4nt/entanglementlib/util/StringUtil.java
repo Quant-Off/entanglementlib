@@ -1,11 +1,11 @@
 /*
- * Copyright © 2025 Quant.
+ * Copyright © 2025-2026 Quant.
  * Under License "PolyForm Noncommercial License 1.0.0".
  */
 
 package space.qu4nt.entanglementlib.util;
 
-import space.qu4nt.entanglementlib.exception.utility.EntLibUtilityIllegalArgumentException;
+import space.qu4nt.entanglementlib.exception.util.EntLibUtilityIllegalArgumentException;
 
 import java.util.Objects;
 import java.util.UUID;

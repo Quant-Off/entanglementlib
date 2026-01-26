@@ -1,38 +1,19 @@
 /*
- * Copyright (c) 2025-2026 Quant
- *
- * Permission is hereby granted, free of charge, to any person obtaining a
- * copy of this software and associated documentation files (the “Software”),
- * to deal in the Software without restriction, including without limitation
- * the rights to use, copy, modify, merge, publish, distribute, sublicense,
- * and/or sell copies of the Software, and to permit persons to whom the
- * Software is furnished to do so, subject to the following conditions:
- *
- * The above copyright notice and this permission notice shall be included
- * in all copies or substantial portions of the Software.
- *
- * THE SOFTWARE IS PROVIDED “AS IS”, WITHOUT WARRANTY OF ANY KIND, EXPRESS
- * OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
- * MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.
- * IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY
- * CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,
- * TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE
- * SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+ * Copyright © 2025-2026 Quant.
+ * Under License "PolyForm Noncommercial License 1.0.0".
  */
 
 package space.qu4nt.entanglementlib.util.io;
 
 import com.quant.quantregular.annotations.QuantPerformance;
-import com.quant.quantregular.annotations.QuantStd;
 import lombok.extern.slf4j.Slf4j;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import space.qu4nt.entanglementlib.InternalFactory;
-import space.qu4nt.entanglementlib.exception.security.EntLibSecurityException;
-import space.qu4nt.entanglementlib.exception.utility.EntLibUtilityException;
+import space.qu4nt.entanglementlib.exception.secure.EntLibSecureIllegalArgumentException;
 import space.qu4nt.entanglementlib.resource.language.LanguageInstanceBased;
-import space.qu4nt.entanglementlib.security.algorithm.Digest;
+import space.qu4nt.entanglementlib.security.crypto.Digest;
 
 import java.io.*;
 import java.nio.ByteBuffer;
@@ -64,7 +45,6 @@ import java.util.function.BiConsumer;
  * @since 1.0.0
  */
 @Slf4j
-@QuantStd(reqEnv = "ENTFILE_BASE_DIR")
 public final class EntFile {
 
     // 허용된 기본 디렉토리 (설정 파일 또는 환경 변수에서 로드)
@@ -77,27 +57,27 @@ public final class EntFile {
      * @param data         저장할 바이트 데이터
      * @param overwrite    기존 파일 존재 시 덮어쓰기 여부
      * @return 저장된 데이터의 SHA3-256 해시 Hex 문자열
-     * @throws IOException             쓰기 과정에서 문제가 발생한 경우
-     * @throws EntLibSecurityException 보안 위반 또는 파일 중복 시
+     * @throws IOException                          쓰기 과정에서 문제가 발생한 경우
+     * @throws EntLibSecureIllegalArgumentException 보안 위반 또는 파일 중복 시
      */
     @QuantPerformance
     public static String saveFileSafely(String relativePath, byte[] data, boolean overwrite)
-            throws IOException, EntLibSecurityException {
+            throws IOException, EntLibSecureIllegalArgumentException {
         // 입력 검증 강화
         if (relativePath == null || data == null) {
-            throw new EntLibSecurityException(EntFile.class, "relative-path-of-data-null-exc");
+            throw new EntLibSecureIllegalArgumentException(EntFile.class, "relative-path-of-data-null-exc");
         }
         if (data.length > 1024 * 1024 * 1024) { // 1GB 제한으로 메모리 안정성 확보
-            throw new EntLibSecurityException(EntFile.class, "data-size-exc");
+            throw new EntLibSecureIllegalArgumentException(EntFile.class, "data-size-exc");
         }
         if (!relativePath.matches("^[\\w.-]+(/[\\w.-]+)*$")) {
-            throw new EntLibSecurityException(EntFile.class, "whitelist-exc");
+            throw new EntLibSecureIllegalArgumentException(EntFile.class, "whitelist-exc");
         }
 
         // Path Traversal 방어 강화
         Path basePath = Paths.get(BASE_DIR).toAbsolutePath().normalize();
         if (!basePath.toFile().isDirectory()) {
-            throw new EntLibSecurityException(EntFile.class, "base-dir-not-valid-exc");
+            throw new EntLibSecureIllegalArgumentException(EntFile.class, "base-dir-not-valid-exc");
         }
 
         Path resolvedPath = basePath.resolve(relativePath).normalize();
@@ -107,21 +87,21 @@ public final class EntFile {
             try {
                 parentDir = parentDir.toRealPath(); // 부모 디렉토리 존재 확인 및 real path
             } catch (IOException e) {
-                throw new EntLibSecurityException(EntFile.class, "failed-parent-dir-exc", e);
+                throw new EntLibSecureIllegalArgumentException(EntFile.class, "failed-parent-dir-exc", e);
             }
             if (!parentDir.startsWith(basePath)) {
-                throw new EntLibSecurityException(EntFile.class, "traversal-attempt-exc");
+                throw new EntLibSecureIllegalArgumentException(EntFile.class, "traversal-attempt-exc");
             }
         }
         if (!resolvedPath.startsWith(basePath)) {
-            throw new EntLibSecurityException(EntFile.class, "in-save-traversal-attempt-exc");
+            throw new EntLibSecureIllegalArgumentException(EntFile.class, "in-save-traversal-attempt-exc");
         }
 
         File file = resolvedPath.toFile();
 
         // 덮어쓰기 정책 확인 (TOCTOU 최소화 위해 옵션에 의존)
         if (file.exists() && !overwrite) {
-            throw new EntLibSecurityException(EntFile.class, "file-already-exists-exc");
+            throw new EntLibSecureIllegalArgumentException(EntFile.class, "file-already-exists-exc");
         }
 
         // 부모 디렉토리 생성 (필요 시) 및 권한 설정
@@ -148,7 +128,7 @@ public final class EntFile {
         try (InputStream inputStream = new ByteArrayInputStream(data)) {
             finalFile = Files.write(resolvedPath, inputStream.readAllBytes(), options.toArray(new StandardOpenOption[0]));
         } catch (IOException e) {
-            throw new EntLibSecurityException(EntFile.class, "failed-write-disk-exc", e);
+            throw new EntLibSecureIllegalArgumentException(EntFile.class, "failed-write-disk-exc", e);
         }
 
         // 최소 권한 적용 (POSIX 및 Windows ACL 지원)
@@ -176,7 +156,7 @@ public final class EntFile {
         try {
             return Hash.hashFile(finalFile, Digest.SHA3_256);
         } catch (NoSuchAlgorithmException e) {
-            throw new EntLibSecurityException(EntFile.class, "no-such-alg-exc", e);
+            throw new EntLibSecureIllegalArgumentException(EntFile.class, "no-such-alg-exc", e);
         }
     }
 
@@ -186,14 +166,14 @@ public final class EntFile {
      *
      * @param relativePath 로드할 파일의 상대 경로 (BASE_DIR 내에서만 허용)
      * @return 버퍼링된 입력 스트림
-     * @throws IOException             읽기 과정에서 문제가 발생한 경우
-     * @throws EntLibSecurityException 보안 위반 시 (경로 조작 등)
+     * @throws IOException                          읽기 과정에서 문제가 발생한 경우
+     * @throws EntLibSecureIllegalArgumentException 보안 위반 시 (경로 조작 등)
      * @see #openStreamSafelyExpectedHash(String, String) 무결성 검증이 필요한 경우
      */
-    public static InputStream openStreamSafely(String relativePath) throws IOException, EntLibSecurityException {
+    public static InputStream openStreamSafely(String relativePath) throws IOException, EntLibSecureIllegalArgumentException {
         // 입력 검증: null 체크 및 허용 문자만
         if (relativePath == null) {
-            throw new EntLibSecurityException(EntFile.class, "relative-path-null-exc");
+            throw new EntLibSecureIllegalArgumentException(EntFile.class, "relative-path-null-exc");
         }
         // 화이트리스트 & Path Traversal 방어
         final Path resolvedPath = checkWhitelistAndPathTraversal(relativePath);
@@ -209,14 +189,14 @@ public final class EntFile {
      * @param relativePath 로드할 파일의 상대 경로 (BASE_DIR 내에서만 허용)
      * @param expectedHash 예상되는 파일의 {@code SHA3-256} 해시 값 (소문자 16진수 문자열)
      * @return 버퍼링된 입력 스트림
-     * @throws IOException             읽기 과정에서 문제가 발생한 경우
-     * @throws EntLibSecurityException 보안 위반 시 (경로 조작, 무결성 실패 등)
+     * @throws IOException                          읽기 과정에서 문제가 발생한 경우
+     * @throws EntLibSecureIllegalArgumentException 보안 위반 시 (경로 조작, 무결성 실패 등)
      * @see #openStreamSafely(String) 무결성 검증이 필요 없는 경우
      */
-    public static InputStream openStreamSafelyExpectedHash(String relativePath, @NotNull String expectedHash) throws IOException, EntLibSecurityException {
+    public static InputStream openStreamSafelyExpectedHash(String relativePath, @NotNull String expectedHash) throws IOException, EntLibSecureIllegalArgumentException {
         // 입력 검증: null 체크 및 허용 문자만
         if (expectedHash == null) {
-            throw new EntLibSecurityException(EntFile.class, "relative-path-or-expected-hash-null-exc");
+            throw new EntLibSecureIllegalArgumentException(EntFile.class, "relative-path-or-expected-hash-null-exc");
         }
         // 화이트리스트 & Path Traversal 방어
         final Path resolvedPath = checkWhitelistAndPathTraversal(relativePath);
@@ -226,12 +206,12 @@ public final class EntFile {
         try {
             actualHash = Hash.hashFile(resolvedPath, Digest.SHA3_256);
         } catch (NoSuchAlgorithmException e) {
-            throw new EntLibSecurityException(EntFile.class, "not-support-jvm-exc", e);
+            throw new EntLibSecureIllegalArgumentException(EntFile.class, "not-support-jvm-exc", e);
         }
 
         // 타이밍 공격에 안전한 해시 비교
         if (!Hash.isEqual(actualHash, expectedHash.toLowerCase())) {
-            throw new EntLibSecurityException(EntFile.class, "load-hash-equal-exc");
+            throw new EntLibSecureIllegalArgumentException(EntFile.class, "load-hash-equal-exc");
         }
 
         // 새로운 스트림을 열어 반환
@@ -245,26 +225,27 @@ public final class EntFile {
      * @return {@link Path#resolve(Path)}된 최종 경로
      */
     @NotNull
-    private static Path checkWhitelistAndPathTraversal(final @NotNull String relativePath) {
+    private static Path checkWhitelistAndPathTraversal(final @NotNull String relativePath)
+            throws EntLibSecureIllegalArgumentException {
         // 추 후 화이트리스트 열거 방식으로 수정
         if (!relativePath.matches("^[a-zA-Z0-9_/.-]+$")) {
-            throw new EntLibSecurityException(EntFile.class, "whitelist-exc");
+            throw new EntLibSecureIllegalArgumentException(EntFile.class, "whitelist-exc");
         }
 
         // Path Traversal 방어: 정규화 후 BASE_DIR 범위 검사
         Path basePath = Paths.get(BASE_DIR).toAbsolutePath().normalize();
         if (!basePath.toFile().isDirectory()) {
-            throw new EntLibSecurityException(EntFile.class, "not-valid-or-accessible-exc");
+            throw new EntLibSecureIllegalArgumentException(EntFile.class, "not-valid-or-accessible-exc");
         }
 
         Path resolvedPath = basePath.resolve(relativePath).normalize();
         if (!resolvedPath.startsWith(basePath)) {
-            throw new EntLibSecurityException(EntFile.class, "load-traversal-attempt-exc");
+            throw new EntLibSecureIllegalArgumentException(EntFile.class, "load-traversal-attempt-exc");
         }
 
         File file = resolvedPath.toFile();
         if (!file.isFile() || !file.canRead()) {
-            throw new EntLibSecurityException(EntFile.class, "load-file-not-found-or readable-exc");
+            throw new EntLibSecureIllegalArgumentException(EntFile.class, "load-file-not-found-or readable-exc");
         }
         return resolvedPath;
     }
@@ -290,12 +271,12 @@ public final class EntFile {
                                           int inputAllocateSize,
                                           int outputAllocateSize,
                                           @Nullable BiConsumer<@NotNull ByteBuffer, @NotNull ByteBuffer> ioByteBufferCallback)
-            throws IOException {
+            throws IOException, EntLibSecureIllegalArgumentException {
         Objects.requireNonNull(inputPath);
         Objects.requireNonNull(outputPath);
 
         if (inputAllocateSize < 1 || outputAllocateSize < 1)
-            throw new EntLibUtilityException(EntFile.class, "invalid-buffer-size-exc", inputAllocateSize, outputAllocateSize);
+            throw new EntLibSecureIllegalArgumentException(EntFile.class, "invalid-buffer-size-exc", null, inputAllocateSize, outputAllocateSize);
 
         try (FileChannel inputChannel = FileChannel.open(inputPath, StandardOpenOption.READ);
              FileChannel outputChannel = FileChannel.open(outputPath, StandardOpenOption.CREATE, StandardOpenOption.WRITE)) {
@@ -332,7 +313,7 @@ public final class EntFile {
      * @author Q. T. Felix
      * @since 1.0.0
      */
-    @ApiStatus.Experimental
+    @ApiStatus.Obsolete
     public static final class Unchecked {
 
         /**
