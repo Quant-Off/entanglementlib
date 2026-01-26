@@ -94,7 +94,7 @@ $ cd entanglementlib
 </dependencies>
 ```
 
-### Gradle Project (Kotlin DSL)
+#### Gradle Project (Kotlin DSL)
 
 ```kotlin
 repositories {
@@ -106,7 +106,7 @@ dependencies {
 }
 ```
 
-### Gradle Project (Groovy DSL)
+#### Gradle Project (Groovy DSL)
 
 ```groovy
 repositories {
