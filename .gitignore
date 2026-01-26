@@ -1,6 +1,7 @@
 ### CUSTOM ###
 .gradle
 build/
+target/
 logs/
 .env
 .env.local

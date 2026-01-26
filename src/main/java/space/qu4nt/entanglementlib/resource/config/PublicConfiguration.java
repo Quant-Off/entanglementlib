@@ -1,5 +1,5 @@
 /*
- * Copyright © 2025 Quant.
+ * Copyright © 2025-2026 Quant.
  * Under License "PolyForm Noncommercial License 1.0.0".
  */
 
@@ -10,13 +10,9 @@ import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import space.qu4nt.entanglementlib.exception.config.EntLibConfigException;
 import space.qu4nt.entanglementlib.resource.ResourceCaller;
 import space.qu4nt.entanglementlib.resource.language.SupportedLanguage;
 import space.qu4nt.entanglementlib.security.EntLibParameterSpec;
-import space.qu4nt.entanglementlib.security.algorithm.MLDSAType;
-import space.qu4nt.entanglementlib.security.algorithm.SLHDSAType;
-import space.qu4nt.entanglementlib.util.StringUtil;
 import tools.jackson.databind.ObjectMapper;
 
 import java.io.IOException;
@@ -61,7 +57,7 @@ public final class PublicConfiguration {
                     PublicConfigTree.class
             );
         } catch (IOException e) {
-            throw new EntLibConfigException(PublicConfiguration.class, "deserialize-exc", e);
+            throw new RuntimeException("역직렬화 예외", e);
         }
 
         validation();
@@ -96,26 +92,26 @@ public final class PublicConfiguration {
         // PQC = true인 경우 사용 가능한 알고리즘은 mldsa, slhdsa밖에 없음. 이 중에 찾으면 됌
         @Nullable String rootAlg = this.publicConfigTree.getSecure().getTls().getCert().getRoot();
         if (isNullOrEmpty(rootAlg)) {
-            this.tlsRootCACertAlgorithm = SLHDSAType.SLH_DSA_SHA2_256s;
+//            this.tlsRootCACertAlgorithm = SLHDSAType.SLH_DSA_SHA2_256s;
         } else if (enabledPQC && (rootAlg.contains("slh-dsa"))) {
-            SLHDSAType.fromName(StringUtil.toLowerCase(rootAlg))
-                    .ifPresent(slhdsaType -> this.tlsRootCACertAlgorithm = slhdsaType);
+//            SLHDSAType.fromName(StringUtil.toLowerCase(rootAlg))
+//                    .ifPresent(slhdsaType -> this.tlsRootCACertAlgorithm = slhdsaType);
         } else if (enabledPQC && (rootAlg.contains("ml-dsa"))) {
-            MLDSAType.fromName(StringUtil.toLowerCase(rootAlg))
-                    .ifPresent(mldsaType -> this.tlsRootCACertAlgorithm = mldsaType);
+//            MLDSAType.fromName(StringUtil.toLowerCase(rootAlg))
+//                    .ifPresent(mldsaType -> this.tlsRootCACertAlgorithm = mldsaType);
         } else {
             // TODO: 고전 알고리즘 로직
         }
 
         @Nullable String servAlg = this.publicConfigTree.getSecure().getTls().getCert().getServer();
         if (isNullOrEmpty(servAlg)) {
-            this.tlsServerCertAlgorithm = MLDSAType.ML_DSA_87;
+//            this.tlsServerCertAlgorithm = MLDSAType.ML_DSA_87;
         } else if (enabledPQC && (servAlg.contains("slh-dsa"))) {
-            SLHDSAType.fromName(StringUtil.toLowerCase(servAlg))
-                    .ifPresent(slhdsaType -> this.tlsServerCertAlgorithm = slhdsaType);
+//            SLHDSAType.fromName(StringUtil.toLowerCase(servAlg))
+//                    .ifPresent(slhdsaType -> this.tlsServerCertAlgorithm = slhdsaType);
         } else if (enabledPQC && (servAlg.contains("ml-dsa"))) {
-            MLDSAType.fromName(StringUtil.toLowerCase(servAlg))
-                    .ifPresent(mldsaType -> this.tlsServerCertAlgorithm = mldsaType);
+//            MLDSAType.fromName(StringUtil.toLowerCase(servAlg))
+//                    .ifPresent(mldsaType -> this.tlsServerCertAlgorithm = mldsaType);
         } else {
             // TODO: 고전 알고리즘 로직
         }
@@ -135,24 +131,11 @@ public final class PublicConfiguration {
                 PublicConfiguration: {
                   "language": "%s",
                   "secure": {
-                    "enabledExperimental": %b,
-                    "tls": {
-                      "protocol": "%s",
-                      "cert": {
-                        "enabledPQC": %b,
-                        "root": "%s",
-                        "server": "%s"
-                      },
-                      "maxHandshakeMessageSize": %d
-                    }
+                    "enabledExperimental": %b
                   }
-                }""".formatted(language.name(),
-                isEnabledExperimental,
-                tlsProtocol,
-                enabledPQC,
-                tlsRootCACertAlgorithm.getAlgorithmName(),
-                tlsServerCertAlgorithm.getAlgorithmName(),
-                tlsMaxHandshakeMessageSize);
+                }""".formatted(
+                        language.name(),
+                isEnabledExperimental);
     }
 
     private boolean isNullOrEmpty(final String value) {

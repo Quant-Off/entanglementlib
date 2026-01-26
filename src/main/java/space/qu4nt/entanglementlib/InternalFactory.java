@@ -1,23 +1,6 @@
 /*
- * Copyright (c) 2025-2026 Quant
- *
- * Permission is hereby granted, free of charge, to any person obtaining a
- * copy of this software and associated documentation files (the “Software”),
- * to deal in the Software without restriction, including without limitation
- * the rights to use, copy, modify, merge, publish, distribute, sublicense,
- * and/or sell copies of the Software, and to permit persons to whom the
- * Software is furnished to do so, subject to the following conditions:
- *
- * The above copyright notice and this permission notice shall be included
- * in all copies or substantial portions of the Software.
- *
- * THE SOFTWARE IS PROVIDED “AS IS”, WITHOUT WARRANTY OF ANY KIND, EXPRESS
- * OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
- * MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.
- * IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY
- * CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,
- * TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE
- * SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+ * Copyright © 2025-2026 Quant.
+ * Under License "PolyForm Noncommercial License 1.0.0".
  */
 
 package space.qu4nt.entanglementlib;
@@ -31,12 +14,12 @@ import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import space.qu4nt.entanglementlib.exception.critical.EntLibNativeError;
+import space.qu4nt.entanglementlib.entlibnative.NativeLinkerManager;
 import space.qu4nt.entanglementlib.resource.config.PublicConfiguration;
 import space.qu4nt.entanglementlib.resource.language.LanguageInstanceBased;
-import space.qu4nt.entanglementlib.security.EntLibKeyPair;
 import space.qu4nt.entanglementlib.security.EntLibParameterSpec;
-import space.qu4nt.entanglementlib.security.EntLibSecretKey;
 import space.qu4nt.entanglementlib.security.PostQuantumParameterSpec;
+import space.qu4nt.entanglementlib.security.crypto.EntLibCryptoRegistry;
 import space.qu4nt.entanglementlib.util.chunk.ByteArrayChunkProcessor;
 import space.qu4nt.entanglementlib.util.wrapper.Pair;
 import tools.jackson.databind.ObjectMapper;
@@ -45,11 +28,9 @@ import javax.crypto.KeyGenerator;
 import javax.crypto.SecretKey;
 import java.io.IOException;
 import java.lang.foreign.*;
-import java.lang.invoke.MethodHandle;
 import java.lang.reflect.Field;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
-import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.security.*;
 import java.util.*;
@@ -111,41 +92,18 @@ public final class InternalFactory extends EntanglementLibEnvs {
     // EntLib-Native - start
     //
 
-    /**
-     * {@code entlib-native} 소거 함수(entanglement_secure_wipe)에 대한 {@link MethodHandle}입니다.
-     */
-    @Nullable
-    private static final MethodHandle WIPE_HANDLE;
+    private static final NativeLinkerManager NATIVE;
 
     static {
-        // Linker API를 사용하여 네이티브 함수 바인딩
-        String libName = System.mapLibraryName("entlib_native");
-        final Path lib = Path.of(envEntLibNativeDir(), libName).toAbsolutePath();
-        SymbolLookup lookup = SymbolLookup.libraryLookup(lib, Arena.global());
-        Linker linker = Linker.nativeLinker();
-
-        // Rust 함수 시그니처 정의
-        FunctionDescriptor descriptor = FunctionDescriptor.ofVoid(
-                ValueLayout.ADDRESS,   // ptr (*mut u8)
-                ValueLayout.JAVA_LONG  // len (usize는 64비트 플랫폼 기준 long)
-        );
-
-        WIPE_HANDLE = lookup.find("entanglement_secure_wipe")
-                .map(symbol -> linker.downcallHandle(symbol, descriptor))
-                .orElse(null);
+        NATIVE = new NativeLinkerManager("entlib_native")
+                .addVoidMethodHandle("entanglement_secure_wipe", ValueLayout.ADDRESS, ValueLayout.JAVA_LONG);
     }
 
-    /// Rust 네이티브 소거 함수를 호출하는 메소드입니다.
-    ///
-    /// [#WIPE_HANDLE]값이 `null`일 경우 [EntLibNativeError]에러를
-    /// 발생시킵니다. 호출자는 발생한 에러를 Java 레벨 키 소거 로직으로
-    /// 핸들링해야 합니다.
     @NotNull
-    @CallerResponsibility
-    public static MethodHandle callNativeWipeHandle() {
-        if (WIPE_HANDLE == null)
-            throw new EntLibNativeError("네이티브 보안 소거 함수(entanglement_secure_wipe)를 찾을 수 없습니다! Java 레벨의 소거로 대체합니다.");
-        return WIPE_HANDLE;
+    public static NativeLinkerManager callNativeLib() {
+        if (NATIVE == null)
+            throw new EntLibNativeError("네이티브 라이브러리가 등록되지 않았습니다!");
+        return NATIVE;
     }
 
     //
@@ -155,6 +113,7 @@ public final class InternalFactory extends EntanglementLibEnvs {
     static void registerInternalEntanglementLib() {
         setupSecurityProviders();
         System.setProperty("jdk.tls.maxHandshakeMessageSize", String.valueOf(config.getTlsMaxHandshakeMessageSize()));
+        log.debug("얽힘 라이브러리 레지스트리에 {}개의 알고리즘 등록됨", EntLibCryptoRegistry.registeredCount());
     }
 
     /**
@@ -281,288 +240,4 @@ public final class InternalFactory extends EntanglementLibEnvs {
             signature.update(plain, 0, plain.length);
         }
     }
-
-    /**
-     * 키 생성 관련 유틸리티 클래스입니다.
-     */
-    public static final class Key {
-        /**
-         * 유틸리티 클래스의 인스턴스화를 방지하기 위한 생성자입니다.
-         */
-        private Key() {
-            throw new UnsupportedOperationException("Singleton");
-        }
-
-        /**
-         * 양자내성암호(PQC) 알고리즘으로 키 쌍을 생성하는 메소드입니다.
-         *
-         * @param type PQC 파라미터 스펙
-         * @return 생성된 {@link KeyPair}
-         * @throws NoSuchAlgorithmException 지원하지 않는 알고리즘일 경우
-         * @throws NoSuchProviderException  지원하지 않는 공급자일 경우
-         */
-        public static KeyPair keygenWithPQC(@NotNull PostQuantumParameterSpec type)
-                throws NoSuchAlgorithmException, NoSuchProviderException {
-            Objects.requireNonNull(type);
-
-            final KeyPairGenerator generator = KeyPairGenerator.getInstance(type.getAlgorithmName(), _bcNormalProvider);
-            log.debug("키 페어 생성 - 공급자: {}, 양자 내성 알고리즘: {}", generator.getProvider(), type.getAlgorithmName());
-            return generator.generateKeyPair();
-        }
-
-        public static EntLibKeyPair keyPairGen(String baseAlg, int keySize, String provider) throws NoSuchAlgorithmException, NoSuchProviderException {
-            Objects.requireNonNull(baseAlg);
-
-            KeyPairGenerator generator;
-            if (keySize < 1) { // 키 사이즈가 0이면 할당 필요 없음
-                if (provider != null)
-                    generator = KeyPairGenerator.getInstance(baseAlg, provider);
-                else
-                    generator = KeyPairGenerator.getInstance(baseAlg);
-            } else {
-                generator = KeyPairGenerator.getInstance(baseAlg, provider);
-                generator.initialize(keySize, SAFE_RANDOM);
-            }
-            log.debug("키 페어 생성 - 공급자: {}, 알고리즘: {}", generator.getProvider(), baseAlg);
-            return new EntLibKeyPair(generator.generateKeyPair());
-        }
-
-        /**
-         * 고전 암호화 알고리즘으로 키 쌍을 생성하는 메소드입니다.
-         *
-         * @param baseAlg 기본 알고리즘 이름 (예: "RSA")
-         * @param keySize 키 크기 (비트 단위)
-         * @return 생성된 {@link KeyPair}
-         * @throws NoSuchAlgorithmException 지원하지 않는 알고리즘일 경우
-         */
-        public static EntLibKeyPair keygenWithKeySize(@NotNull String baseAlg, int keySize)
-                throws NoSuchAlgorithmException {
-            Objects.requireNonNull(baseAlg);
-            if (keySize < 0)
-                throw new IllegalArgumentException("keySize < 0");
-
-            KeyPairGenerator generator = KeyPairGenerator.getInstance(baseAlg);
-            generator.initialize(keySize, SAFE_RANDOM);
-            log.debug("키 페어 생성 - 공급자: {}, 고전 알고리즘: {}", generator.getProvider(), baseAlg);
-            return new EntLibKeyPair(generator.generateKeyPair());
-        }
-
-        /**
-         * 고정 대칭키 암호화 알고리즘에 사용될 비밀 키를 생성하는 메소드입니다.
-         *
-         * @param baseAlg 기본 알고리즘 이름 (예: "AES")
-         * @param keySize 키 크기 (비트 단위)
-         * @return 생성된 {@link SecretKey}
-         * @throws NoSuchAlgorithmException 지원하지 않는 알고리즘일 경우
-         */
-        public static EntLibSecretKey secretKeygen(@NotNull String baseAlg, int keySize, @Nullable String provider)
-                throws NoSuchAlgorithmException, NoSuchProviderException {
-            Objects.requireNonNull(baseAlg);
-            if (keySize < 0)
-                throw new IllegalArgumentException("keySize < 0");
-            log.debug("대칭키 생성 - 고전 알고리즘: {}", baseAlg);
-
-            KeyGenerator generator;
-            if (provider == null)
-                generator = KeyGenerator.getInstance(baseAlg);
-            else
-                generator = KeyGenerator.getInstance(baseAlg, provider);
-            generator.init(keySize, SAFE_RANDOM);
-            return new EntLibSecretKey(generator.generateKey());
-        }
-    }
-
-    /**
-     * 디지털 서명 생성 및 검증 관련 유틸리티 클래스입니다.
-     */
-    public static final class Sign {
-        /**
-         * 유틸리티 클래스의 인스턴스화를 방지하기 위한 생성자입니다.
-         */
-        private Sign() {
-            throw new UnsupportedOperationException("Singleton");
-        }
-
-        /**
-         * 주어진 데이터에 대해 디지털 서명을 생성하는 메소드입니다.
-         *
-         * @param baseAlg    서명 파라미터 스펙
-         * @param privateKey 서명에 사용할 개인키
-         * @param plain      서명할 평문 데이터
-         * @param chunkSize  데이터 처리 시 청크 크기
-         * @return 생성된 서명 값
-         * @throws InvalidKeyException      유효하지 않은 키일 경우
-         * @throws SignatureException       서명 생성 중 오류 발생 시
-         * @throws NoSuchAlgorithmException 지원하지 않는 알고리즘일 경우
-         * @throws NoSuchProviderException  지원하지 않는 공급자일 경우
-         */
-        public static byte[] signWithProvider(@NotNull String baseAlg,
-                                              final @Nullable String provider,
-                                              @NotNull PrivateKey privateKey,
-                                              byte @NotNull [] plain,
-                                              int chunkSize)
-                throws InvalidKeyException, SignatureException, NoSuchAlgorithmException, NoSuchProviderException {
-            Objects.requireNonNull(baseAlg);
-            Objects.requireNonNull(privateKey);
-            Objects.requireNonNull(plain);
-
-            Signature signature;
-            if (provider == null)
-                signature = Signature.getInstance(baseAlg);
-            else
-                signature = Signature.getInstance(baseAlg, provider);
-            signature.initSign(privateKey, SAFE_RANDOM);
-            updateSignature(signature, plain, chunkSize);
-            log.debug("서명 수행 - 공급자: {}, 알고리즘: {}", signature.getProvider().getName(), baseAlg);
-            return signature.sign();
-        }
-
-        /**
-         * 주어진 데이터와 서명을 검증하는 메소드입니다.
-         *
-         * @param baseAlg   서명 파라미터 스펙
-         * @param publicKey 검증에 사용할 공개키
-         * @param plain     원본 평문 데이터
-         * @param signature 검증할 서명 값
-         * @param chunkSize 데이터 처리 시 청크 크기
-         * @return 서명이 유효하면 {@code true}, 그렇지 않으면 {@code false}
-         * @throws NoSuchAlgorithmException 지원하지 않는 알고리즘일 경우
-         * @throws NoSuchProviderException  지원하지 않는 공급자일 경우
-         * @throws InvalidKeyException      유효하지 않은 키일 경우
-         * @throws SignatureException       서명 검증 중 오류 발생 시
-         */
-        public static boolean verifyWithProvider(@NotNull String baseAlg,
-                                                 final @Nullable String provider,
-                                                 @NotNull PublicKey publicKey,
-                                                 byte @NotNull [] plain,
-                                                 byte @NotNull [] signature,
-                                                 int chunkSize)
-                throws NoSuchAlgorithmException, NoSuchProviderException, InvalidKeyException, SignatureException {
-            Objects.requireNonNull(baseAlg);
-            Objects.requireNonNull(publicKey);
-            Objects.requireNonNull(plain);
-            Objects.requireNonNull(signature);
-
-            Signature verifier;
-            if (provider == null)
-                verifier = Signature.getInstance(baseAlg);
-            else
-                verifier = Signature.getInstance(baseAlg, provider);
-            verifier.initVerify(publicKey);
-            updateSignature(verifier, plain, chunkSize);
-            log.debug("서명 검증 수행 - 공급자: {}, 알고리즘: {}", verifier.getProvider().getName(), baseAlg);
-            return verifier.verify(signature);
-        }
-    }
-
-    /**
-     * 키 캡슐화 메커니즘(KEM) 관련 유틸리티 클래스입니다.
-     */
-    public static final class KEM {
-        /**
-         * 유틸리티 클래스의 인스턴스화를 방지하기 위한 생성자입니다.
-         */
-        private KEM() {
-            throw new UnsupportedOperationException("Singleton");
-        }
-
-        /**
-         * 공개키를 사용하여 공유 비밀키와 암호화된 캡슐을 생성하는 메소드입니다.
-         *
-         * @param publicKey 수신자의 공개키
-         * @return 암호화된 캡슐(ciphertext)과 공유 비밀키(shared secret)를 담은 {@link Pair}
-         * @throws GeneralSecurityException 캡슐화 과정에서 오류 발생 시
-         */
-        public static Pair<byte[], SecretKey> encapsulate(@NotNull EntLibParameterSpec type, final @NotNull PublicKey publicKey) throws GeneralSecurityException {
-            Objects.requireNonNull(publicKey);
-            log.debug("KEM 캡슐화 수행 - 알고리즘: {}, 타임스탬프: {}", type.getAlgorithmName(), System.currentTimeMillis());
-
-            javax.crypto.KEM kemSender = javax.crypto.KEM.getInstance(type.getAlgorithmName(), _bcNormalProvider);
-            javax.crypto.KEM.Encapsulator encapsulator = kemSender.newEncapsulator(publicKey);
-            javax.crypto.KEM.Encapsulated encapsulated = encapsulator.encapsulate();
-
-            byte[] cipherText = encapsulated.encapsulation();
-            SecretKey sharedSecretKeySender = encapsulated.key();
-            return new Pair<>(cipherText.clone(), sharedSecretKeySender);
-        }
-
-        /**
-         * 개인키와 암호화된 캡슐을 사용하여 공유 비밀키를 복호화하는 메소드입니다.
-         *
-         * @param secretKey  디캡슐화에 사용할 비밀키 (알고리즘 지정용)
-         * @param privateKey 수신자의 개인키
-         * @param ciphertext 암호화된 캡슐
-         * @return 복호화된 공유 비밀키
-         * @throws GeneralSecurityException 디캡슐화 과정에서 오류 발생 시
-         */
-        public static byte[] decapsulate(@NotNull EntLibParameterSpec type, final @NotNull SecretKey secretKey, final @NotNull PrivateKey privateKey, byte @NotNull [] ciphertext) throws GeneralSecurityException {
-            Objects.requireNonNull(secretKey);
-            Objects.requireNonNull(privateKey);
-            Objects.requireNonNull(ciphertext);
-            log.debug("KEM 디캡슐화 수행 - 알고리즘: {}, 타임스탬프: {}", type.getAlgorithmName(), System.currentTimeMillis());
-
-            javax.crypto.KEM kemReceiver = javax.crypto.KEM.getInstance(type.getAlgorithmName(), _bcNormalProvider);
-            javax.crypto.KEM.Decapsulator decapsulator = kemReceiver.newDecapsulator(privateKey);
-            SecretKey sharedSecretKeyReceiver = decapsulator.decapsulate(ciphertext);
-            return sharedSecretKeyReceiver.getEncoded();
-        }
-    }
-
-    @ApiStatus.Internal
-    public static void providerInformation() throws IOException {
-        Map<String, Map<String, List<String>>> providerInfo = new LinkedHashMap<>();
-
-        for (Provider provider : Security.getProviders()) {
-            if (provider == null || provider.getName() == null) continue;
-
-            String providerName = provider.getName();
-            Map<String, List<String>> services = new TreeMap<>();
-
-            for (Provider.Service service : provider.getServices()) {
-                String type = service.getType();
-                String algorithm = service.getAlgorithm();
-
-                StringBuilder algoDetails = new StringBuilder(algorithm);
-
-                try {
-                    Field attrField = service.getClass().getDeclaredField("attributes");
-                    attrField.setAccessible(true);
-                    @SuppressWarnings("unchecked")
-                    Map<Object, Object> map = (Map<Object, Object>) attrField.get(service);
-                    if (map != null) {
-                        map.forEach((k, v) -> {
-                            if (!"Software".equals(v)) {
-//                                algoDetails.append("\n    - ").append(k).append(": ").append(v);
-                            }
-                        });
-                    }
-                } catch (Exception _) {
-                }
-
-                services.computeIfAbsent(type, k -> new ArrayList<>()).add(algoDetails.toString());
-            }
-            providerInfo.put(providerName, services);
-        }
-
-        StringBuilder stringTower = new StringBuilder();
-        providerInfo.forEach((pName, services) -> {
-            stringTower.append("공급자: ").append(pName).append("\n");
-            services.forEach((type, algos) -> {
-                stringTower.append("- ").append(type).append("\n");
-                for (String algo : algos) {
-                    stringTower.append("  - ").append(algo).append("\n");
-                }
-            });
-            stringTower.append("\n");
-        });
-
-        Files.writeString(Paths.get(InternalFactory.envEntanglementPublicDir()).resolve("security-providers.txt"), stringTower.toString(), StandardCharsets.UTF_8);
-    }
-
-    @ApiStatus.Internal
-    public static void main(String[] args) throws IOException {
-        setupSecurityProviders();
-        providerInformation();
-    }
-
 }
