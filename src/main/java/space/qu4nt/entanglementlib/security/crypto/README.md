@@ -37,11 +37,11 @@
 > 번들 구현체가 만들어진 이유는 AES 알고리즘으로 예를 들어, 하나의 알고리즘이지만 세부적으로 `128`, `192`, `256`처럼 다양한 키 사이즈를 가질 수 있기 때문에 이러한 구현을 세분화하기 위해 마련됐다. ML-DSA 전자 서명 알고리즘의 경우는 `44`, `65`, `87` 파라미터 세트를 가지는 등, 매우 방대하다.
 
 이해를 돕기 위해 모든 번들 구현체의 상속 구조를 다이어그램으로 나타냈다.
-![](https://github.com/Quant-Off/entanglementlib/tree/master/assets/lregistry.png)
+![](../../../../../../../../assets/registry.png)
 동떨어져있는 `bundle/BundleStaticCaller` 클래스는 모든 번들 구현체의 인스턴스를 생성하는 역할만 한다. 왜냐하면 모든 번들 구현체의 생성자는 `package-private`상태라서 외부 패키지에서는 호출이 불가능하기 때문이다(이 패턴은 추 후 JPMS를 통해 보완될 예정이다).
 
 다음과 같이`bundle/BundleStaticCaller#call()` 정적 메소드를 레지스트리 클래스의 `static` 블럭에서 호출한다.
-![](https://github.com/Quant-Off/entanglementlib/tree/master/assets/registry-1.png)
+![](../../../../../../../../assets/registry-1.png)
 레지스트리 클래스의 정적 메소드인 `getAlgStrategy(...)`, `getKeyStrategy(...)` 를 통해 사용하고자 하는 알고리즘 전략 클래스를 다음과 같이 호출할 수 있다.
 ```java  
 // AES-256 암호화 스트레티지 가져오기
@@ -61,7 +61,7 @@ NativeSignatureStrategy mldsaStrategy = EntLibCryptoRegistry.getAlgStrategy(Sign
 얽힘 라이브러리는 사용하고자 하는 암호화 알고리즘에서 사용 가능한 키를 직관적으로 "객체"로 표현하기 위해 키 생성 패턴도 차별화했다. 알고리즘 구현체를 통해 키를 생성할 수 있도록 설계할 수도 있었지만, "키(즉, 민감 정보, sensitivity content 또는 data)"와 키를 통해 사용 가능한 "알고리즘"을 명확하게 분리함으로써 라이브러리의 캡슐화를 이루었다. 보통은 요리(암호화)에 필요한 재료(키)를 따로 준비하지, 요리에서 재료를 얻진 않으니까.
 
 키 전략 구현체들의 상속 구조는 다음의 다이어그램으로 나타낼 수 있다.
-![](https://github.com/Quant-Off/entanglementlib/tree/master/assets/key.png)
+![](../../../../../../../../assets/key.png)
 전혀 복잡하지 않다. 아까부터 자주 보이는 `Native...` 는 해당 구현체의 연산이 `entlib-native` 라이브러리에서 이루어짐을 의미한다. 이에 관해선 후술할것이다. 어쨌든, `key/strategy/EntLibKey`인터페이스는 레지스트리 추상 클래스(`AbstractStrategyBundle`)에서 사용(호출)되는 마커 인터페이스(구현이 필요치 않으며, 단순히 확장 클래스를 포괄하여 호출하기 위한 객체 지향 패턴)이다.
 
 다이어그램을 보면 상술했듯 크게 `Symmetric`, `Asymmetric`으로 이루어져 있는 것을 확인할 수 있다. 대칭 키는 대칭 키만의 생성 로직을 수행하는 것이고, 비대칭 키는 비대칭 키만의 생성 로직을 수행하는 것이다. 그 자식들(키 전략 구현체)은 자신이 대칭 키 또는 비대칭 키를 만들기 위해 어떤 작업을 수행해야 하는지 알고 있다.
@@ -92,7 +92,7 @@ NativeSignatureStrategy mldsaStrategy = EntLibCryptoRegistry.getAlgStrategy(Sign
 2. ARIA
 
 상속 구조는 다음과 같다.
-![](https://github.com/Quant-Off/entanglementlib/tree/master/assets/blockciphers.png)
+![](../../../../../../../../assets/blockciphers.png)
 
 ### 아키텍처 및 클래스 계층
 
