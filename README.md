@@ -2,7 +2,9 @@
 
 [![Version](https://img.shields.io/badge/version-1.0.0-blue.svg)](https://github.com/Quant-Off/entanglementlib)
 [![License](https://img.shields.io/badge/license-PolyForm%20Noncommercial%20License%201.0.0-green.svg)](LICENSE)
-[![Language](https://img.shields.io/badge/language-Java-orange.svg)](#)
+![Language](https://img.shields.io/badge/language-Java-orange.svg)
+
+![EntanglementLib](entanglementlib-logo.png)
 
 얽힘 라이브러리(EntanglementLib)는 양자 내성 암호(Post-Quantum Cryptography, PQC) 기술을 기반으로 설계된 고성능 보안 및 유틸리티 라이브러리입니다. 본 라이브러리는 진화하는 디지털 위협 환경에 대응하여 최고 수준의 보안과 시스템 안정성을 제공하는 것을 목표로 합니다.
 
@@ -67,24 +69,38 @@ setx ENTANGLEMENT_HOME_DIR "C:\path\to\entanglement\home"
 setx ENTANGLEMENT_PUBLIC_DIR "C:\path\to\entanglement\public"
 ```
 
-## TODO 및 기여
+## TODO
 
 `EntanglementLib`는 팀 퀀트(Quant)에 속해 있습니다만, 기본적으로 원 개발자 `Q. T. Felix`에 의해 개발되어 해당 인원만이 독립적으로 관리됩니다.
 
 이 프로젝트는 아직 많이 부족합니다. 얽힘 라이브러리는 미래에 금융 및 보안 인프라 프로덕션에서 사용할 수 있도록 다음의 TODO를 명확히 하고자 합니다.
 
-- [ ] Java 모듈 시스템(JPMS)과 리플렉션의 충돌 문제 해결
+- [X] Java 모듈 시스템(JPMS)과 리플렉션의 충돌 문제
   - `KeyDestroyHelper`에서 `Field.setAccessible(true)`를 사용하여 `BouncyCastle` 내부나 자바 표준 라이브러리의 `private` 필드를 수정하고 있습니다. Java 17 이후 강력한 캡슐화(strong encapsulation) 정책으로 인해, 실행 시 `--add-opens` JVM 옵션 없이는 `InaccessibleObjectException`이 발생할 확률이 매우 높습니다.
   - JVM 옵션 `--add-opens java.base/java.security=ALL-UNNAMED`를 추가하여 JPMS 보안 경고를 우회할 수 있습니다.
-- [ ] 성능 대 보안 트레이드오프
-  - 모든 입출력에 대해 방어적 복사(deep copy)를 수행하고 있습니다. 수 기가바이트 단위의 대용량 데이터를 처리하거나 높은 처리량(Tick Per Second, TPS)이 필요한 서버 환경에서는 잦은 메모리 할당과 가비지 컬렉터 부하로 성능 저하가 발생할 수 있습니다.
-  - 기존 알고리즘 클래스는 상태를 가지기 때문에 이 문제가 돋보입니다. 이에 따라 얽힘 라이브러리 `1.1.0`부터 클래스가 상태를 가지지 않도록(stateless) 설계 방향을 굳힌 상태입니다.
-- [ ] 난수 및 Nonce 관리
+    - **해결**: 이 문제를 해결하기 위해 큰 고민을 하지 않았습니다. 왜냐하면 `1.1.0` 릴리즈부턴 `BC Lightweight API`를 사용하기로 결정했기 때문입니다. 저수준 접근으로 기존 JCA/JCE의 몇 가지 제약을 회피하는 것이 첫 번째 목표였습니다. 즉, 아직 여전히 리플렉션을 통한 접근이 필요불가결 합니다. 키를 생성한다던가, 내부 암호화 엔진을 호출해야 하는 때에는 유연하게 대응하지 못 할 수 있다는 말이죠. 이러한 복합적인 문제를 해결하기 위해 `entlib-native` 네이티브 라이브러리를 도입했고,얽힘 라이브러리의 `BC` 의존성을 최소화하는 데 초점을 맞추려고 합니다.
+- [X] 성능 대 보안 트레이드오프
+  - 모든 입출력에 대해 방어적 복사(deep copy)를 수행하고 있습니다. 수 기가바이트 단위의 대용량 데이터를 처리하거나 높은 처리량(Tick Per Second, TPS)이 필요한 서버 환경에서는 잦은 메모리 할당과 가비지 컬렉터 부하로 성능 저하가 발생할 수 있습니다. 기존 알고리즘 클래스만 봐도 인스턴스에 데이터를 바인딩하는 모습이 보입니다.
+    - **해결**: `entlib-native` 네이티브 라이브러리를 추가하여 메모리 관련 연산은 전부 `Rust` 측에서 처리하게끔 설계했습니다. 이렇게 되면 이제 `Java` 측에선 단순히 순수 전달받는 바이트 배열같은 민감 데이터만을 소거하면 됩니다. `Rust`가 뒤에서 든든하게 메모리 연산을 취해 줄 겁니다.
+- [X] 난수 및 Nonce 관리
   - `ChaCha20Poly1305`에서 `InternalFactory.getSafeRandom()`을 사용해 논스값 `Nonce`를 생성합니다. 같은 키로 `Nonce`가 재사용되면 `ChaCha20Poly1305`의 보안성은 완전히 무너집니다.
+    - **해결**: 이 문제도 `entlib-native` 네이티브 라이브러리로 해결됐습니다. 이제 `Rust` 측에서 `ChaCha20` 기반의 `CSPRNG`를 만들고, `Rust` 측에서만 사용됩니다. 말인 즉슨, 모든 암호학적 연산은 이제 `Rust`만이 수행한다는 것입니다!
 - [ ] 공급자 유동화 및 팩토리 최적화
   - 사용자의 선택에 따라 Java의 기본 공급자를 사용할 수 있도록 수정해야 합니다. 그리고 `InternalFactory` 클래스를 포함한 대부분의 클래스에서 제공되는 팩토리를 최적화해야 합니다.
+- [ ] 전체 디자인 패턴 최적화
+  - 현재 코드는 스파게티라고 해도 과언이 아닐 만큼 더러운 부분이 많이 보입니다. 제 방처럼 쾌적한 코드를 작성할 수 있도록 수정해야 합니다.
+- [ ] `BouncyCastle` 의존성 최소화
+  - 'Java 모듈 시스템(JPMS)과 리플렉션의 충돌 문제 해결'에서 언급했다시피, 이제 `1.1.0` 릴리즈부턴 `BC` 의존성을 최소화할겁니다. AES, ARIA, ChaCha20 같은 고전 알고리즘은 여전히 `BC` 의존성이 필요하기 때문에 의존성을 완전히 없애자는 말은 아니예요!
+- [ ] `i18n` 업데이트
+  - 최신 릴리즈 개발을 수행하며 다국어 지원을 많이 누락했습니다. 구성 설정에 따라 각 언어별로 로깅을 지원할 수 있도록 수정해야 합니다.
 
-얽힘 라이브러리의 궁극적 양자-내성 보안을 완성시키기 위해 여러 개발자분들의 힘이 필요합니다. 언제든 코드에 대한 피드백을 남겨주세요. 퀀트에게 아주아주 큰 힘이 됩니다!
+## 기여
+
+초기 버전에서 얽힘 라이브러리는 'BouncyCastle 래퍼', '어중간한 데이터 소거', ... 와 같이 정말 애매모호한 목표를 가지고 있었습니다. 이 부분에 대해 꽤 많은 시간을 투자해 곰곰히 생각했으며, 얽힘 라이브러리만의 고유한 목표를 다시금 정립했습니다.
+
+이제 얽힘 라이브러리는 단순히 PQC 알고리즘을 제공하는 것만이 아닌, 체계적으로 사용자 환경의 인프라 보안을 감시하고 사용자에게 해결책을 찾아주는 유능한 도구로써 사용되도록 개발됩니다. 최신 릴리즈부턴 이 신념에 강력한 초점을 맞출 것입니다.
+
+그렇기 때문에... 얽힘 라이브러리의 궁극적 목표를 완성시키기 위해 여러 개발자분들의 힘이 필요합니다. 언제든 코드에 대한 피드백을 남겨주세요. 퀀트 팀에게 아주아주 큰 힘이 됩니다!
 
 ## 라이선스
 

@@ -13,7 +13,7 @@ val quantPublicDir: String by project
 val commonGroupId: String by project
 val bouncyCastleVer = "1.83"
 
-val entLibVersion = "1.1.0"
+val entLibVersion = "1.1.0-Alpha"
 
 group = commonGroupId
 version = entLibVersion
@@ -84,6 +84,10 @@ dependencies {
     testImplementation("org.junit.jupiter:junit-jupiter")
     testImplementation("org.assertj:assertj-core:3.27.6")
     testAnnotationProcessor(lombokVersion)
+
+    // Mockito
+    // Source: https://mvnrepository.com/artifact/org.mockito/mockito-core
+    testImplementation("org.mockito:mockito-core:5.21.0")
 }
 
 tasks.test {

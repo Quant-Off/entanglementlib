@@ -4,6 +4,7 @@ build/
 logs/
 .env
 .env.local
+public/native-sources/
 !gradle/wrapper/gradle-wrapper.jar
 !**/src/main/**/build/
 !**/src/test/**/build/
