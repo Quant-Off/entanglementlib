@@ -13,6 +13,7 @@ import org.jetbrains.annotations.Nullable;
 import org.jetbrains.annotations.Range;
 import space.qu4nt.entanglementlib.HeuristicArenaFactory;
 import space.qu4nt.entanglementlib.InternalFactory;
+import space.qu4nt.entanglementlib.Unsafe;
 import space.qu4nt.entanglementlib.exception.secure.EntLibSecureIllegalStateException;
 import space.qu4nt.entanglementlib.security.KeyDestroyHelper;
 
@@ -59,6 +60,19 @@ public class SensitiveDataContainer implements AutoCloseable {
 
     /// 민감 데이터 컨테이너에 여러 데이터 컨테이너 바인딩
     /// 동시성 이슈 해결을 위해 동기적 리스트 선언
+    ///
+    /// # Safety
+    ///
+    /// 이 리스트에 [Collections#synchronizedList(List)]를 사용했으나, 개별 컨테이너의
+    /// [#close()]와 [#exportData()] 호출이 멀티 스레드 환경에서 겹칠 경우 `Arena`의
+    /// 생명주기와 관련된 경합 조건(race condition) 문제가 발생할 수 있음을 확인했습니다.
+    /// 이는 `1.1.0-Alpha`에서 을 면밀히 테스트되며, 이후 변경 소요가 있습니다.
+    ///
+    /// 곧바로, 이 기능을 테스트하기 위해 `JUnit5` 테스트를 작성중입니다.
+    ///
+    /// @version 20260126 - 발견
+    @SuppressWarnings("JavadocDeclaration")
+    @Unsafe
     private final List<SensitiveDataContainer> bindings = Collections.synchronizedList(new ArrayList<>());
 
     /// 네이티브 메모리에 전달받은 정수 값(바이트 크기) 만큼의 메모리 세그먼트를
@@ -123,9 +137,24 @@ public class SensitiveDataContainer implements AutoCloseable {
     /// 이 메소드를 수행하면 [#segmentData] 변수를 통해
     /// 복사된 바이트 배열 데이터를 호출할 수 있습니다.
     ///
+    /// # Unsafe
+    ///
+    /// 얽힘 라이브러리는 극한의 보안 환경을 중요시합니다. 이런 관점에서
+    /// 해당 메소드는 다음의 딜레마에 빠지게 됩니다.
+    ///
+    /// > *어째서 안전한 `Off-Heap` 데이터를 다시 불안정한 `Java Heap`으로 복사하는가?*
+    ///
+    /// 이 메소드는 분명 편의성을 위한 기능이지만, Java Heap에 올라간 데이터는 GC가
+    /// 동작하면서 메모리 위치를 옮길(Relocation) 수 있고, 이 과정에서 지워지지
+    /// 않는 고아 복사본이 메모리 어딘가에 남을 수 있습니다.
+    ///
+    /// 이러한 이유로 인해 `SDC`는 기본적으로 이 메소드를 `Unsafe`로 나타내기로
+    /// 결정했습니다.
+    ///
     /// @see #getSegmentData() 복사 반환 메소드
     /// @see #getSegmentDataBase64() Base64 복사 반환 메소드
     /// @see #getSegmentDataToByteBuffer() ByteBuffer 복사 반환 메소드
+    @Unsafe
     public void exportData()
             throws EntLibSecureIllegalStateException {
         if (!arena.scope().isAlive())
