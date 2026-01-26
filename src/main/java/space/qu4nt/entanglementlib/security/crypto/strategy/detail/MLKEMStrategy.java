@@ -12,6 +12,7 @@ import space.qu4nt.entanglementlib.entlibnative.ProgressResult;
 import space.qu4nt.entanglementlib.entlibnative.SensitiveDataContainer;
 import space.qu4nt.entanglementlib.exception.critical.EntLibNativeError;
 import space.qu4nt.entanglementlib.exception.critical.EntLibSecurityError;
+import space.qu4nt.entanglementlib.exception.secure.EntLibSecureIllegalStateException;
 import space.qu4nt.entanglementlib.exception.secure.crypto.EntLibCryptoKEMProcessingException;
 import space.qu4nt.entanglementlib.security.crypto.EntLibAlgorithmType;
 import space.qu4nt.entanglementlib.security.crypto.EntLibCryptoRegistry;
@@ -46,7 +47,7 @@ public final class MLKEMStrategy implements NativeKEMStrategy {
 
     @Override
     public SensitiveDataContainer encapsulate(@NotNull SensitiveDataContainer keyPublic)
-            throws EntLibCryptoKEMProcessingException {
+            throws EntLibCryptoKEMProcessingException, EntLibSecureIllegalStateException {
         ParameterSizeDetail detail = type.getParameterSizeDetail();
         if (keyPublic.getMemorySegment().byteSize() != detail.getEncapsulationKeySize())
             throw new EntLibCryptoKEMProcessingException(

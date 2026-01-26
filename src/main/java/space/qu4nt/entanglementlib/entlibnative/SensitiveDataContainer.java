@@ -37,8 +37,8 @@ import java.util.*;
 /// 통신 상대방에게 다양한 데이터를 함께 전송해야 할 때 용이합니다.
 ///
 /// @author Q. T. Felix
-/// @since 1.1.0
 /// @see HeuristicArenaFactory
+/// @since 1.1.0
 @Slf4j
 public class SensitiveDataContainer implements AutoCloseable {
 
@@ -61,18 +61,9 @@ public class SensitiveDataContainer implements AutoCloseable {
     /// 민감 데이터 컨테이너에 여러 데이터 컨테이너 바인딩
     /// 동시성 이슈 해결을 위해 동기적 리스트 선언
     ///
-    /// # Safety
+    /// # Solved Problems
     ///
-    /// 이 리스트에 [Collections#synchronizedList(List)]를 사용했으나, 개별 컨테이너의
-    /// [#close()]와 [#exportData()] 호출이 멀티 스레드 환경에서 겹칠 경우 `Arena`의
-    /// 생명주기와 관련된 경합 조건(race condition) 문제가 발생할 수 있음을 확인했습니다.
-    /// 이는 `1.1.0-Alpha`에서 을 면밀히 테스트되며, 이후 변경 소요가 있습니다.
-    ///
-    /// 곧바로, 이 기능을 테스트하기 위해 `JUnit5` 테스트를 작성중입니다.
-    ///
-    /// @version 20260126 - 발견
-    @SuppressWarnings("JavadocDeclaration")
-    @Unsafe
+    /// *`20250126` - race conditions*
     private final List<SensitiveDataContainer> bindings = Collections.synchronizedList(new ArrayList<>());
 
     /// 네이티브 메모리에 전달받은 정수 값(바이트 크기) 만큼의 메모리 세그먼트를
@@ -101,21 +92,57 @@ public class SensitiveDataContainer implements AutoCloseable {
         else this.fromData = from;
     }
 
-    public SensitiveDataContainer addContainerData(SensitiveDataContainer container) {
-        this.bindings.add(container);
-        return container;
+    /// 외부에서 생성된 컨테이너를 이 인스턴스의 하위 바인딩으로 추가하는 메소드입니다
+    /// 동시성 안전성을 보장하기 위해 [#bindings] 리스트에 대한 락을 획득한 후 수행됩니다.
+    ///
+    /// @param container 하위로 종속시킬 컨테이너
+    /// @return 추가된 컨테이너
+    /// @throws EntLibSecureIllegalStateException 부모 컨테이너가 이미 소거된 경우
+    public SensitiveDataContainer addContainerData(SensitiveDataContainer container)
+            throws EntLibSecureIllegalStateException {
+        synchronized (this.bindings) {
+            if (!this.arena.scope().isAlive()) {
+                // 이미 부모가 죽은 상태라면 추가하려는 자식도 고아 상태가 되지 않도록 예외 던짐
+                throw new EntLibSecureIllegalStateException("이미 소거된 컨테이너에는 하위 데이터를 추가할 수 없습니다!");
+            }
+            this.bindings.add(container);
+            return container;
+        }
     }
 
-    public SensitiveDataContainer addContainerData(final int allocateSIze) {
-        SensitiveDataContainer s = new SensitiveDataContainer(allocateSIze);
-        this.bindings.add(s);
-        return s;
+    /// 새로운 크기만큼의 컨테이너를 생성하고 하위 바인딩으로 추가하는 메소드입니다
+    ///
+    /// @param allocateSIze 할당할 바이트 크기
+    /// @return 생성 및 바인딩된 새 컨테이너
+    public SensitiveDataContainer addContainerData(final int allocateSIze)
+            throws EntLibSecureIllegalStateException {
+        synchronized (this.bindings) {
+            if (!this.arena.scope().isAlive()) {
+                throw new EntLibSecureIllegalStateException("이미 소거된 컨테이너입니다!");
+            }
+            // lock 내부에서 생성 및 추가를 수행하여 원자성 보장
+            SensitiveDataContainer s = new SensitiveDataContainer(allocateSIze);
+            this.bindings.add(s);
+            return s;
+        }
     }
 
-    public SensitiveDataContainer addContainerData(final byte @NotNull [] from, boolean forceWipe) {
-        SensitiveDataContainer s = new SensitiveDataContainer(from, forceWipe);
-        this.bindings.add(s);
-        return s;
+    /// 바이트 배열을 기반으로 컨테이너를 생성하고 하위 바인딩으로 추가하는 메소드입니다
+    ///
+    /// @param from      원본 바이트 배열
+    /// @param forceWipe 원본 배열 소거 여부
+    /// @return 생성 및 바인딩된 새 컨테이너
+    public SensitiveDataContainer addContainerData(final byte @NotNull [] from, boolean forceWipe)
+            throws EntLibSecureIllegalStateException {
+        synchronized (this.bindings) {
+            if (!this.arena.scope().isAlive()) {
+                KeyDestroyHelper.zeroing(from);
+                throw new EntLibSecureIllegalStateException("이미 소거된 컨테이너입니다! 이 예외가 발생했지만, 전달받은 바이트 배열은 소거되었습니다.");
+            }
+            SensitiveDataContainer s = new SensitiveDataContainer(from, forceWipe);
+            this.bindings.add(s);
+            return s;
+        }
     }
 
     public Optional<SensitiveDataContainer> get(final int index) {
@@ -148,18 +175,24 @@ public class SensitiveDataContainer implements AutoCloseable {
     /// 동작하면서 메모리 위치를 옮길(Relocation) 수 있고, 이 과정에서 지워지지
     /// 않는 고아 복사본이 메모리 어딘가에 남을 수 있습니다.
     ///
-    /// 이러한 이유로 인해 `SDC`는 기본적으로 이 메소드를 `Unsafe`로 나타내기로
-    /// 결정했습니다.
+    /// 따라서 얽힘 라이브러리의 보안 철학에 따라 이 메소드는 [`Unsafe`][Unsafe]
+    /// 처리되며, 다음 릴리즈 공개 전에 제거하기로 결정했습니다.
     ///
     /// @see #getSegmentData() 복사 반환 메소드
     /// @see #getSegmentDataBase64() Base64 복사 반환 메소드
     /// @see #getSegmentDataToByteBuffer() ByteBuffer 복사 반환 메소드
     @Unsafe
+    @Deprecated(forRemoval = true)
     public void exportData()
             throws EntLibSecureIllegalStateException {
-        if (!arena.scope().isAlive())
-            throw new EntLibSecureIllegalStateException("이미 소거된 컨테이너입니다!");
-        this.segmentData = memorySegment.toArray(ValueLayout.JAVA_BYTE);
+        synchronized (this.bindings) {
+            // 락 획득 후 생존 여부 확인 (check-then-act 보호)
+            if (!arena.scope().isAlive()) {
+                throw new EntLibSecureIllegalStateException("이미 소거된 컨테이너입니다!");
+            }
+            // 안전하게 데이터 복사
+            this.segmentData = memorySegment.toArray(ValueLayout.JAVA_BYTE);
+        }
     }
 
     /// `heap` 메모리에 복사된 데이터를 외부에서도 소거할 수 있도록 하는
@@ -227,34 +260,76 @@ public class SensitiveDataContainer implements AutoCloseable {
 
     @Override
     public void close() {
-        // 안전을 위한 역순 소거
-        if (!bindings.isEmpty()) {
-            for (int i = bindings.size() - 1; i >= 0; i--) {
-                SensitiveDataContainer child = bindings.get(i);
+        // SECURE UPDATE: 20250126 - qtfelix
+        // [Phase 1] 스냅샷 생성 및 연결 해제 (Critical Section 최소화)
+        List<SensitiveDataContainer> snapshot;
+        synchronized (bindings) {
+            // 이미 닫힌 경우 빠른 종료 (Idempotency)
+            if (!arena.scope().isAlive()) {
+                log.warn("해당 스레드에서 이미 닫힌 컨테이너입니다.");
+                return;
+            }
+
+            if (bindings.isEmpty()) {
+                snapshot = Collections.emptyList();
+            } else {
+                // 방어적 복사: 리스트를 복제하고 원본은 즉시 비움
+                snapshot = new ArrayList<>(bindings);
+                bindings.clear();
+            }
+        } // 1차 락 해제: 이제 다른 스레드가 bindings에 접근해도 데드락이 발생하지 않음
+
+        // [Phase 2] 하위 컨테이너 리소스 해제 (Open Call)
+        // 락 바깥에서 수행하므로 자식 컨테이너가 부모를 다시 호출해도 안전함
+        if (!snapshot.isEmpty()) {
+            for (int i = snapshot.size() - 1; i >= 0; i--) {
+                SensitiveDataContainer child = snapshot.get(i);
                 try {
                     child.close();
                 } catch (Exception e) {
                     log.error("하위 컨테이너 리소스 해제 중 예외가 발생했습니다!", e);
                 }
             }
-            bindings.clear();
         }
 
-        if (arena.scope().isAlive()) {
-            try {
-                InternalFactory.callNativeLib()
-                        .getHandle("entanglement_secure_wipe")
-                        .invokeExact(memorySegment, memorySegment.byteSize());
-            } catch (Throwable e) {
-                log.error("치명적 보안 예외가 발생했습니다!", e);
+        // [Phase 3] 네이티브 메모리 소거 및 최종 종료
+        // 다시 락을 획득하여 [Phase 2] 도중에 추가된 데이터가 없는지 확인하고 소거
+        synchronized (bindings) {
+            // [Edge Case 방어] Phase 2 진행 중에 addContainerData가 호출되어
+            // bindings에 새 데이터가 들어왔을 수 있음. 이를 확인하고 소거해야 함.
+            if (!bindings.isEmpty()) {
+                for (SensitiveDataContainer straggler : bindings) {
+                    try {
+                        straggler.close();
+                    } catch (Exception e) {
+                        log.error("지연 추가된 하위 컨테이너 해제 중 오류 발생", e);
+                    }
+                }
+                bindings.clear();
+            }
+
+            // Arena가 여전히 살아있는지 확인 후 소거 (Double Check)
+            if (arena.scope().isAlive()) {
+                try {
+                    // Rust Native Wipe 호출
+                    InternalFactory.callNativeLib()
+                            .getHandle("entanglement_secure_wipe")
+                            .invokeExact(memorySegment, memorySegment.byteSize());
+                } catch (Throwable e) {
+                    log.error("치명적 보안 예외가 발생했습니다! (Native Wipe Failed)", e);
+                }
+
+                // Java Heap 데이터 소거
+                if (fromData != null) {
+                    KeyDestroyHelper.zeroing(fromData);
+                    fromData = null; // GC Hint
+                }
+                zeroingExportedData();
+                segmentData = null; // GC Hint
+
+                // Arena 종료
+                arena.close();
             }
         }
-        if (fromData != null) {
-            KeyDestroyHelper.zeroing(fromData);
-            fromData = null; // GC 콜
-        }
-        zeroingExportedData();
-        segmentData = null; // GC 콜
-        arena.close();
     }
 }

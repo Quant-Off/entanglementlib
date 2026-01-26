@@ -12,6 +12,7 @@ import space.qu4nt.entanglementlib.entlibnative.ProgressResult;
 import space.qu4nt.entanglementlib.entlibnative.SensitiveDataContainer;
 import space.qu4nt.entanglementlib.exception.critical.EntLibNativeError;
 import space.qu4nt.entanglementlib.exception.critical.EntLibSecurityError;
+import space.qu4nt.entanglementlib.exception.secure.EntLibSecureIllegalStateException;
 import space.qu4nt.entanglementlib.exception.secure.crypto.EntLibCryptoSignatureProcessingException;
 import space.qu4nt.entanglementlib.security.crypto.EntLibAlgorithmType;
 import space.qu4nt.entanglementlib.security.crypto.EntLibCryptoRegistry;
@@ -64,7 +65,7 @@ public final class MLDSAStrategy implements NativeSignatureStrategy {
 
     @Override
     public SensitiveDataContainer sign(@NotNull SensitiveDataContainer keyPrivate, byte[] plainBytes)
-            throws EntLibCryptoSignatureProcessingException {
+            throws EntLibCryptoSignatureProcessingException, EntLibSecureIllegalStateException {
         ParameterSizeDetail detail = type.getParameterSizeDetail();
         if (keyPrivate.getMemorySegment().byteSize() != detail.getPrivateKeySize())
             throw new EntLibSecurityError(

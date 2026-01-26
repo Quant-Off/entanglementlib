@@ -7,6 +7,7 @@ package space.qu4nt.entanglementlib.security.crypto.strategy;
 
 import org.jetbrains.annotations.NotNull;
 import space.qu4nt.entanglementlib.entlibnative.SensitiveDataContainer;
+import space.qu4nt.entanglementlib.exception.secure.EntLibSecureIllegalStateException;
 import space.qu4nt.entanglementlib.exception.secure.crypto.EntLibCryptoSignatureProcessingException;
 
 /// 네이티브 라이브러리를 사용하여 전자 서명을 수행하는 전략 인터페이스입니다.
@@ -30,7 +31,7 @@ public interface NativeSignatureStrategy extends EntLibCryptoStrategy {
     /// @param keyPrivate 서명에 사용할 개인 키에 대한 `단일` 민감 데이터 컨테이너
     /// @param plainBytes 서명할 원본 데이터
     /// @return 생성된 서명 바이트 배열과 평문에 대한 민감 데이터 컨테이너
-    SensitiveDataContainer sign(@NotNull SensitiveDataContainer keyPrivate, byte[] plainBytes) throws EntLibCryptoSignatureProcessingException;
+    SensitiveDataContainer sign(@NotNull SensitiveDataContainer keyPrivate, byte[] plainBytes) throws EntLibCryptoSignatureProcessingException, EntLibSecureIllegalStateException;
 
     /// 공개 키를 사용하여 서명을 검증하는 메소드입니다.
     ///
