@@ -94,7 +94,7 @@ $ cd entanglementlib
 </dependencies>
 ```
 
-#### Gradle Project (Kotlin DSL)
+#### Gradle Project
 
 ```kotlin
 repositories {
@@ -103,18 +103,8 @@ repositories {
 
 dependencies {
     implementaion("space.qu4nt.entanglementlib:entanglementlib:1.0.0")
-}
-```
-
-#### Gradle Project (Groovy DSL)
-
-```groovy
-repositories {
-    mavenCentral()
-}
-
-dependencies {
-    implementaion 'space.qu4nt.entanglementlib:entanglementlib:1.0.0'
+    // or Groovy
+    // implementaion 'space.qu4nt.entanglementlib:entanglementlib:1.0.0'
 }
 ```
 
