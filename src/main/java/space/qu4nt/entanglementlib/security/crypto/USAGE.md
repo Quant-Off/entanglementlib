@@ -1,4 +1,4 @@
-# EF: BC Lightweight API and Strategy Pattern
+# EF: Crypto Strategy Pattern
 
 이 패키지는 `BouncyCastle` 라이브러리의 저수준 API를 기반으로 한 몇 가지의 암호화 알고리즘과, `entlib-native`에서 연산이 이루어지는 전자 서명, 키 관리 기능 등을 제공하는 주력 암호화 모듈입니다.
 

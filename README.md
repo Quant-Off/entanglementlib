@@ -1,8 +1,8 @@
 # EntanglementLib
 
-[![Version](https://img.shields.io/badge/version-1.1.0_Alpha-blue.svg)](https://github.com/Quant-Off/entanglementlib)
-[![License](https://img.shields.io/badge/license-PolyForm%20Noncommercial%20License%201.0.0-green.svg)](LICENSE)
-![Language](https://img.shields.io/badge/language-Java-orange.svg)
+[![Version](https://img.shields.io/badge/version-1.1.0%20Alpha-blue?style=for-the-badge)](https://github.com/Quant-Off/entanglementlib)
+[![License](https://img.shields.io/badge/license-PolyForm%20Noncommercial%20License%201.0.0-green?style=for-the-badge)](LICENSE)
+[![Language](https://img.shields.io/badge/language-Java-orange?style=for-the-badge)](https://github.com/Quant-Off/entanglementlib)
 
 ![EntanglementLib](entanglementlib-logo.png)
 
@@ -10,7 +10,7 @@
 
 ## 핵심 철학
 
-얽힘 라이브러리의 모든 설계는 보안성(security) 을 최우선 원칙으로 합니다. 라이브러리는 잠재적 보안 취약점을 원천적으로 방지하고, 데이터 무결성을 보장하도록 구현되었습니다. 두 번째 핵심 가치는 안정성(stability) 으로, 예측 가능하고 일관된 성능을 보장하기 위해 메모리 효율성을 극대화하고 체계적인 오류 처리 메커니즘을 갖추었습니다.
+얽힘 라이브러리의 모든 설계는 '군사적 보안', '금융 및 대규모 엔터프라이즈 환경에서의 안전한 인프라 확립'을 위한 보안성(security)을 최우선 원칙으로 합니다. 얽힘 라이브러리는 잠재적 보안 취약점을 원천적으로 방지하고, 데이터 무결성을 보장하도록 구현되었습니다. 두 번째 핵심 가치는 안정성(stability) 으로, 예측 가능하고 일관된 성능을 보장하기 위해 Rust 네이티브 연산을 적용하여 매우 안전하게 메모리 효율성을 극대화하고, 체계적인 오류(또는 예외) 처리 메커니즘을 갖추었습니다.
 
 ## 강점
 
@@ -18,11 +18,10 @@
 
 1. 잔류 데이터 방지 (Anti-Data Remanence) 및 메모리 소거
    - 자바의 메모리 관리 모델인 가비지 컬렉터(Garbage Collection, GC)가 보안에 취약할 수 있다는 점을 정확히 파악하고 이를 기술적으로 극복하기 위한 기술이 탑재되었습니다.
-   - 이 기술을 위해 `entlib-native` 네이티브 라이브러리를 사용하여 안전하게 소거하도록 설계했습니다.
-   - 모든 민감 정보를 안전하게 관리하기 위해 [데이터 컨테이너 기능](https://github.com/Quant-Off/entanglementlib/blob/master/src/main/java/space/qu4nt/entanglementlib/entlibnative/SensitiveDataContainer.java)을 제공합니다.
+   - 이 기술을 위해 [`entlib-native` 네이티브 라이브러리](https://github.com/Quant-Off/entlib-native)를 사용하여 안전하게 소거하도록 설계했습니다.
+   - 모든 민감 정보를 안전하게 관리하기 위해 [데이터 컨테이너 기능](https://github.com/Quant-Off/entanglementlib/blob/master/src/main/java/space/qu4nt/entanglementlib/entlibnative/SensitiveDataContainer.java)을 제공합니다. 
 2. 최신 PQC 표준 준수
-   - FIPS 203, 204, 205에 따른 ML-KEM, ML-DSA, SLH-DSA 등의 NIST 표준화가 완료된 최신 알고리즘을 네이티브에서 처리하도록 하여 안전한 연산이 가능합니다.
-   - `BouncyCastle Lightweight API`를 사용하여 고전 알고리즘을 사용하고, 내부적인 데이터 잔류 현상을 제거했습니다.
+   - FIPS 203, 204, 205에 따른 ML-KEM, ML-DSA, SLH-DSA 등의 NIST 표준화가 완료된 최신 알고리즘 및 AES, ARIA, ChaCha20과 같은 고전 알고리즘을 네이티브에서 처리하도록 하여 안전한 연산이 가능합니다.
 3. 아키텍처 및 디자인 패턴
    - 팩토리 패턴 및 인터페이스를 명확히 분리했습니다. [암호화 알고리즘은 전략적](https://github.com/Quant-Off/entanglementlib/tree/master/src/main/java/space/qu4nt/entanglementlib/security/crypto)으로 호출하여 사용할 수 있습니다.
 4. 예외 처리
@@ -40,6 +39,10 @@
 | `entlibnative`           | 네이티브 라이브러리와의 연동을 담당합니다.<br/>- **데이터 보호**: `SensitiveDataContainer`를 통해 민감한 데이터를 안전하게 관리하고 소거합니다.<br/>- **네이티브 연동**: `NativeLinkerManager`를 통해 Rust 등으로 작성된 고성능 네이티브 라이브러리를 로드하고 사용합니다.                                                                                                                                                                                                                                                                                                                                            |
 | `util`                   | 보안 및 개발 편의성을 고려한 고성능 유틸리티를 제공합니다.<br/>- **입출력 및 청크 처리**: `EntFile`, `ChunkProcessor` 등을 통해 대용량 파일 및 데이터를 효율적으로 처리합니다.<br/>- **보안 유틸리티**: `Password`, `SecureCharBuffer` 등을 통해 비밀번호 및 민감한 문자열을 안전하게 다룹니다.<br/>- **기타**: `Hex`, `Hash`, `Async` 등 다양한 유틸리티 클래스를 제공합니다.                                                                                                                                                                                                                                                              |
 | `exception`              | 안정적인 오류 처리를 위한 체계적인 예외 계층 구조를 제공합니다.<br/>- **보안 예외**: `EntLibSecureException` 및 하위 클래스들을 통해 보안 관련 오류를 명확하게 처리합니다.<br/>- **암호화 예외**: `EntLibCryptoException` 등을 통해 암호화 과정에서 발생하는 오류를 세분화하여 관리합니다.<br/>- **치명적 오류**: `EntLibError` 및 하위 클래스들을 통해 시스템의 치명적인 오류를 정의합니다.                                                                                                                                                                                                                                                               |
+
+### 기술 명세
+
+얽힘 라이브러리가 네이티브 라이브러리와 어떻게 상호 작용하는지, 네이티브에서 보안 연산은 어떻게 수행하는지에 대한 기술 명세를 [이 곳](TECHNICAL)에 작성했습니다. 
 
 ## 시작하기
 
@@ -64,11 +67,13 @@
 ```bash
 # 예시: Linux/macOS
 export ENTLIB_NATIVE_BIN="/path/to/entlib-native/release"
-export ENTANGLEMENT_HOME_DIR="/path/to/entanglementlib/"
+export ENTANGLEMENT_HOME_DIR="/path/to/entanglementlib"
+```
 
+```bash
 # 예시: Windows
 setx ENTLIB_NATIVE_BIN "C:\path\to\entlib-native\release"
-setx ENTANGLEMENT_HOME_DIR "C:\path\to\entanglementlib\"
+setx ENTANGLEMENT_HOME_DIR "C:\path\to\entanglementlib"
 ```
 
 ### 3. 저장소 클론 또는 Maven 저장소 사용
@@ -112,24 +117,31 @@ dependencies {
 
 이 프로젝트는 아직 많이 부족합니다. 얽힘 라이브러리는 미래에 금융 및 보안 인프라 프로덕션에서 사용할 수 있도록 다음의 TODO를 명확히 하고자 합니다.
 
-- [X] Java 모듈 시스템(JPMS)과 리플렉션의 충돌 문제
-  - `KeyDestroyHelper`에서 `Field.setAccessible(true)`를 사용하여 `BouncyCastle` 내부나 자바 표준 라이브러리의 `private` 필드를 수정하고 있습니다. Java 17 이후 강력한 캡슐화(strong encapsulation) 정책으로 인해, 실행 시 `--add-opens` JVM 옵션 없이는 `InaccessibleObjectException`이 발생할 확률이 매우 높습니다.
-  - JVM 옵션 `--add-opens java.base/java.security=ALL-UNNAMED`를 추가하여 JPMS 보안 경고를 우회할 수 있습니다.
-    - **해결**: 이 문제를 해결하기 위해 큰 고민을 하지 않았습니다. 왜냐하면 `1.1.0` 릴리즈부턴 `BC Lightweight API`를 사용하기로 결정했기 때문입니다. 저수준 접근으로 기존 JCA/JCE의 몇 가지 제약을 회피하는 것이 첫 번째 목표였습니다. 즉, 아직 여전히 리플렉션을 통한 접근이 필요불가결 합니다. 키를 생성한다던가, 내부 암호화 엔진을 호출해야 하는 때에는 유연하게 대응하지 못 할 수 있다는 말이죠. 이러한 복합적인 문제를 해결하기 위해 `entlib-native` 네이티브 라이브러리를 도입했고,얽힘 라이브러리의 `BC` 의존성을 최소화하는 데 초점을 맞추려고 합니다.
-- [X] 성능 대 보안 트레이드오프
-  - 모든 입출력에 대해 방어적 복사(deep copy)를 수행하고 있습니다. 수 기가바이트 단위의 대용량 데이터를 처리하거나 높은 처리량(Tick Per Second, TPS)이 필요한 서버 환경에서는 잦은 메모리 할당과 가비지 컬렉터 부하로 성능 저하가 발생할 수 있습니다. 기존 알고리즘 클래스만 봐도 인스턴스에 데이터를 바인딩하는 모습이 보입니다.
-    - **해결**: `entlib-native` 네이티브 라이브러리를 추가하여 메모리 관련 연산은 전부 `Rust` 측에서 처리하게끔 설계했습니다. 이렇게 되면 이제 `Java` 측에선 단순히 순수 전달받는 바이트 배열같은 민감 데이터만을 소거하면 됩니다. `Rust`가 뒤에서 든든하게 메모리 연산을 취해 줄 겁니다.
-- [X] 난수 및 Nonce 관리
-  - `ChaCha20Poly1305`에서 `InternalFactory.getSafeRandom()`을 사용해 논스값 `Nonce`를 생성합니다. 같은 키로 `Nonce`가 재사용되면 `ChaCha20Poly1305`의 보안성은 완전히 무너집니다.
-    - **해결**: 이 문제도 `entlib-native` 네이티브 라이브러리로 해결됐습니다. 이제 `Rust` 측에서 `ChaCha20` 기반의 `CSPRNG`를 만들고, `Rust` 측에서만 사용됩니다. 말인 즉슨, 모든 암호학적 연산은 이제 `Rust`만이 수행한다는 것입니다!
 - [ ] 공급자 유동화 및 팩토리 최적화
   - 사용자의 선택에 따라 Java의 기본 공급자를 사용할 수 있도록 수정해야 합니다. 그리고 `InternalFactory` 클래스를 포함한 대부분의 클래스에서 제공되는 팩토리를 최적화해야 합니다.
 - [ ] 전체 디자인 패턴 최적화
   - 현재 코드는 스파게티라고 해도 과언이 아닐 만큼 더러운 부분이 많이 보입니다. 제 방처럼 쾌적한 코드를 작성할 수 있도록 수정해야 합니다.
-- [ ] `BouncyCastle` 의존성 최소화
-  - 'Java 모듈 시스템(JPMS)과 리플렉션의 충돌 문제 해결'에서 언급했다시피, 이제 `1.1.0` 릴리즈부턴 `BC` 의존성을 최소화할겁니다. AES, ARIA, ChaCha20 같은 고전 알고리즘은 여전히 `BC` 의존성이 필요하기 때문에 의존성을 완전히 없애자는 말은 아니예요!
+- [ ] JPMS 적용
+  - 안전한 캡슐화와 일관된 호출(또는 사용) 패턴이 완성되면 JPMS를 통해 캡슐화된 패키지를 모듈로서 관리하려고 합니다.
+- [ ] `BouncyCastle` 의존성 제거
+  - 이제 `1.1.0` 릴리즈부턴 `BC` 의존성을 최소화하며, 끝내 제거하려고 합니다. 현재 AES, ARIA, ChaCha20 같은 고전 알고리즘은 여전히 `BC`에 의존하고 있습니다. 얽힘 라이브러리의 보안 철학을 확실히 하고자 모든 암호학적 연산은 `entlib-native`에서 수행하기로 결정했습니다.
 - [ ] `i18n` 업데이트
   - 최신 릴리즈 개발을 수행하며 다국어 지원을 많이 누락했습니다. 구성 설정에 따라 각 언어별로 로깅을 지원할 수 있도록 수정해야 합니다.
+- [ ] 보안 기능에 대한 기술 명세 작성
+  - 얽힘 라이브러리의 중요한 보안 관련 기능을 [별도의 문서](TECHNICAL)에 작성하겠습니다.
+
+### 해결됨
+
+- [X] Java 모듈 시스템(JPMS)과 리플렉션의 충돌 문제
+    - `KeyDestroyHelper`에서 `Field.setAccessible(true)`를 사용하여 `BouncyCastle` 내부나 자바 표준 라이브러리의 `private` 필드를 수정하고 있습니다. Java 17 이후 강력한 캡슐화(strong encapsulation) 정책으로 인해, 실행 시 `--add-opens` JVM 옵션 없이는 `InaccessibleObjectException`이 발생할 확률이 매우 높습니다.
+    - JVM 옵션 `--add-opens java.base/java.security=ALL-UNNAMED`를 추가하여 JPMS 보안 경고를 우회할 수 있습니다.
+        - **해결**: 이 문제를 해결하기 위해 큰 고민을 하지 않았습니다. 왜냐하면 `1.1.0` 릴리즈부턴 `BC Lightweight API`를 사용하기로 결정했기 때문입니다. 저수준 접근으로 기존 JCA/JCE의 몇 가지 제약을 회피하는 것이 첫 번째 목표였습니다. 즉, 아직 여전히 리플렉션을 통한 접근이 필요불가결 합니다. 키를 생성한다던가, 내부 암호화 엔진을 호출해야 하는 때에는 유연하게 대응하지 못 할 수 있다는 말이죠. 이러한 복합적인 문제를 해결하기 위해 `entlib-native` 네이티브 라이브러리를 도입했고,얽힘 라이브러리의 `BC` 의존성을 최소화하는 데 초점을 맞추려고 합니다.
+- [X] 성능 대 보안 트레이드오프
+    - 모든 입출력에 대해 방어적 복사(deep copy)를 수행하고 있습니다. 수 기가바이트 단위의 대용량 데이터를 처리하거나 높은 처리량(Tick Per Second, TPS)이 필요한 서버 환경에서는 잦은 메모리 할당과 가비지 컬렉터 부하로 성능 저하가 발생할 수 있습니다. 기존 알고리즘 클래스만 봐도 인스턴스에 데이터를 바인딩하는 모습이 보입니다.
+        - **해결**: `entlib-native` 네이티브 라이브러리를 추가하여 메모리 관련 연산은 전부 `Rust` 측에서 처리하게끔 설계했습니다. 이렇게 되면 이제 `Java` 측에선 단순히 순수 전달받는 바이트 배열같은 민감 데이터만을 소거하면 됩니다. `Rust`가 뒤에서 든든하게 메모리 연산을 취해 줄 겁니다.
+- [X] 난수 및 Nonce 관리
+    - `ChaCha20Poly1305`에서 `InternalFactory.getSafeRandom()`을 사용해 논스값 `Nonce`를 생성합니다. 같은 키로 `Nonce`가 재사용되면 `ChaCha20Poly1305`의 보안성은 완전히 무너집니다.
+        - **해결**: 이 문제도 `entlib-native` 네이티브 라이브러리로 해결됐습니다. 이제 `Rust` 측에서 `ChaCha20` 기반의 `CSPRNG`를 만들고, `Rust` 측에서만 사용됩니다. 말인 즉슨, 모든 암호학적 연산은 이제 `Rust`만이 수행한다는 것입니다!
 
 ## 기여
 
