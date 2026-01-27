@@ -18,7 +18,7 @@ import space.qu4nt.entanglementlib.exception.server.EntLibServerSecurityWarningE
 import space.qu4nt.entanglementlib.exception.session.EntLibSessionException;
 import space.qu4nt.entanglementlib.security.communication.session.*;
 import space.qu4nt.entanglementlib.security.crypto.*;
-import space.qu4nt.entanglementlib.security.crypto.key.strategy.NativeEntLibAsymmetricKeyStrategy;
+import space.qu4nt.entanglementlib.security.crypto.key.strategy.EntLibAsymmetricKeyStrategy;
 import space.qu4nt.entanglementlib.security.crypto.key.strategy.detail.MLKEMKeyStrategy;
 import space.qu4nt.entanglementlib.security.crypto.key.strategy.detail.X25519KeyStrategy;
 import space.qu4nt.entanglementlib.security.crypto.key.strategy.detail.X25519MLKEM768KeyStrategy;
@@ -238,8 +238,8 @@ public class Server implements Closeable {
     private void initializeServerKeys() throws Throwable {
         // 서버 장기 키페어 생성 (기본 KEM 타입 사용)
         KEMType kemType = config.getSessionConfig().getDefaultKemType();
-        NativeEntLibAsymmetricKeyStrategy keyStrategy =
-                EntLibCryptoRegistry.getKeyStrategy(kemType, NativeEntLibAsymmetricKeyStrategy.class);
+        EntLibAsymmetricKeyStrategy keyStrategy =
+                EntLibCryptoRegistry.getKeyStrategy(kemType, EntLibAsymmetricKeyStrategy.class);
 
         if (keyStrategy instanceof X25519MLKEM768KeyStrategy hybridKey) {
             X25519KeyStrategy x25519KeyStrategy = EntLibCryptoRegistry.getKeyStrategy(KEMType.X25519, X25519KeyStrategy.class);

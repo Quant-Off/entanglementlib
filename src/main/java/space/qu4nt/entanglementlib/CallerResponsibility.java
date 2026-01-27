@@ -5,6 +5,7 @@
 
 package space.qu4nt.entanglementlib;
 
+import java.lang.annotation.Documented;
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Target;
 
@@ -19,6 +20,7 @@ import java.lang.annotation.Target;
  * @author Q. T. Felix
  * @since 1.1.0
  */
+@Documented
 @Target(ElementType.TYPE_USE)
 public @interface CallerResponsibility {
 

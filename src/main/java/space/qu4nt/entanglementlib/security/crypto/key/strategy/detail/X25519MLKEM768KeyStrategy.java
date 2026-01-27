@@ -13,7 +13,6 @@ import space.qu4nt.entanglementlib.exception.secure.EntLibSecureIllegalStateExce
 import space.qu4nt.entanglementlib.exception.secure.crypto.EntLibCryptoException;
 import space.qu4nt.entanglementlib.security.crypto.KEMType;
 import space.qu4nt.entanglementlib.security.crypto.key.strategy.EntLibAsymmetricKeyStrategy;
-import space.qu4nt.entanglementlib.security.crypto.key.strategy.NativeEntLibAsymmetricKeyStrategy;
 import space.qu4nt.entanglementlib.security.crypto.strategy.detail.hybrid.X25519MLKEM768Strategy;
 import space.qu4nt.entanglementlib.util.wrapper.Pair;
 
@@ -38,7 +37,7 @@ import java.lang.foreign.MemorySegment;
 /// @see X25519MLKEM768Strategy
 /// @since 1.1.0
 @Slf4j
-public final class X25519MLKEM768KeyStrategy implements NativeEntLibAsymmetricKeyStrategy {
+public final class X25519MLKEM768KeyStrategy implements EntLibAsymmetricKeyStrategy {
 
     @Setter
     @Nullable

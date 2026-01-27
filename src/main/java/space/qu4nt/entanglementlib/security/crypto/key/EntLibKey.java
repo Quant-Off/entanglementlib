@@ -3,7 +3,7 @@
  * Under License "PolyForm Noncommercial License 1.0.0".
  */
 
-package space.qu4nt.entanglementlib.security.crypto.key.strategy;
+package space.qu4nt.entanglementlib.security.crypto.key;
 
 public interface EntLibKey {
 }

@@ -11,7 +11,6 @@ import space.qu4nt.entanglementlib.entlibnative.SensitiveDataContainer;
 import space.qu4nt.entanglementlib.exception.critical.EntLibNativeError;
 import space.qu4nt.entanglementlib.security.crypto.bundle.X25519StrategyBundle;
 import space.qu4nt.entanglementlib.security.crypto.key.strategy.EntLibAsymmetricKeyStrategy;
-import space.qu4nt.entanglementlib.security.crypto.key.strategy.NativeEntLibAsymmetricKeyStrategy;
 import space.qu4nt.entanglementlib.security.crypto.strategy.detail.X25519Strategy;
 import space.qu4nt.entanglementlib.util.wrapper.Pair;
 
@@ -26,7 +25,7 @@ import space.qu4nt.entanglementlib.util.wrapper.Pair;
 /// @see X25519Strategy
 /// @since 1.1.0
 @Slf4j
-public final class X25519KeyStrategy implements NativeEntLibAsymmetricKeyStrategy {
+public final class X25519KeyStrategy implements EntLibAsymmetricKeyStrategy {
 
     private X25519KeyStrategy() {
     }

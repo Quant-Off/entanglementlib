@@ -5,7 +5,7 @@
 
 package space.qu4nt.entanglementlib.security.crypto;
 
-import space.qu4nt.entanglementlib.security.crypto.key.strategy.EntLibKey;
+import space.qu4nt.entanglementlib.security.crypto.key.EntLibKey;
 import space.qu4nt.entanglementlib.security.crypto.strategy.EntLibCryptoStrategy;
 
 import java.util.Map;

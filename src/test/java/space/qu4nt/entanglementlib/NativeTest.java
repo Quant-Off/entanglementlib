@@ -12,7 +12,7 @@ import space.qu4nt.entanglementlib.entlibnative.SensitiveDataContainer;
 import space.qu4nt.entanglementlib.exception.secure.crypto.EntLibCryptoSignatureProcessingException;
 import space.qu4nt.entanglementlib.security.crypto.EntLibCryptoRegistry;
 import space.qu4nt.entanglementlib.security.crypto.SignatureType;
-import space.qu4nt.entanglementlib.security.crypto.key.strategy.NativeEntLibAsymmetricKeyStrategy;
+import space.qu4nt.entanglementlib.security.crypto.key.strategy.EntLibAsymmetricKeyStrategy;
 import space.qu4nt.entanglementlib.security.crypto.strategy.NativeSignatureStrategy;
 import space.qu4nt.entanglementlib.util.StringUtil;
 import space.qu4nt.entanglementlib.util.wrapper.Hex;
@@ -31,7 +31,7 @@ class NativeTest {
         NativeSignatureStrategy mldsaStrategy = EntLibCryptoRegistry.getAlgStrategy(SignatureType.ML_DSA_65, NativeSignatureStrategy.class);
 
         // keygen
-        NativeEntLibAsymmetricKeyStrategy key = EntLibCryptoRegistry.getKeyStrategy(SignatureType.ML_DSA_65, NativeEntLibAsymmetricKeyStrategy.class);
+        EntLibAsymmetricKeyStrategy key = EntLibCryptoRegistry.getKeyStrategy(SignatureType.ML_DSA_65, EntLibAsymmetricKeyStrategy.class);
         Pair<SensitiveDataContainer, SensitiveDataContainer> keyPair = key.generateKeyPair();
         keyPair.getFirst().exportData();
         keyPair.getSecond().exportData();

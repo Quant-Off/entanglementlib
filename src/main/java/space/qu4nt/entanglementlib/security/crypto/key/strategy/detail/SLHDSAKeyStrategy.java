@@ -8,9 +8,10 @@ package space.qu4nt.entanglementlib.security.crypto.key.strategy.detail;
 import lombok.extern.slf4j.Slf4j;
 import org.bouncycastle.pqc.crypto.slhdsa.SLHDSAParameters;
 import org.bouncycastle.util.Arrays;
+import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
+import space.qu4nt.entanglementlib.Unsafe;
 import space.qu4nt.entanglementlib.entlibnative.SensitiveDataContainer;
-import space.qu4nt.entanglementlib.security.crypto.key.EntLibCryptoKey;
 import space.qu4nt.entanglementlib.security.crypto.key.strategy.EntLibAsymmetricKeyStrategy;
 import space.qu4nt.entanglementlib.security.crypto.strategy.detail.SLHDSAStrategy;
 import space.qu4nt.entanglementlib.util.wrapper.Pair;
@@ -26,10 +27,15 @@ import java.lang.reflect.Method;
 /// SLH-DSA는 NIST에서 표준화한 PQC 전자 서명 알고리즘으로, 많은 파라미터 세트를 지원합니다.
 /// [SLHDSAStrategy]와 함께 사용됩니다.
 ///
+/// # Safety
+///
+/// 이 알고리즘에 대해, 모든 로직이 네이티브에서 아직 안정화되지 않았습니다.
+///
 /// @author Q. T. Felix
 /// @see EntLibAsymmetricKeyStrategy
 /// @see SLHDSAStrategy
 /// @since 1.1.0
+@Unsafe
 @Slf4j
 public final class SLHDSAKeyStrategy implements EntLibAsymmetricKeyStrategy {
 
@@ -53,6 +59,7 @@ public final class SLHDSAKeyStrategy implements EntLibAsymmetricKeyStrategy {
      * @param SLHDSAStrategy SLH-DSA 서명 전략
      * @return 새 {@link SLHDSAKeyStrategy} 인스턴스
      */
+    @ApiStatus.Internal
     public static SLHDSAKeyStrategy create(@NotNull SLHDSAParameters slhdsaParameters) {
         return new SLHDSAKeyStrategy(slhdsaParameters);
     }
@@ -65,7 +72,7 @@ public final class SLHDSAKeyStrategy implements EntLibAsymmetricKeyStrategy {
      * @return 공개 키와 개인 키의 쌍
      */
     @Override
-    public Pair<EntLibCryptoKey, EntLibCryptoKey> generateKeyPair() {
+    public Pair<SensitiveDataContainer, SensitiveDataContainer> generateKeyPair() {
         try {
             final Internal in = new Internal(slhdsaParameters);
             return in.gen();
@@ -81,8 +88,17 @@ public final class SLHDSAKeyStrategy implements EntLibAsymmetricKeyStrategy {
     /// 사용하면 개별 엔진 클래스를 따로 호출할 필요 없이 사용 가능하지만, 리플렉션을 사용하여
     /// 접근하기 때문에 별도의 엔진 메소드를 차별화했습니다.
     ///
+    /// # Safety
+    ///
+    /// 이 기능은 `BouncyCastle`의 `SLH-DSA` 엔진을 리플렉션으로 호출하여 키 생성을
+    /// 수행하도록 하는 내부 클래스입니다. 이 기능은 `BC`의존성이 제거됨과 동시에
+    /// 제거됩니다.
+    ///
     /// @author Q. T. Felix
     /// @since 1.1.0
+    @Unsafe
+    @ApiStatus.Obsolete(since = "1.1.0")
+    @ApiStatus.Internal
     private static class Internal {
         SLHDSAParameters baseParam;
         Object engine;
@@ -95,13 +111,13 @@ public final class SLHDSAKeyStrategy implements EntLibAsymmetricKeyStrategy {
         }
 
         // pk, sk
-        Pair<EntLibCryptoKey, EntLibCryptoKey> gen() throws NoSuchFieldException, ClassNotFoundException, InvocationTargetException, NoSuchMethodException, InstantiationException, IllegalAccessException {
+        Pair<SensitiveDataContainer, SensitiveDataContainer> gen() throws NoSuchFieldException, ClassNotFoundException, InvocationTargetException, NoSuchMethodException, InstantiationException, IllegalAccessException {
             byte[] pkRoot = pkC(); // htpubkey(pkroot)
             byte[] sk = skC(pkRoot);
             final byte[] safeMixPK = Arrays.concatenate(tuple.getThird(), pkRoot);
             return new Pair<>(
-                    new EntLibCryptoKey(safeMixPK),
-                    new EntLibCryptoKey(sk)
+                    new SensitiveDataContainer(safeMixPK, true),
+                    new SensitiveDataContainer(sk, true)
             );
         }
 

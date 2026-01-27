@@ -8,6 +8,8 @@ package space.qu4nt.entanglementlib;
 import com.quant.quantregular.annotations.QuantTypeOwner;
 import com.quant.quantregular.annotations.Quanters;
 
+import java.lang.annotation.Documented;
+
 /// # Basically Unsafe Usage
 ///
 /// #### 사용에 주의하세요!
@@ -20,6 +22,7 @@ import com.quant.quantregular.annotations.Quanters;
 ///
 /// - 표준 안전 검사나 캡슐화 메커니즘을 우회하는 코드
 /// - 기본 작동 방식(세부 로직, 알고리즘 자체 및 불건전 참조 등) 자체에 문제
+/// - (연동된 경우) 네이티브 레이어에서 최종 안정화 작업을 거치지 않은 등, 기능 자체가 불안정
 /// - 보안 취약점 발견
 ///
 /// 이 API를 사용하려면 기본 구현 및 잠재적인 부작용에 대한 깊은 이해가 필요합니다.
@@ -32,8 +35,13 @@ import com.quant.quantregular.annotations.Quanters;
 /// 사용자는 절대적으로 필요한 경우에만 이 요소를 사용해야 하며, 위험을 완화하기 위해 적절한 보안 조치와
 /// 검증 로직이 마련되어 있는지 확인해야 합니다.
 ///
+/// # Note
+///
+/// 이 어노테이션이 사용된 멤버는 `# Security` 헤더에 `Unsafe` 근거가 기록되어야 합니다.
+///
 /// @author Q. T. Felix
 /// @since 1.1.0
+@Documented
 @QuantTypeOwner(Quanters.Q_T_FELIX)
 public @interface Unsafe {
 }
