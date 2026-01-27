@@ -1,7 +1,8 @@
 <component name="CopyrightManager">
   <settings>
     <module2copyright>
-      <element module="Project Files" copyright="PolyForm Noncommercial License 1.0.0" />
+      <element module="얽힘 라이브러리 src" copyright="PolyForm Noncommercial License 1.0.0" />
+      <element module="얽힘 라이브러리 네이티브 브릿지 src" copyright="MIT" />
     </module2copyright>
   </settings>
 </component>

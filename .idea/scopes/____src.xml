@@ -1,0 +1,3 @@
+<component name="DependencyValidationManager">
+  <scope name="얽힘 라이브러리 네이티브 브릿지 src" pattern="file[entlib-native]:src/*||file[entlib-native]:Cargo.toml||file[entlib-native]:src//*" />
+</component>
