@@ -11,9 +11,9 @@ import space.qu4nt.entanglementlib.entlibnative.ProgressResult;
 import space.qu4nt.entanglementlib.entlibnative.SensitiveDataContainer;
 import space.qu4nt.entanglementlib.exception.critical.EntLibNativeError;
 import space.qu4nt.entanglementlib.security.crypto.KEMType;
+import space.qu4nt.entanglementlib.security.crypto.ParameterSizeDetail;
 import space.qu4nt.entanglementlib.security.crypto.bundle.MLKEMStrategyBundle;
 import space.qu4nt.entanglementlib.security.crypto.key.strategy.EntLibAsymmetricKeyStrategy;
-import space.qu4nt.entanglementlib.security.crypto.key.strategy.NativeEntLibAsymmetricKeyStrategy;
 import space.qu4nt.entanglementlib.security.crypto.strategy.detail.MLDSAStrategy;
 import space.qu4nt.entanglementlib.security.crypto.strategy.detail.MLKEMStrategy;
 import space.qu4nt.entanglementlib.util.wrapper.Pair;
@@ -30,7 +30,7 @@ import space.qu4nt.entanglementlib.util.wrapper.Pair;
 /// @see MLKEMStrategy
 /// @since 1.1.0
 @Slf4j
-public final class MLKEMKeyStrategy implements NativeEntLibAsymmetricKeyStrategy {
+public final class MLKEMKeyStrategy implements EntLibAsymmetricKeyStrategy {
 
     private final KEMType mlkemType;
 
@@ -44,13 +44,9 @@ public final class MLKEMKeyStrategy implements NativeEntLibAsymmetricKeyStrategy
 
     @Override
     public Pair<SensitiveDataContainer, SensitiveDataContainer> generateKeyPair() throws Throwable {
-        final Pair<Integer, Integer> keySizePair = switch (mlkemType) { // pk, sk
-            case ML_KEM_512 -> new Pair<>(0x320, 0x660);
-            case ML_KEM_1024 -> new Pair<>(0x4a0, 0x960);
-            default -> new Pair<>(0x620, 0xc60);
-        };
-        final SensitiveDataContainer pkC = new SensitiveDataContainer(keySizePair.getFirst());
-        final SensitiveDataContainer skC = new SensitiveDataContainer(keySizePair.getSecond());
+        ParameterSizeDetail detail = mlkemType.getParameterSizeDetail();
+        final SensitiveDataContainer pkC = new SensitiveDataContainer(detail.getEncapsulationKeySize());
+        final SensitiveDataContainer skC = new SensitiveDataContainer(detail.getDecapsulationKeySize());
         int code = (int) MLKEMStrategyBundle
                 .callNativeMLKEMHandle(mlkemType, 0)
                 .invokeExact(skC.getMemorySegment(), pkC.getMemorySegment());

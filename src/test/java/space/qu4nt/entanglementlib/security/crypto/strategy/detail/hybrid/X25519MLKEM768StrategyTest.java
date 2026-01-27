@@ -15,7 +15,7 @@ import space.qu4nt.entanglementlib.exception.secure.crypto.EntLibCryptoKEMProces
 import space.qu4nt.entanglementlib.security.crypto.EntLibCryptoRegistry;
 import space.qu4nt.entanglementlib.security.crypto.KEMType;
 import space.qu4nt.entanglementlib.security.crypto.ParameterSizeDetail;
-import space.qu4nt.entanglementlib.security.crypto.key.strategy.NativeEntLibAsymmetricKeyStrategy;
+import space.qu4nt.entanglementlib.security.crypto.key.strategy.EntLibAsymmetricKeyStrategy;
 import space.qu4nt.entanglementlib.security.crypto.key.strategy.detail.MLKEMKeyStrategy;
 import space.qu4nt.entanglementlib.security.crypto.key.strategy.detail.X25519KeyStrategy;
 import space.qu4nt.entanglementlib.security.crypto.key.strategy.detail.X25519MLKEM768KeyStrategy;
@@ -41,9 +41,9 @@ import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 class X25519MLKEM768StrategyTest {
 
     private static NativeKEMStrategy x25519Strategy;
-    private static NativeEntLibAsymmetricKeyStrategy x25519KeyStrategy;
+    private static EntLibAsymmetricKeyStrategy x25519KeyStrategy;
     private static NativeKEMStrategy mlkem768Strategy;
-    private static NativeEntLibAsymmetricKeyStrategy mlkem768KeyStrategy;
+    private static EntLibAsymmetricKeyStrategy mlkem768KeyStrategy;
 
     private static ParameterSizeDetail hybridDetail;
 
@@ -52,9 +52,9 @@ class X25519MLKEM768StrategyTest {
         EntanglementLibBootstrap.registerEntanglementLib("X25519MLKEM768-TEST", true);
 
         x25519Strategy = EntLibCryptoRegistry.getAlgStrategy(KEMType.X25519, NativeKEMStrategy.class);
-        x25519KeyStrategy = EntLibCryptoRegistry.getKeyStrategy(KEMType.X25519, NativeEntLibAsymmetricKeyStrategy.class);
+        x25519KeyStrategy = EntLibCryptoRegistry.getKeyStrategy(KEMType.X25519, EntLibAsymmetricKeyStrategy.class);
         mlkem768Strategy = EntLibCryptoRegistry.getAlgStrategy(KEMType.ML_KEM_768, NativeKEMStrategy.class);
-        mlkem768KeyStrategy = EntLibCryptoRegistry.getKeyStrategy(KEMType.ML_KEM_768, NativeEntLibAsymmetricKeyStrategy.class);
+        mlkem768KeyStrategy = EntLibCryptoRegistry.getKeyStrategy(KEMType.ML_KEM_768, EntLibAsymmetricKeyStrategy.class);
 
         hybridDetail = KEMType.X25519MLKEM768.getParameterSizeDetail();
 
