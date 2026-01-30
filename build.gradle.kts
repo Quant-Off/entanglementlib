@@ -56,7 +56,7 @@ dependencies {
     implementation("org.slf4j:jul-to-slf4j:2.0.17")
     // Logging Provider (Logback)
     // https://mvnrepository.com/artifact/ch.qos.logback/logback-classic
-    implementation("ch.qos.logback:logback-classic:1.5.21")
+    implementation("ch.qos.logback:logback-classic:1.5.26")
 
     // Lombok
     // https://mvnrepository.com/artifact/org.projectlombok/lombok
@@ -82,12 +82,14 @@ dependencies {
     // Tests JUnit 5
     testImplementation(platform("org.junit:junit-bom:5.10.0"))
     testImplementation("org.junit.jupiter:junit-jupiter")
-    testImplementation("org.assertj:assertj-core:3.27.6")
+    testImplementation("org.assertj:assertj-core:3.27.7")
     testAnnotationProcessor(lombokVersion)
 
-    // Mockito
-    // Source: https://mvnrepository.com/artifact/org.mockito/mockito-core
-    testImplementation("org.mockito:mockito-core:5.21.0")
+    // JMH
+    // Source: https://mvnrepository.com/artifact/org.openjdk.jmh/jmh-core
+    testImplementation("org.openjdk.jmh:jmh-core:1.37")
+    // Source: https://mvnrepository.com/artifact/org.openjdk.jmh/jmh-generator-annprocess
+    testImplementation("org.openjdk.jmh:jmh-generator-annprocess:1.37")
 }
 
 tasks.test {
