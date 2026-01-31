@@ -9,6 +9,8 @@ public/native-sources/
 !gradle/wrapper/gradle-wrapper.jar
 !**/src/main/**/build/
 !**/src/test/**/build/
+native-benchmark/target/
+native-benchmark/Cargo.lock
 
 ### IntelliJ IDEA ###
 .idea/modules.xml

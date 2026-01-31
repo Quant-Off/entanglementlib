@@ -6,6 +6,7 @@
 plugins {
     id("java")
     id("com.vanniktech.maven.publish") version "0.28.0"
+    id("me.champeau.jmh") version "0.7.3"
 }
 
 val lombokVersion = "org.projectlombok:lombok:1.18.42"
@@ -32,8 +33,11 @@ sourceSets {
 }
 
 java {
-    sourceCompatibility = JavaVersion.VERSION_24
-    targetCompatibility = JavaVersion.VERSION_24
+    toolchain {
+        languageVersion.set(JavaLanguageVersion.of(25))
+    }
+    sourceCompatibility = JavaVersion.VERSION_25
+    targetCompatibility = JavaVersion.VERSION_25
 }
 
 repositories {
@@ -76,7 +80,6 @@ dependencies {
     implementation("org.bouncycastle:bcprov-jdk18on:${bouncyCastleVer}")
     implementation("org.bouncycastle:bcutil-jdk18on:${bouncyCastleVer}")
     implementation("org.bouncycastle:bcpkix-jdk18on:${bouncyCastleVer}")
-    // 1.83 부터 SLH-DSA 알고리즘 TLS 지원
     implementation("org.bouncycastle:bctls-jdk18on:${bouncyCastleVer}")
 
     // Tests JUnit 5
@@ -86,6 +89,8 @@ dependencies {
     testAnnotationProcessor(lombokVersion)
 
     // JMH
+    jmh("org.openjdk.jmh:jmh-core:1.37")
+    jmh("org.openjdk.jmh:jmh-generator-annprocess:1.37")
     // Source: https://mvnrepository.com/artifact/org.openjdk.jmh/jmh-core
     testImplementation("org.openjdk.jmh:jmh-core:1.37")
     // Source: https://mvnrepository.com/artifact/org.openjdk.jmh/jmh-generator-annprocess
@@ -136,3 +141,34 @@ mavenPublishing {
         )
     )
 }
+
+//
+// JMH - start
+//
+jmh {
+    jmhVersion.set("1.37")
+
+    // 테스트 벤치마킹 클래스 등록
+    includeTests.set(true)
+    includes.set(listOf(".*Benchmark"))
+
+    // 벤치마크 실행 시 필요한 jvm 인자 중앙 제어
+    jvmArgs.set(listOf(
+        "--enable-native-access=ALL-UNNAMED",
+        "--enable-preview",
+        "-Djava.library.path=${projectDir}/native-benchmark/target/debug",
+        "-Xms2g", "-Xmx2g" // gc 간섭 최소화
+    ))
+    fork.set(1)
+
+    // 결과 출력 포맷
+    resultFormat.set("JSON")
+
+    // 벤치마크 수행 옵션 (프로세스 및 반복 횟수)
+    fork.set(1)
+    warmupIterations.set(3)
+    iterations.set(5)
+}
+//
+// JMH - end
+//

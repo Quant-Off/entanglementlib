@@ -1,0 +1,17 @@
+[package]
+name = "native-benchmark"
+version = "0.1.0"
+edition = "2024"
+
+[lib]
+crate-type = ["cdylib"]
+
+[profile.release]
+opt-level = 3           # 최고 수준의 최적화
+lto = "fat"             # 전체 프로그램 분석을 통한 교차 모듈 최적화 (호출 비용 감소)
+codegen-units = 1       # 병렬 컴파일을 끄고 단일 유닛으로 컴파일하여 최적화 품질 향상
+panic = "abort"         # 패닉 시 스택 언와인딩 제거 (코드 크기 감소 및 단순화)
+strip = true            # 심볼 제거 (바이너리 크기 최적화)
+
+[dependencies]
+jni = "0.21.1"
