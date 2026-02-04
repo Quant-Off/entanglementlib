@@ -5,9 +5,7 @@
 
 package space.qu4nt.entanglementlib.security.crypto.key.strategy.detail;
 
-import org.jetbrains.annotations.NotNull;
 import space.qu4nt.entanglementlib.entlibnative.SensitiveDataContainer;
-import space.qu4nt.entanglementlib.security.crypto.key.EntLibCryptoKey;
 import space.qu4nt.entanglementlib.security.crypto.key.strategy.EntLibSymmetricKeyStrategy;
 import space.qu4nt.entanglementlib.security.crypto.strategy.detail.ChaCha20Poly1305Strategy;
 
@@ -37,7 +35,6 @@ public final class ChaCha20Poly1305SymmetricKeyStrategy implements EntLibSymmetr
     /**
      * {@link ChaCha20Poly1305SymmetricKeyStrategy} 인스턴스를 생성하는 팩토리 메소드입니다.
      *
-     * @param chaCha20Poly1305Strategy ChaCha20-Poly1305 암호화 전략
      * @return 새 {@link ChaCha20Poly1305SymmetricKeyStrategy} 인스턴스
      */
     public static ChaCha20Poly1305SymmetricKeyStrategy create() {

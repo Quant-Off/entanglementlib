@@ -13,9 +13,6 @@ import lombok.NoArgsConstructor;
 /// 파라미터의 데이터 바이트 사이즈를 관리할 수 있는 클래스입니다.
 /// 기존 키 사이즈를 정수 배열로 관리하는 방식에서 변경되었습니다.
 ///
-/// 이 클래스는 읽기 전용 클래스로, [ParameterSizeDetailBuilder]
-/// 빌더 패턴을 사용하여 쓰기 작업 후 사용할 수 있습니다.
-///
 /// @author Q. T. Felix
 /// @since 1.1.0
 @Getter

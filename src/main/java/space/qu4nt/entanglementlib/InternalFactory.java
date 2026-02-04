@@ -13,27 +13,17 @@ import org.bouncycastle.pqc.jcajce.provider.BouncyCastlePQCProvider;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import space.qu4nt.entanglementlib.exception.critical.EntLibNativeError;
 import space.qu4nt.entanglementlib.entlibnative.NativeLinkerManager;
+import space.qu4nt.entanglementlib.exception.critical.EntLibNativeError;
 import space.qu4nt.entanglementlib.resource.config.PublicConfiguration;
 import space.qu4nt.entanglementlib.resource.language.LanguageInstanceBased;
-import space.qu4nt.entanglementlib.security.EntLibParameterSpec;
-import space.qu4nt.entanglementlib.security.PostQuantumParameterSpec;
 import space.qu4nt.entanglementlib.security.crypto.EntLibCryptoRegistry;
 import space.qu4nt.entanglementlib.util.chunk.ByteArrayChunkProcessor;
-import space.qu4nt.entanglementlib.util.wrapper.Pair;
 import tools.jackson.databind.ObjectMapper;
 
-import javax.crypto.KeyGenerator;
-import javax.crypto.SecretKey;
-import java.io.IOException;
-import java.lang.foreign.*;
-import java.lang.reflect.Field;
-import java.nio.charset.StandardCharsets;
-import java.nio.file.Files;
-import java.nio.file.Paths;
+import java.lang.foreign.ValueLayout;
 import java.security.*;
-import java.util.*;
+import java.util.Objects;
 
 /// 환경 변수 할당 및 암호화 연산을 중앙에서 처리하기 위한 내부 클래스입니다.
 ///
@@ -95,6 +85,7 @@ public final class InternalFactory extends EntanglementLibEnvs {
     private static final NativeLinkerManager NATIVE;
 
     static {
+        log.debug("네이티브 로드");
         NATIVE = new NativeLinkerManager("entlib_native")
                 .addVoidMethodHandle("entanglement_secure_wipe", ValueLayout.ADDRESS, ValueLayout.JAVA_LONG);
     }
@@ -107,7 +98,7 @@ public final class InternalFactory extends EntanglementLibEnvs {
     }
 
     //
-    // EntLib-Native - end
+    // EntLib-Native - end todo; 배포 용이하게 수정
     //
 
     static void registerInternalEntanglementLib() {

@@ -5,9 +5,7 @@
 
 package space.qu4nt.entanglementlib.security.crypto.key.strategy.detail;
 
-import org.jetbrains.annotations.NotNull;
 import space.qu4nt.entanglementlib.entlibnative.SensitiveDataContainer;
-import space.qu4nt.entanglementlib.security.crypto.key.EntLibCryptoKey;
 import space.qu4nt.entanglementlib.security.crypto.key.strategy.EntLibSymmetricKeyStrategy;
 import space.qu4nt.entanglementlib.security.crypto.strategy.detail.ARIAStrategy;
 
@@ -49,7 +47,7 @@ public final class ARIASymmetricKeyStrategy implements EntLibSymmetricKeyStrateg
     /**
      * {@link ARIASymmetricKeyStrategy} 인스턴스를 생성하는 팩토리 메소드입니다.
      *
-     * @param ariaStrategy ARIA 암호화 전략
+     * @param keySize ARIA 키 사이즈
      * @return 새 {@link ARIASymmetricKeyStrategy} 인스턴스
      */
     public static ARIASymmetricKeyStrategy create(final int keySize) {

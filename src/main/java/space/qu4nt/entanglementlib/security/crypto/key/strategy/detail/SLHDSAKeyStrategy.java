@@ -37,6 +37,7 @@ import java.lang.reflect.Method;
 /// @since 1.1.0
 @Unsafe
 @Slf4j
+@ApiStatus.Obsolete
 public final class SLHDSAKeyStrategy implements EntLibAsymmetricKeyStrategy {
 
     /**
@@ -47,7 +48,7 @@ public final class SLHDSAKeyStrategy implements EntLibAsymmetricKeyStrategy {
     /**
      * {@link SLHDSAStrategy}로부터 파라미터를 추출하여 인스턴스를 생성하는 생성자입니다.
      *
-     * @param SLHDSAStrategy SLH-DSA 서명 전략
+     * @param slhdsaParameters SLH-DSA 서명 BC 파라미터
      */
     private SLHDSAKeyStrategy(SLHDSAParameters slhdsaParameters) {
         this.slhdsaParameters = slhdsaParameters;
@@ -56,7 +57,7 @@ public final class SLHDSAKeyStrategy implements EntLibAsymmetricKeyStrategy {
     /**
      * {@link SLHDSAKeyStrategy} 인스턴스를 생성하는 팩토리 메소드입니다.
      *
-     * @param SLHDSAStrategy SLH-DSA 서명 전략
+     * @param slhdsaParameters SLH-DSA 서명 BC 파라미터
      * @return 새 {@link SLHDSAKeyStrategy} 인스턴스
      */
     @ApiStatus.Internal

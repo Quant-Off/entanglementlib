@@ -3,6 +3,8 @@
  * Under License "PolyForm Noncommercial License 1.0.0".
  */
 
+import org.apache.tools.ant.taskdefs.condition.Os
+
 plugins {
     id("java")
     id("com.vanniktech.maven.publish") version "0.28.0"
@@ -14,7 +16,7 @@ val quantPublicDir: String by project
 val commonGroupId: String by project
 val bouncyCastleVer = "1.83"
 
-val entLibVersion = "1.1.0-Alpha"
+val entLibVersion = "1.1.1-Alpha"
 
 group = commonGroupId
 version = entLibVersion
@@ -86,6 +88,7 @@ dependencies {
     testImplementation(platform("org.junit:junit-bom:5.10.0"))
     testImplementation("org.junit.jupiter:junit-jupiter")
     testImplementation("org.assertj:assertj-core:3.27.7")
+    testRuntimeOnly("org.junit.platform:junit-platform-launcher")
     testAnnotationProcessor(lombokVersion)
 
     // JMH
@@ -99,6 +102,24 @@ dependencies {
 
 tasks.test {
     useJUnitPlatform()
+}
+
+val buildNative = tasks.register("buildNative", Exec::class) {
+    workingDir = file("entlib-native")
+    val cargoPath = if (Os.isFamily(Os.FAMILY_WINDOWS)) {
+        "${System.getProperty("user.home")}\\.cargo\\bin\\cargo.exe"
+    } else {
+        "${System.getProperty("user.home")}/.cargo/bin/cargo"
+    }
+    commandLine = listOf(cargoPath, "build", "--release")
+}
+
+tasks.jar {
+    dependsOn(buildNative)
+    from("entlib-native/target/release") {
+        into("native")
+        include("libentlib_native.so", "entlib_native.dll", "libentlib_native.dylib")
+    }
 }
 
 mavenPublishing {

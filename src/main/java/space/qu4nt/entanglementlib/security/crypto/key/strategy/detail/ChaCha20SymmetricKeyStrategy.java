@@ -5,9 +5,7 @@
 
 package space.qu4nt.entanglementlib.security.crypto.key.strategy.detail;
 
-import org.jetbrains.annotations.NotNull;
 import space.qu4nt.entanglementlib.entlibnative.SensitiveDataContainer;
-import space.qu4nt.entanglementlib.security.crypto.key.EntLibCryptoKey;
 import space.qu4nt.entanglementlib.security.crypto.key.strategy.EntLibSymmetricKeyStrategy;
 import space.qu4nt.entanglementlib.security.crypto.strategy.detail.ChaCha20Strategy;
 
@@ -29,8 +27,6 @@ public final class ChaCha20SymmetricKeyStrategy implements EntLibSymmetricKeyStr
 
     /**
      * {@link ChaCha20Strategy}로부터 키 크기를 추출하여 인스턴스를 생성하는 생성자입니다.
-     *
-     * @param chaCha20Strategy ChaCha20 암호화 전략
      */
     ChaCha20SymmetricKeyStrategy() {
         this.keySize = 256;
@@ -39,7 +35,6 @@ public final class ChaCha20SymmetricKeyStrategy implements EntLibSymmetricKeyStr
     /**
      * {@link ChaCha20SymmetricKeyStrategy} 인스턴스를 생성하는 팩토리 메소드입니다.
      *
-     * @param chaCha20Strategy ChaCha20 암호화 전략
      * @return 새 {@link ChaCha20SymmetricKeyStrategy} 인스턴스
      */
     public static ChaCha20SymmetricKeyStrategy create() {
