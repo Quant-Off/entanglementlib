@@ -16,6 +16,8 @@ import java.lang.foreign.*;
 import java.lang.invoke.MethodHandle;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.ConcurrentHashMap;
@@ -36,6 +38,9 @@ import java.util.concurrent.ConcurrentHashMap;
 @Setter
 public class NativeLinkerManager {
 
+    private static final String OS_NAME = System.getProperty("os.name").toLowerCase();
+    private static final String OS_ARCH = System.getProperty("os.arch").toLowerCase();
+
     private final SymbolLookup lookup;
     private final Linker linker;
 
@@ -43,13 +48,89 @@ public class NativeLinkerManager {
     private Map<String, MethodHandle> handles;
 
     public NativeLinkerManager(final @NotNull String libName) {
-        this.libName = System.mapLibraryName(Objects.requireNonNull(libName));
-        Path lib = Path.of(InternalFactory.envEntLibNativeDir(), this.libName).toAbsolutePath();
-        if (Files.notExists(lib))
-            throw new EntLibNativeError("네이티브 라이브러리 '" + libName + "'을(를) 찾을 수 없습니다!");
+        Objects.requireNonNull(libName);
+        Path nativeDir = Path.of(InternalFactory.envEntLibNativeDir()).toAbsolutePath();
+        Path lib = resolveNativeLibrary(nativeDir, libName);
+        if (lib == null)
+            throw new EntLibNativeError("네이티브 라이브러리 '" + libName + "'을(를) 찾을 수 없습니다! " +
+                    "(검색 경로: " + nativeDir + ", OS: " + OS_NAME + ", Arch: " + OS_ARCH + ")");
+        this.libName = lib.getFileName().toString();
+        log.debug("네이티브 라이브러리 로드: {}", lib);
         this.lookup = SymbolLookup.libraryLookup(lib, Arena.global());
         this.linker = Linker.nativeLinker();
         this.handles = new ConcurrentHashMap<>();
+    }
+
+    /// 현재 플랫폼과 아키텍처에 맞는 네이티브 라이브러리 파일을 찾는 메소드입니다.
+    /// 검색 우선순위는 다음과 같습니다.
+    ///
+    /// 1. 정확한 이름 (예: libentlib_native.dylib)
+    /// 2. 아키텍처 특정 이름 (예: libentlib_native_aarch64.dylib)
+    /// 3. macOS의 경우 universal 바이너리 (예: libentlib_native_universal.dylib)
+    ///
+    /// @param nativeDir 바이너리 파일이 위치한 네이티브 디렉토리
+    /// @param libName   네이티브 라이브러리명
+    /// @return 특정된 바이너리 파일
+    private static Path resolveNativeLibrary(@NotNull Path nativeDir, @NotNull String libName) {
+        List<String> candidates = generateCandidateNames(libName);
+        for (String candidate : candidates) {
+            Path path = nativeDir.resolve(candidate);
+            if (Files.exists(path)) {
+                return path;
+            }
+        }
+        return null;
+    }
+
+    /// 플랫폼과 아키텍처에 따라 후보 파일명 목록을 생성하는 메소드입니다.
+    private static List<String> generateCandidateNames(@NotNull String libName) {
+        List<String> candidates = new ArrayList<>();
+        String archSuffix = getArchitectureSuffix();
+        String ext = getLibraryExtension();
+        String prefix = getLibraryPrefix();
+
+        // 1. 정확한 이름 (System.mapLibraryName과 동일)
+        candidates.add(prefix + libName + ext);
+
+        // 2. 아키텍처 특정 이름
+        candidates.add(prefix + libName + "_" + archSuffix + ext);
+
+        // 3. macOS의 경우 universal 바이너리
+        if (isMacOS()) {
+            candidates.add(prefix + libName + "_universal" + ext);
+        }
+
+        return candidates;
+    }
+
+    private static String getArchitectureSuffix() {
+        if (OS_ARCH.contains("aarch64") || OS_ARCH.contains("arm64")) {
+            return "aarch64";
+        } else if (OS_ARCH.contains("amd64") || OS_ARCH.contains("x86_64")) {
+            return "x86_64";
+        } else if (OS_ARCH.contains("x86") || OS_ARCH.contains("i386") || OS_ARCH.contains("i686")) {
+            return "i686";
+        }
+        return OS_ARCH;
+    }
+
+    private static String getLibraryExtension() {
+        if (isMacOS()) return ".dylib";
+        if (isWindows()) return ".dll";
+        return ".so";
+    }
+
+    private static String getLibraryPrefix() {
+        if (isWindows()) return "";
+        return "lib";
+    }
+
+    private static boolean isMacOS() {
+        return OS_NAME.contains("mac") || OS_NAME.contains("darwin");
+    }
+
+    private static boolean isWindows() {
+        return OS_NAME.contains("win");
     }
 
     @NotNull
