@@ -14,7 +14,7 @@ val quantPublicDir: String by project
 val commonGroupId: String by project
 val bouncyCastleVer = "1.83"
 
-val entLibVersion = "1.1.2-Alpha1"
+val entLibVersion = "1.1.2-Alpha2"
 
 group = commonGroupId
 version = entLibVersion
@@ -102,18 +102,7 @@ tasks.test {
     useJUnitPlatform()
 }
 
-//val buildNative = tasks.register("buildNative", Exec::class) {
-//    workingDir = file("entlib-native")
-//    val cargoPath = if (Os.isFamily(Os.FAMILY_WINDOWS)) {
-//        "${System.getProperty("user.home")}\\.cargo\\bin\\cargo.exe"
-//    } else {
-//        "${System.getProperty("user.home")}/.cargo/bin/cargo"
-//    }
-//    commandLine = listOf(cargoPath, "build", "--release")
-//}
-
 tasks.jar {
-//    dependsOn(buildNative)
     from("entlib-native/dist") {
         into("native")
         include("linux/libentlib_native_aarch64.so", "linux/libentlib_native_x86_64.so",
