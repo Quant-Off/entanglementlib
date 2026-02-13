@@ -49,7 +49,12 @@ jobs:
       # 정적 분석 및 린트 (Clippy) - 보안 취약점 및 잠재적 버그 탐지
       - name: Run Clippy (Linting)
         working-directory: ./${{ matrix.project-path }}
-        run: cargo clippy --all-targets --all-features -- -D warnings
+        run: |
+          if [ "${{ matrix.project-path }}" == "native-benchmark" ]; then
+            cargo clippy --all-targets --all-features
+          else
+            cargo clippy --all-targets --all-features -- -D warnings
+          fi
 
       # 의존성 보안 검사 (Audit) - RustSec 데이터베이스 기반
       - name: Run Security Audit

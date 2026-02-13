@@ -1,0 +1,3 @@
+[submodule "entlib-native"]
+	path = entlib-native
+	url = https://github.com/Quant-Off/entlib-native.git
