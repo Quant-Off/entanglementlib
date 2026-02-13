@@ -14,6 +14,9 @@ pub extern "C" fn bench_add_numbers(a: i64, b: i64) -> i64 {
 
 /// 벡터의 XOR 연산 및 데이터 소거 시뮬레이션
 /// 메모리 세그먼트에 직접 접근하여 연산을 수행하며, 데이터 보안을 위한 로직을 포함합니다.
+///
+/// # Safety
+/// `ptr`은 최소 `len` 바이트 이상의 유효한 메모리를 가리켜야 합니다.
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn process_secure_vector(ptr: *mut u8, len: usize, key: u8) {
     if ptr.is_null() {
@@ -31,6 +34,9 @@ pub unsafe extern "C" fn process_secure_vector(ptr: *mut u8, len: usize, key: u8
 /// SWAR(SIMD Within A Register) 도입
 /// 1바이트씩 처리하는 대신, 64비트(8바이트) 단위로 처리하여 루프 반복 횟수를
 /// 1/8로 줄여서 별도의 unsafe SIMD 인트린직 없이도 이식성 높은 고성능을 냅니다.
+///
+/// # Safety
+/// `ptr`은 최소 `len` 바이트 이상의 유효한 메모리를 가리켜야 합니다.
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn swar_process_secure_vector(ptr: *mut u8, len: usize, key: u8) {
     if ptr.is_null() {
@@ -41,7 +47,7 @@ pub unsafe extern "C" fn swar_process_secure_vector(ptr: *mut u8, len: usize, ke
     let mut offset = 0;
 
     // 8바이트 정렬 맞추기 전까지 처리
-    while unsafe { (ptr.add(offset) as usize) % 8 != 0 } && offset < len {
+    while unsafe { !(ptr.add(offset) as usize).is_multiple_of(8) } && offset < len {
         unsafe { *ptr.add(offset) ^= key };
         offset += 1;
     }
@@ -70,6 +76,9 @@ pub unsafe extern "C" fn swar_process_secure_vector(ptr: *mut u8, len: usize, ke
 /// 격자 기반 암호용 다항식 모듈러 가산(modular addition)
 /// LWE 계열 알고리즘의 핵심 연산을 시뮬레이션합니다.
 /// 연산식: A[i] = (A[i] + B[i]) mod q
+///
+/// # Safety
+/// `a_ptr`과 `b_ptr`은 각각 최소 `len`개의 `i32` 요소를 가리키는 유효한 포인터여야 합니다.
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn poly_modular_add(a_ptr: *mut i32, b_ptr: *const i32, len: usize, q: i32) {
     if a_ptr.is_null() || b_ptr.is_null() {
@@ -89,6 +98,9 @@ pub unsafe extern "C" fn poly_modular_add(a_ptr: *mut i32, b_ptr: *const i32, le
 /// Branchless 연산 수행
 /// if 문은 CPU의 분기 예측 실패(branch misprediction)를 유발하여 파이프라인을 멈추게 합니다.
 /// 이를 비트 연산이나 조건부 이동으로 대체합니다.
+///
+/// # Safety
+/// `a_ptr`과 `b_ptr`은 각각 최소 `len`개의 `i32` 요소를 가리키는 유효한 포인터여야 합니다.
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn bless_poly_modular_add(
     a_ptr: *mut i32,
@@ -134,6 +146,9 @@ pub extern "C" fn jni_add_numbers_impl(
 
 /// AVX2를 활용한 32바이트 단위 초고속 XOR (Zero-copy)
 /// Target: invoke_hard_swarProcessSecureVector 대체
+///
+/// # Safety
+/// `ptr`은 최소 `len` 바이트 이상의 유효한 메모리를 가리켜야 하며, AVX2를 지원하는 CPU에서 호출해야 합니다.
 #[unsafe(no_mangle)]
 #[target_feature(enable = "avx2")] // 이 함수 내에서 AVX2 활성화
 pub unsafe extern "C" fn process_vector_avx2(ptr: *mut u8, len: usize, key: u8) {
@@ -173,6 +188,9 @@ pub unsafe extern "C" fn process_vector_avx2(ptr: *mut u8, len: usize, key: u8) 
 
 /// AVX2를 활용한 다항식 모듈러 가산 (Branchless & Vectorized)
 /// Target: invoke_hard_blessPolyModularAdd 대체
+///
+/// # Safety
+/// `a_ptr`과 `b_ptr`은 각각 최소 `len`개의 `i32` 요소를 가리키는 유효한 포인터여야 하며, AVX2를 지원하는 CPU에서 호출해야 합니다.
 #[unsafe(no_mangle)]
 #[target_feature(enable = "avx2")]
 pub unsafe extern "C" fn poly_add_avx2(a_ptr: *mut i32, b_ptr: *const i32, len: usize, q: i32) {
