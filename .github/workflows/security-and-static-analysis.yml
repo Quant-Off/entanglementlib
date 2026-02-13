@@ -7,6 +7,12 @@ on:
     branches: [ "master", "develop" ]
   schedule:
     - cron: '30 1 * * 0' # 매주 일요일 01:30 정기검진
+  workflow_dispatch:
+    inputs:
+      logLevel:
+        description: 'Log level'
+        required: false
+        default: 'warning'
 
 jobs:
   # ------------------------------------------------------------------
