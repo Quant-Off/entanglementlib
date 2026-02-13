@@ -9,12 +9,14 @@ plugins {
     id("me.champeau.jmh") version "0.7.3"
 }
 
+val commonGroupId = project.findProperty("commonGroupId") as? String ?: "space.qu4nt"
+val quantPublicDir = project.findProperty("quantPublicDir") as? String
+    ?: layout.buildDirectory.dir("dummy-resources").get().asFile.absolutePath
+
 val lombokVersion = "org.projectlombok:lombok:1.18.42"
-val quantPublicDir: String by project
-val commonGroupId: String by project
 val bouncyCastleVer = "1.83"
 
-val entLibVersion = "1.1.2-Alpha2"
+val entLibVersion = "1.1.2-Alpha3"
 
 group = commonGroupId
 version = entLibVersion
@@ -22,12 +24,24 @@ version = entLibVersion
 sourceSets {
     main {
         resources {
-            srcDirs += File("${quantPublicDir}/entanglementlib")
+            if (quantPublicDir.isNotEmpty()) {
+                val extraResourceDir = File("${quantPublicDir}/entanglementlib")
+                if (extraResourceDir.exists()) {
+                    srcDirs(extraResourceDir)
+                } else {
+                    logger.warn("Warning: External resource directory not found: $extraResourceDir. Skipping...")
+                }
+            }
         }
     }
     test {
         resources {
-            srcDirs += File("${quantPublicDir}/entanglementlib-test")
+            if (quantPublicDir.isNotEmpty()) {
+                val extraTestResourceDir = File("${quantPublicDir}/entanglementlib-test")
+                if (extraTestResourceDir.exists()) {
+                    srcDirs(extraTestResourceDir)
+                }
+            }
         }
     }
 }
