@@ -28,7 +28,7 @@ sealed class EntanglementLibEnvs extends WrapEnv permits InternalFactory {
     static {
         entanglementPublicDir = new EntanglementLibEnvs("ENTANGLEMENT_PUBLIC_DIR"  , true);
         entanglementHomeDir   = new EntanglementLibEnvs("ENTANGLEMENT_HOME_DIR"    , true);
-        entLibNativeDir       = new EntanglementLibEnvs("ENTLIB_NATIVE_DIR"        , false, "native");
+        entLibNativeDir       = new EntanglementLibEnvs("ENTLIB_NATIVE_BIN"        , false, "native");
     }
 
     EntanglementLibEnvs() {
