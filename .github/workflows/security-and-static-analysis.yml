@@ -30,6 +30,9 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
+        with:
+          submodules: recursive
+          token: ${{ secrets.GITHUB_TOKEN }}
 
       # Rust 툴체인 설치 (clippy, rustfmt 포함)
       - name: Install Rust toolchain
