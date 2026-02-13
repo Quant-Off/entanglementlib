@@ -1,0 +1,103 @@
+name: Security & Static Analysis
+
+on:
+  push:
+    branches: [ "master", "develop" ]
+  pull_request:
+    branches: [ "master", "develop" ]
+  schedule:
+    - cron: '30 1 * * 0' # 매주 일요일 01:30 정기검진
+
+jobs:
+  # ------------------------------------------------------------------
+  # JOB 1: Rust Security & Linting (entlib-native & native-benchmark)
+  # ------------------------------------------------------------------
+  rust-analysis:
+    name: Rust Check (${{ matrix.project-path }})
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        # 독립 검사 매트릭스
+        project-path: [ "entlib-native", "native-benchmark" ]
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      # Rust 툴체인 설치 (clippy, rustfmt 포함)
+      - name: Install Rust toolchain
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          components: clippy, rustfmt
+
+      # Rust 캐시 설정 (빌드 속도 최적화)
+      - name: Rust Cache
+        uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: ${{ matrix.project-path }}
+
+      # Cargo Audit 설치 (의존성 보안 취약점 검사 도구)
+      - name: Install cargo-audit
+        run: cargo install cargo-audit
+
+      # 코드 포맷 검사 (Formatting)
+      - name: Check Formatting
+        working-directory: ./${{ matrix.project-path }}
+        run: cargo fmt -- --check
+
+      # 정적 분석 및 린트 (Clippy) - 보안 취약점 및 잠재적 버그 탐지
+      - name: Run Clippy (Linting)
+        working-directory: ./${{ matrix.project-path }}
+        run: cargo clippy --all-targets --all-features -- -D warnings
+
+      # 의존성 보안 검사 (Audit) - RustSec 데이터베이스 기반
+      - name: Run Security Audit
+        working-directory: ./${{ matrix.project-path }}
+        run: cargo audit
+
+  # ------------------------------------------------------------------
+  # JOB 2: CodeQL Analysis (Java/Kotlin)
+  # ------------------------------------------------------------------
+  codeql-java:
+    name: CodeQL (Java)
+    runs-on: ubuntu-latest
+    permissions:
+      actions: read
+      contents: read
+      security-events: write
+
+    strategy:
+      fail-fast: false
+      matrix:
+        language: [ 'java' ] # Kotlin은 Java 분석기에 포함됨
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      # Java 25 환경 설정 (프로젝트 요구사항)
+      - name: Set up JDK 25
+        uses: actions/setup-java@v4
+        with:
+          java-version: '25'
+          distribution: 'temurin'
+          cache: 'gradle'
+
+      # CodeQL 초기화
+      - name: Initialize CodeQL
+        uses: github/codeql-action/init@v3
+        with:
+          languages: ${{ matrix.language }}
+          # 얽힘 라이브러리의 특성상 메모리 관련 쿼리를 추가하면 좋음
+          queries: security-extended,security-and-quality
+
+      # Java 빌드 (CodeQL은 컴파일된 언어 분석 시 빌드 과정이 필요함)
+      - name: Build with Gradle
+        run: ./gradlew classes testClasses --no-daemon
+
+      # 분석 수행 및 리포트 생성
+      - name: Perform CodeQL Analysis
+        uses: github/codeql-action/analyze@v3
+        with:
+          category: "/language:${{ matrix.language }}"
