@@ -21,7 +21,7 @@ pub unsafe extern "C" fn process_secure_vector(ptr: *mut u8, len: usize, key: u8
     }
 
     // java의 memorysegment가 가리키는 주소를 슬라이스로 변환
-    let data = slice::from_raw_parts_mut(ptr, len);
+    let data = unsafe { slice::from_raw_parts_mut(ptr, len) };
 
     for byte in data.iter_mut() {
         *byte ^= key; // 단순 xor 연산 (연산 복잡도 부여)
@@ -41,18 +41,18 @@ pub unsafe extern "C" fn swar_process_secure_vector(ptr: *mut u8, len: usize, ke
     let mut offset = 0;
 
     // 8바이트 정렬 맞추기 전까지 처리
-    while (ptr.add(offset) as usize) % 8 != 0 && offset < len {
-        *ptr.add(offset) ^= key;
+    while unsafe { (ptr.add(offset) as usize) % 8 != 0 } && offset < len {
+        unsafe { *ptr.add(offset) ^= key };
         offset += 1;
     }
 
     // 64비트(8바이트) 단위 고속 XOR (SWAR)
     // 1바이트 키를 8개 복제하여 64비트 마스크 생성 (e.g., 0xAF -> 0xAFAFAFAFAFAFAFAF)
     let key64 = u64::from_le_bytes([key; 8]);
-    let ptr64 = ptr.add(offset) as *mut u64;
+    let ptr64 = unsafe { ptr.add(offset) as *mut u64 };
     let len64 = (len - offset) / 8;
 
-    let data64 = slice::from_raw_parts_mut(ptr64, len64);
+    let data64 = unsafe { slice::from_raw_parts_mut(ptr64, len64) };
 
     // 루프 언롤링 힌트가 없어도, 단순 반복문은 컴파일러가 AVX/NEON으로 자동 변환하기 매우 쉽습니다.
     for chunk in data64.iter_mut() {
@@ -62,7 +62,7 @@ pub unsafe extern "C" fn swar_process_secure_vector(ptr: *mut u8, len: usize, ke
     // 남은 자투리 바이트 처리
     offset += len64 * 8;
     while offset < len {
-        *ptr.add(offset) ^= key;
+        unsafe { *ptr.add(offset) ^= key };
         offset += 1;
     }
 }
@@ -76,8 +76,8 @@ pub unsafe extern "C" fn poly_modular_add(a_ptr: *mut i32, b_ptr: *const i32, le
         return;
     }
 
-    let a = slice::from_raw_parts_mut(a_ptr, len);
-    let b = slice::from_raw_parts(b_ptr, len);
+    let a = unsafe { slice::from_raw_parts_mut(a_ptr, len) };
+    let b = unsafe { slice::from_raw_parts(b_ptr, len) };
 
     for i in 0..len {
         // 복잡한 조건문과 산술 연산을 통해 jit 최적화에 저항하고 실제 연산 부하 측정
@@ -100,8 +100,8 @@ pub unsafe extern "C" fn bless_poly_modular_add(
         return;
     }
 
-    let a = slice::from_raw_parts_mut(a_ptr, len);
-    let b = slice::from_raw_parts(b_ptr, len);
+    let a = unsafe { slice::from_raw_parts_mut(a_ptr, len) };
+    let b = unsafe { slice::from_raw_parts(b_ptr, len) };
 
     // assert!(len % 4 == 0); // 가능하면 4의 배수로
 
@@ -118,7 +118,6 @@ pub unsafe extern "C" fn bless_poly_modular_add(
 }
 
 /// jni 단순 ++++
-#[unsafe(no_mangle)]
 #[unsafe(export_name = "Java_space_qu4nt_entanglementlib_benchmarks_NativeCallBenchmark_jni_1add_1numbers")]
 pub extern "C" fn jni_add_numbers_impl(
     mut _env: JNIEnv,
@@ -149,23 +148,25 @@ pub unsafe extern "C" fn process_vector_avx2(ptr: *mut u8, len: usize, key: u8) 
     // 256비트(32바이트) 단위 처리 (Loop Unrolling 포함 가능)
     // 1KB 기준 루프 횟수: 128회 -> 32회로 급감
     while i + 32 <= len {
-        let p = ptr.add(i) as *mut __m256i;
+        unsafe {
+            let p = ptr.add(i) as *mut __m256i;
 
-        // Load (정렬되지 않은 데이터도 처리 가능한 lddqu 사용 권장되나, 최신 CPU는 loadu도 빠름)
-        let data = _mm256_loadu_si256(p);
+            // Load (정렬되지 않은 데이터도 처리 가능한 lddqu 사용 권장되나, 최신 CPU는 loadu도 빠름)
+            let data = _mm256_loadu_si256(p);
 
-        // XOR 연산
-        let xored = _mm256_xor_si256(data, key_vec);
+            // XOR 연산
+            let xored = _mm256_xor_si256(data, key_vec);
 
-        // Store
-        _mm256_storeu_si256(p, xored);
+            // Store
+            _mm256_storeu_si256(p, xored);
+        }
 
         i += 32;
     }
 
     // 남은 자투리 바이트 처리 스칼라ㅏ라라라라라
     while i < len {
-        *ptr.add(i) ^= key;
+        unsafe { *ptr.add(i) ^= key };
         i += 1;
     }
 }
@@ -184,35 +185,39 @@ pub unsafe extern "C" fn poly_add_avx2(a_ptr: *mut i32, b_ptr: *const i32, len: 
 
     // 8개 정수(i32 * 8 = 256bit) 동시 처리
     while i + 8 <= len {
-        let a_p = a_ptr.add(i) as *mut __m256i;
-        let b_p = b_ptr.add(i) as *const __m256i;
+        unsafe {
+            let a_p = a_ptr.add(i) as *mut __m256i;
+            let b_p = b_ptr.add(i) as *const __m256i;
 
-        let a_val = _mm256_loadu_si256(a_p);
-        let b_val = _mm256_loadu_si256(b_p);
+            let a_val = _mm256_loadu_si256(a_p);
+            let b_val = _mm256_loadu_si256(b_p);
 
-        //  단순 덧셈: Res = A + B
-        let sum = _mm256_add_epi32(a_val, b_val);
+            //  단순 덧셈: Res = A + B
+            let sum = _mm256_add_epi32(a_val, b_val);
 
-        // 모듈러 감산 로직 (Constant-time)
-        // AVX2에는 부호 없는 비교가 없으므로 덧셈 후 MSB 체크 등의 기법 대신
-        let q_minus_1 = _mm256_set1_epi32(q - 1);
-        let mask = _mm256_cmpgt_epi32(sum, q_minus_1);
+            // 모듈러 감산 로직 (Constant-time)
+            // AVX2에는 부호 없는 비교가 없으므로 덧셈 후 MSB 체크 등의 기법 대신
+            let q_minus_1 = _mm256_set1_epi32(q - 1);
+            let mask = _mm256_cmpgt_epi32(sum, q_minus_1);
 
-        // 빼야 할 값: q AND mask (mask가 0xFFFF...이면 q, 0이면 0)
-        let sub = _mm256_and_si256(q_vec, mask);
+            // 빼야 할 값: q AND mask (mask가 0xFFFF...이면 q, 0이면 0)
+            let sub = _mm256_and_si256(q_vec, mask);
 
-        // 최종 감산: Res = Sum - Sub
-        let res = _mm256_sub_epi32(sum, sub);
+            // 최종 감산: Res = Sum - Sub
+            let res = _mm256_sub_epi32(sum, sub);
 
-        _mm256_storeu_si256(a_p, res);
+            _mm256_storeu_si256(a_p, res);
+        }
 
         i += 8;
     }
 
     // 남은 처리 (Scalar)
     while i < len {
-        let sum = *a_ptr.add(i) + *b_ptr.add(i);
-        *a_ptr.add(i) = if sum >= q { sum - q } else { sum };
+        unsafe {
+            let sum = *a_ptr.add(i) + *b_ptr.add(i);
+            *a_ptr.add(i) = if sum >= q { sum - q } else { sum };
+        }
         i += 1;
     }
 }
