@@ -1,7 +1,7 @@
 use jni::sys::*;
 use std::arch::x86_64::{
     __m256i, _mm256_add_epi32, _mm256_and_si256, _mm256_cmpgt_epi32, _mm256_loadu_si256,
-    _mm256_set1_epi32, _mm256_set1_epi8, _mm256_storeu_si256, _mm256_sub_epi32, _mm256_xor_si256,
+    _mm256_set1_epi8, _mm256_set1_epi32, _mm256_storeu_si256, _mm256_sub_epi32, _mm256_xor_si256,
 };
 use std::slice;
 
