@@ -1,9 +1,7 @@
-/*
+package space.qu4nt.entanglementlib.benchmark;/*
  * Copyright © 2025-2026 Quant.
  * Under License "PolyForm Noncommercial License 1.0.0".
  */
-
-package space.qu4nt.entanglementlib.benchmarks;
 
 import org.openjdk.jmh.annotations.*;
 
@@ -23,7 +21,7 @@ import java.util.concurrent.TimeUnit;
 })
 @Warmup(iterations = 5, time = 1)
 @Measurement(iterations = 5, time = 1)
-public class NativeAVXCallBenchmark {
+public class NativeAVXCall_JMHBenchmark {
 
     private static final Linker LINKER = Linker.nativeLinker();
 

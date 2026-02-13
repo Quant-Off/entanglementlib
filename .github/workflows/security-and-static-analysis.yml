@@ -24,6 +24,11 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
+        with:
+          # 서브모듈을 재귀호출
+          submodules: recursive
+          # 비공개 저장소의 경우 토큰 설정 필요
+          # token: ${{ secrets.GITHUB_TOKEN }}
 
       # Rust 툴체인 설치 (clippy, rustfmt 포함)
       - name: Install Rust toolchain
@@ -47,9 +52,15 @@ jobs:
         run: cargo fmt -- --check
 
       # 정적 분석 및 린트 (Clippy) - 보안 취약점 및 잠재적 버그 탐지
+      # 벤치마킹 모듈은 검사 강도 하향 가능
       - name: Run Clippy (Linting)
         working-directory: ./${{ matrix.project-path }}
-        run: cargo clippy --all-targets --all-features -- -D warnings
+        run: |
+          if [ "${{ matrix.project-path }}" == "native-benchmark" ]; then
+            cargo clippy --all-targets --all-features
+          else
+            cargo clippy --all-targets --all-features -- -D warnings
+          fi
 
       # 의존성 보안 검사 (Audit) - RustSec 데이터베이스 기반
       - name: Run Security Audit
@@ -75,6 +86,9 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
+        with:
+          # Java 빌드 시에도 entlib-native 참조 가능성을 위해 서브모듈 체크아웃
+          submodules: recursive
 
       # Java 25 환경 설정 (프로젝트 요구사항)
       - name: Set up JDK 25

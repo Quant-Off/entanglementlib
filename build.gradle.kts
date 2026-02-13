@@ -9,25 +9,59 @@ plugins {
     id("me.champeau.jmh") version "0.7.3"
 }
 
+val commonGroupId = project.findProperty("commonGroupId") as? String ?: "space.qu4nt"
+val quantPublicDir = project.findProperty("quantPublicDir") as? String
+    ?: layout.buildDirectory.dir("dummy-resources").get().asFile.absolutePath
+
 val lombokVersion = "org.projectlombok:lombok:1.18.42"
-val quantPublicDir: String by project
-val commonGroupId: String by project
 val bouncyCastleVer = "1.83"
 
-val entLibVersion = "1.1.2-Alpha2"
+val entLibVersion = "1.1.2-Alpha3"
 
 group = commonGroupId
 version = entLibVersion
 
 sourceSets {
     main {
+        java {
+            srcDirs("src/main/java")
+        }
         resources {
-            srcDirs += File("${quantPublicDir}/entanglementlib")
+            srcDirs("src/main/resources")
+
+            if (quantPublicDir.isNotEmpty()) {
+                val extraResourceDir = File("${quantPublicDir}/entanglementlib")
+                if (extraResourceDir.exists()) {
+                    srcDir(extraResourceDir)
+                } else {
+                    logger.warn("Warning: External resource directory not found: $extraResourceDir. Skipping...")
+                }
+            }
         }
     }
+
     test {
+        java {
+            srcDirs("src/test/java")
+        }
         resources {
-            srcDirs += File("${quantPublicDir}/entanglementlib-test")
+            srcDirs("src/test/resources")
+
+            if (quantPublicDir.isNotEmpty()) {
+                val extraTestResourceDir = File("${quantPublicDir}/entanglementlib-test")
+                if (extraTestResourceDir.exists()) {
+                    srcDir(extraTestResourceDir)
+                }
+            }
+        }
+    }
+
+    named("jmh") {
+        java {
+            srcDirs("src/benchmark/java")
+        }
+        resources {
+            srcDirs("src/benchmark/resources")
         }
     }
 }
@@ -96,6 +130,7 @@ dependencies {
     testImplementation("org.openjdk.jmh:jmh-core:1.37")
     // Source: https://mvnrepository.com/artifact/org.openjdk.jmh/jmh-generator-annprocess
     testImplementation("org.openjdk.jmh:jmh-generator-annprocess:1.37")
+    jmhAnnotationProcessor(lombokVersion)
 }
 
 tasks.test {
@@ -109,6 +144,10 @@ tasks.jar {
             "macos/libentlib_native_aarch64.dylib", "macos/libentlib_native_universal.dylib", "macos/libentlib_native_x86_64.dylib",
             "windows/entlib_native_x86_64.dll")
     }
+}
+
+tasks.withType<Copy> {
+    duplicatesStrategy = DuplicatesStrategy.INCLUDE
 }
 
 mavenPublishing {
@@ -160,7 +199,7 @@ jmh {
 
     // 테스트 벤치마킹 클래스 등록
     includeTests.set(true)
-    includes.set(listOf(".*Benchmark"))
+    includes.set(listOf(".*_JMHBenchmark"))
 
     // 벤치마크 실행 시 필요한 jvm 인자 중앙 제어
     jvmArgs.set(listOf(

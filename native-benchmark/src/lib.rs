@@ -1,7 +1,7 @@
 use jni::sys::*;
 use std::arch::x86_64::{
     __m256i, _mm256_add_epi32, _mm256_and_si256, _mm256_cmpgt_epi32, _mm256_loadu_si256,
-    _mm256_set1_epi32, _mm256_set1_epi8, _mm256_storeu_si256, _mm256_sub_epi32, _mm256_xor_si256,
+    _mm256_set1_epi8, _mm256_set1_epi32, _mm256_storeu_si256, _mm256_sub_epi32, _mm256_xor_si256,
 };
 use std::slice;
 
@@ -119,7 +119,8 @@ pub unsafe extern "C" fn bless_poly_modular_add(
 
 /// jni 단순 ++++
 #[unsafe(no_mangle)]
-#[unsafe(export_name = "Java_space_qu4nt_entanglementlib_benchmarks_NativeCallBenchmark_jni_1add_1numbers")]
+// TODO: 사실 이 JNI 테스트가 작동되는지 모르겠음. 아마 안 될거임. 클래스명까지 "_1"로 언더스코어를 포함할 수 없는걸로 알고 있긴 함.
+#[unsafe(export_name = "Java_space_qu4nt_entanglementlib_benchmark_NativeCall_1JMHBenchmark_jni_1add_1numbers")]
 pub extern "C" fn jni_add_numbers_impl(
     mut _env: JNIEnv,
     _class: jclass,
