@@ -13,6 +13,7 @@ import space.qu4nt.entanglementlib.exception.session.EntLibSessionException;
 
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 import java.util.function.Consumer;
@@ -94,7 +95,8 @@ public class Session {
         this.participants = new ConcurrentHashMap<>();
         this.participantsByRole = new ConcurrentHashMap<>();
         this.participantsLock = new ReentrantReadWriteLock();
-        this.eventListeners = Collections.synchronizedList(new ArrayList<>());
+        // 순회 시 락이 필요 없는 CopyOnWrite 병렬 컬렉션 사용 변경
+        this.eventListeners = new CopyOnWriteArrayList<>();
 
         log.debug("세션 생성됨: {}", sessionId);
     }
@@ -318,21 +320,27 @@ public class Session {
 
         if (state.compareAndSet(current, SessionState.CLOSING)) {
             try {
-                // 모든 참여자에게 종료 알림
                 notifyListeners(listener -> listener.onSessionClosing(this));
 
-                // 참여자 정리
+                // 방어적 복사 로컬 리스트
+                List<Participant> participantsToClose;
+
+                // lock scope 최소화 -> 내부 컬렉션 상태만 조작
                 participantsLock.writeLock().lock();
                 try {
-                    participants.values().forEach(p ->
-                            p.transitionState(ConnectionState.CLOSING));
+                    // 스냅샷 생성
+                    participantsToClose = new ArrayList<>(participants.values());
                     participants.clear();
                     participantsByRole.clear();
                 } finally {
                     participantsLock.writeLock().unlock();
                 }
 
-                // 보안 컨텍스트 정리
+                // 락이 해제된 안전한 상태에서 외부 메소드(alien method) 호출
+                participantsToClose.forEach(p ->
+                        p.transitionState(ConnectionState.CLOSING)
+                );
+
                 if (sessionSecurityContext != null) {
                     sessionSecurityContext.clear();
                 }
