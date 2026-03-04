@@ -2,9 +2,9 @@ name: Security & Static Analysis
 
 on:
   push:
-    branches: [ "master", "develop" ]
+    branches: [ "master", "feature/*" ]
   pull_request:
-    branches: [ "master", "develop" ]
+    branches: [ "master", "feature/*" ]
   schedule:
     - cron: '30 1 * * 0' # 매주 일요일 01:30 정기검진
 
