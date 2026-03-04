@@ -149,4 +149,8 @@ subprojects {
     tasks.withType<Copy> {
         duplicatesStrategy = DuplicatesStrategy.INCLUDE
     }
+
+    tasks.named<Jar>("sourcesJar") {
+        duplicatesStrategy = DuplicatesStrategy.EXCLUDE
+    }
 }

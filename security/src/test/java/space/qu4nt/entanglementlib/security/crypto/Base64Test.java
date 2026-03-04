@@ -19,7 +19,7 @@ class Base64Test {
     void test() {
         EntanglementLibSecurityFacade.initialize(
                 EntanglementLibSecurityConfig.create(
-                        new NativeSpecContext("/entlib-native/target/debug", "entlib_native_ffi",
+                        new NativeSpecContext(System.getenv("ENTLIB_NATIVE_BIN"), "entlib_native_ffi",
                                 Function.Callee_Secure_Buffer_Data,
                                 Function.Callee_Secure_Buffer_Len,
                                 Function.Callee_Secure_Buffer_Free,

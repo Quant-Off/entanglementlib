@@ -1,7 +1,6 @@
 package space.qu4nt.entanglementlib.security.entlibnative;
 
 import org.jetbrains.annotations.NotNull;
-import space.qu4nt.entanglementlib.annotations.CallerResponsibility;
 import space.qu4nt.entanglementlib.core.exception.security.checked.ELIBSecurityProcessException;
 import space.qu4nt.entanglementlib.core.exception.security.critical.ELIBSecurityCritical;
 import space.qu4nt.entanglementlib.core.exception.security.critical.ELIBSecurityNativeCritical;
@@ -9,7 +8,9 @@ import space.qu4nt.entanglementlib.security.data.InternalNativeBridge;
 import space.qu4nt.entanglementlib.security.data.SDCScopeContext;
 import space.qu4nt.entanglementlib.security.data.SensitiveDataContainer;
 
-import java.lang.foreign.*;
+import java.lang.foreign.Linker;
+import java.lang.foreign.MemorySegment;
+import java.lang.foreign.SymbolLookup;
 import java.lang.invoke.MethodHandle;
 import java.util.HashMap;
 import java.util.Map;

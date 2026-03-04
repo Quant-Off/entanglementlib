@@ -7,6 +7,7 @@ import space.qu4nt.entanglementlib.core.util.wrapper.Hex;
 import space.qu4nt.entanglementlib.security.EntanglementLibSecurityConfig;
 import space.qu4nt.entanglementlib.security.EntanglementLibSecurityFacade;
 import space.qu4nt.entanglementlib.security.data.HeuristicArenaFactory;
+import space.qu4nt.entanglementlib.security.data.InternalNativeBridge;
 import space.qu4nt.entanglementlib.security.data.SDCScopeContext;
 import space.qu4nt.entanglementlib.security.data.SensitiveDataContainer;
 import space.qu4nt.entanglementlib.security.entlibnative.Function;
@@ -25,7 +26,7 @@ class ChaCha20Test {
         // 테스트 클래스 로드 시 1회만 네이티브 라이브러리를 초기화하여 성능 최적화
         EntanglementLibSecurityFacade.initialize(
                 EntanglementLibSecurityConfig.create(
-                        new NativeSpecContext("/Library/Quant/Repository/projects/entanglementlib/entlib-native/target/debug", "entlib_native_ffi",
+                        new NativeSpecContext(System.getenv("ENTLIB_NATIVE_BIN"), "entlib_native_ffi",
                                 Function.Callee_Secure_Buffer_Data,
                                 Function.Callee_Secure_Buffer_Len,
                                 Function.Callee_Secure_Buffer_Free,
@@ -84,7 +85,7 @@ class ChaCha20Test {
             SensitiveDataContainer result = ChaCha20.encrypt(context, key, nonce, aad, inputData);
 
             assertNotNull(result, "연산 결과는 null일 수 없습니다.");
-            resultSegmentAlias = result.getMemorySegment();
+            resultSegmentAlias = InternalNativeBridge.unwrapMemorySegment(result);
 
             // [검증 A] 길이 검증
             assertEquals(expected.length + 16, resultSegmentAlias.byteSize(),
@@ -106,7 +107,7 @@ class ChaCha20Test {
             // 복호화
             //
             SensitiveDataContainer decryptResult = ChaCha20.decrypt(context, key, nonce, aad, result);
-            MemorySegment decResultOpt = decryptResult.getMemorySegment();
+            MemorySegment decResultOpt = InternalNativeBridge.unwrapMemorySegment(decryptResult);
             assertNotEquals(MemorySegment.NULL, decResultOpt, "네이티브 측 복호화 결과가 null입니다.");
             assertNotEquals(0, decResultOpt.address(), "네이티브 측 복호화 결과가 유효하지 않습니다.");
             byte[] actualDecBytes = decResultOpt.toArray(ValueLayout.JAVA_BYTE); // 프로덕션에서 사용 권장 X

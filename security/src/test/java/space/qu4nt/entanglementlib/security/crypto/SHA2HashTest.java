@@ -7,6 +7,7 @@ import space.qu4nt.entanglementlib.security.EntanglementLibSecurityConfig;
 import space.qu4nt.entanglementlib.security.EntanglementLibSecurityFacade;
 import space.qu4nt.entanglementlib.security.crypto.hash.Hash;
 import space.qu4nt.entanglementlib.security.data.HeuristicArenaFactory;
+import space.qu4nt.entanglementlib.security.data.InternalNativeBridge;
 import space.qu4nt.entanglementlib.security.data.SDCScopeContext;
 import space.qu4nt.entanglementlib.security.data.SensitiveDataContainer;
 import space.qu4nt.entanglementlib.security.entlibnative.Function;
@@ -26,7 +27,7 @@ class SHA2HashTest {
         // 테스트 클래스 로드 시 1회만 네이티브 라이브러리를 초기화하여 성능 최적화
         EntanglementLibSecurityFacade.initialize(
                 EntanglementLibSecurityConfig.create(
-                        new NativeSpecContext("/Library/Quant/Repository/projects/entanglementlib/entlib-native/target/debug", "entlib_native_ffi",
+                        new NativeSpecContext(System.getenv("ENTLIB_NATIVE_BIN"), "entlib_native_ffi",
                                 Function.chain(
                                         Function.withCalleeSecureBuffer(),
                                         Function.withCallerSecureBuffer(),
@@ -52,7 +53,7 @@ class SHA2HashTest {
             SensitiveDataContainer result = Hash.sha2(224, context, inputData);
 
             assertNotNull(result, "해시 연산 결과는 null일 수 없습니다.");
-            resultSegmentAlias = result.getMemorySegment();
+            resultSegmentAlias = InternalNativeBridge.unwrapMemorySegment(result);
 
             // [검증 A] 길이 검증
             assertEquals(28, resultSegmentAlias.byteSize(),
@@ -90,7 +91,7 @@ class SHA2HashTest {
             SensitiveDataContainer result = Hash.sha2(256, context, inputData);
 
             assertNotNull(result, "해시 연산 결과는 null일 수 없습니다.");
-            resultSegmentAlias = result.getMemorySegment();
+            resultSegmentAlias = InternalNativeBridge.unwrapMemorySegment(result);
 
             // [검증 A] 길이 검증
             assertEquals(32, resultSegmentAlias.byteSize(),
@@ -128,7 +129,7 @@ class SHA2HashTest {
             SensitiveDataContainer result = Hash.sha2(384, context, inputData);
 
             assertNotNull(result, "해시 연산 결과는 null일 수 없습니다.");
-            resultSegmentAlias = result.getMemorySegment();
+            resultSegmentAlias = InternalNativeBridge.unwrapMemorySegment(result);
 
             // [검증 A] 길이 검증
             assertEquals(48, resultSegmentAlias.byteSize(),
@@ -166,7 +167,7 @@ class SHA2HashTest {
             SensitiveDataContainer result = Hash.sha2(512, context, inputData);
 
             assertNotNull(result, "해시 연산 결과는 null일 수 없습니다.");
-            resultSegmentAlias = result.getMemorySegment();
+            resultSegmentAlias = InternalNativeBridge.unwrapMemorySegment(result);
 
             // [검증 A] 길이 검증
             assertEquals(64, resultSegmentAlias.byteSize(),

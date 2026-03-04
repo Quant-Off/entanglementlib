@@ -1,8 +1,8 @@
 package space.qu4nt.entanglementlib.security.crypto.rng;
 
 import org.jetbrains.annotations.NotNull;
-import space.qu4nt.entanglementlib.core.exception.security.critical.ELIBSecurityNativeCritical;
 import space.qu4nt.entanglementlib.core.exception.security.checked.ELIBSecurityProcessException;
+import space.qu4nt.entanglementlib.core.exception.security.critical.ELIBSecurityNativeCritical;
 import space.qu4nt.entanglementlib.security.data.InternalNativeBridge;
 import space.qu4nt.entanglementlib.security.data.SDCScopeContext;
 import space.qu4nt.entanglementlib.security.data.SensitiveDataContainer;

@@ -4,7 +4,6 @@ import space.qu4nt.entanglementlib.security.data.InternalNativeBridge;
 import space.qu4nt.entanglementlib.security.data.SensitiveDataContainer;
 import space.qu4nt.entanglementlib.security.entlibnative.EntLibNativeManager;
 import space.qu4nt.entanglementlib.security.entlibnative.Function;
-import sun.misc.Unsafe;
 
 /**
  * 네이티브 메모리(native memory) 기반의 안전한 Base64 인코딩 및 디코딩 유틸리티입니다.
