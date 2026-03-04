@@ -6,6 +6,7 @@ import space.qu4nt.entanglementlib.core.exception.security.checked.ELIBSecurityI
 import space.qu4nt.entanglementlib.core.exception.security.critical.ELIBSecurityNativeCritical;
 import space.qu4nt.entanglementlib.security.EntanglementLibSecurityConfig;
 
+import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.file.FileSystems;
@@ -93,7 +94,6 @@ public final class NativeLoader {
         }
     }
 
-    @SuppressWarnings("ResultOfMethodCallIgnored")
     private static Path createSecureTempFile(String fileName) throws IOException {
         int dotIndex = fileName.lastIndexOf('.');
         String prefix = fileName.substring(0, dotIndex) + "-";
@@ -102,16 +102,41 @@ public final class NativeLoader {
         boolean isPosix = FileSystems.getDefault().supportedFileAttributeViews().contains("posix");
 
         if (isPosix) {
-            // POSIX 호환 시스템 (linux, macos): 파일 권한 엄격 제한
+            // POSIX 호환 시스템 (Linux, macOS)
             Set<PosixFilePermission> perms = PosixFilePermissions.fromString("rwx------");
             return Files.createTempFile(prefix, suffix, PosixFilePermissions.asFileAttribute(perms));
         } else {
-            // 윈도우 등 non POSIX 시스템: 기본 임시 파일 생성 후 읽기/쓰기/실행 권한 제어
-            Path tempFile = Files.createTempFile(prefix, suffix);
-            tempFile.toFile().setReadable(true, true);
-            tempFile.toFile().setWritable(true, true);
-            tempFile.toFile().setExecutable(true, true);
-            return tempFile;
+            // Windows 등 non-POSIX 시스템
+            Path tempPath = Files.createTempFile(prefix, suffix);
+            File tempFile = tempPath.toFile();
+
+            // 실행 권한 설정 (실패 시 즉시 중단)
+            if (!tempFile.setExecutable(true, true)) {
+                tryDelete(tempPath);
+                throw new IOException("임시 파일의 실행 권한(Owner Only)을 설정할 수 없습니다: " + tempPath);
+            }
+
+            // 읽기 권한 설정
+            if (!tempFile.setReadable(true, true)) {
+                tryDelete(tempPath);
+                throw new IOException("임시 파일의 읽기 권한(Owner Only)을 설정할 수 없습니다: " + tempPath);
+            }
+
+            // 쓰기 권한 설정
+            if (!tempFile.setWritable(true, true)) {
+                tryDelete(tempPath);
+                throw new IOException("임시 파일의 쓰기 권한(Owner Only)을 설정할 수 없습니다: " + tempPath);
+            }
+
+            return tempPath;
+        }
+    }
+
+    private static void tryDelete(Path path) {
+        try {
+            Files.deleteIfExists(path);
+        } catch (IOException e) {
+            log.error("임시 파일 제거 중 예외가 발생했습니다!", e);
         }
     }
 }
