@@ -47,5 +47,5 @@ bin/
 .vscode/
 
 ### Mac OS ###
-.DS_Store
+.DS_*
 .temp.env
