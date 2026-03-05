@@ -75,6 +75,7 @@ public final class RNG {
         }
     }
 
+    // Q. T. Felix TODO: 좀 더 고차원적인 구현
     private static void checkError(byte errorCode) {
         if (errorCode == 0) return;
         throw switch (errorCode) {
