@@ -58,10 +58,11 @@ This project is currently `Alpha` version, and is still lacking a lot. We are al
 
 EntanglementLib wants to clarify the following TODOs so that it can be used in financial and security infrastructure production in the future.
 
+- [ ] Develop Local Hosted Web for useful use in closed network environments
 - [ ] Add TLS communication logic
 - [ ] Prepare and perform complex verification tasks
 - [ ] Custom Exception Optimization
-- [ ] Apply JPMS
+- [ ] Apply JPMS (Package modularization within multi-modules)
     - Once secure encapsulation and consistent call (or usage) patterns are completed, we intend to manage encapsulated packages as modules through JPMS.
 - [ ] Minimize external dependencies
     - Now, from the `1.1.0` release, we have minimized `BouncyCastle` dependencies and finally succeeded in removing them. Dependencies that provide some useful tools needed for current code writing still remain, but these will also be minimized eventually.
