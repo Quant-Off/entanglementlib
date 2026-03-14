@@ -7,8 +7,8 @@ import space.qu4nt.entanglementlib.core.exception.security.checked.ELIBSecurityP
 import space.qu4nt.entanglementlib.security.data.InternalNativeBridge;
 import space.qu4nt.entanglementlib.security.data.SDCScopeContext;
 import space.qu4nt.entanglementlib.security.data.SensitiveDataContainer;
-import space.qu4nt.entanglementlib.security.entlibnative.EntLibNativeManager;
-import space.qu4nt.entanglementlib.security.entlibnative.Function;
+import space.qu4nt.entanglementlib.security.entlibnative.NativeLinker;
+import space.qu4nt.entanglementlib.security.entlibnative.NativeComponent;
 
 import java.lang.foreign.MemorySegment;
 
@@ -44,8 +44,8 @@ public final class ChaCha20 {
             }
 
             // Rust FFI 호출 (Callee-allocated Opaque Pointer 반환)
-            MemorySegment rustBufferPtr = (MemorySegment) EntLibNativeManager
-                    .call(Function.ChaCha20_Poly1305_Encrypt)
+            MemorySegment rustBufferPtr = (MemorySegment) NativeLinker
+                    .call(NativeComponent.ChaCha20_Poly1305_Encrypt)
                     .invokeExact(
                             InternalNativeBridge.unwrapMemorySegment(key), (long) InternalNativeBridge.unwrapMemorySegment(key).byteSize(),
                             InternalNativeBridge.unwrapMemorySegment(nonce), (long) InternalNativeBridge.unwrapMemorySegment(nonce).byteSize(),
@@ -57,7 +57,7 @@ public final class ChaCha20 {
                 throw new ELIBSecurityProcessException("ChaCha20 암호화 실패: 유효하지 않은 입력 길이");
             }
 
-            return EntLibNativeManager.transferNativeBufferBindToContext(
+            return NativeLinker.transferNativeBufferBindToContext(
                     context, rustBufferPtr
             );
         } catch (Throwable t) {
@@ -84,8 +84,8 @@ public final class ChaCha20 {
                 aadLen = InternalNativeBridge.unwrapMemorySegment(aad).byteSize();
             }
 
-            MemorySegment rustBufferPtr = (MemorySegment) EntLibNativeManager
-                    .call(Function.ChaCha20_Poly1305_Decrypt)
+            MemorySegment rustBufferPtr = (MemorySegment) NativeLinker
+                    .call(NativeComponent.ChaCha20_Poly1305_Decrypt)
                     .invokeExact(
                             InternalNativeBridge.unwrapMemorySegment(key), (long) InternalNativeBridge.unwrapMemorySegment(key).byteSize(),
                             InternalNativeBridge.unwrapMemorySegment(nonce), (long) InternalNativeBridge.unwrapMemorySegment(nonce).byteSize(),
@@ -98,7 +98,7 @@ public final class ChaCha20 {
                 throw new ELIBSecurityProcessException("ChaCha20 복호화 실패: 무결성 검증(MAC) 실패 또는 유효하지 않은 입력");
             }
 
-            return EntLibNativeManager.transferNativeBufferBindToContext(
+            return NativeLinker.transferNativeBufferBindToContext(
                     context, rustBufferPtr
             );
         } catch (Throwable t) {

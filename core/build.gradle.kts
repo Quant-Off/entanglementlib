@@ -1,6 +1,7 @@
 dependencies {
     implementation(project(":annotations"))
 
+//    Q. T. Felix TODO: 암덩어리 jackson 제거
     // Jackson
     // https://mvnrepository.com/artifact/tools.jackson.core/jackson-databind
     implementation("tools.jackson.core:jackson-databind:3.0.2")

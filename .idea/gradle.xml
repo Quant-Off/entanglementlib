@@ -12,6 +12,7 @@
             <option value="$PROJECT_DIR$/annotation-processor" />
             <option value="$PROJECT_DIR$/annotations" />
             <option value="$PROJECT_DIR$/core" />
+            <option value="$PROJECT_DIR$/internal-shared-server" />
             <option value="$PROJECT_DIR$/security" />
           </set>
         </option>

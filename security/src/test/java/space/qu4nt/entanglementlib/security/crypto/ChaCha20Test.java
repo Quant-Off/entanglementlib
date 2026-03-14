@@ -10,7 +10,7 @@ import space.qu4nt.entanglementlib.security.data.HeuristicArenaFactory;
 import space.qu4nt.entanglementlib.security.data.InternalNativeBridge;
 import space.qu4nt.entanglementlib.security.data.SDCScopeContext;
 import space.qu4nt.entanglementlib.security.data.SensitiveDataContainer;
-import space.qu4nt.entanglementlib.security.entlibnative.Function;
+import space.qu4nt.entanglementlib.security.entlibnative.NativeComponent;
 import space.qu4nt.entanglementlib.security.entlibnative.NativeSpecContext;
 
 import java.lang.foreign.MemorySegment;
@@ -27,12 +27,12 @@ class ChaCha20Test {
         EntanglementLibSecurityFacade.initialize(
                 EntanglementLibSecurityConfig.create(
                         new NativeSpecContext(System.getenv("ENTLIB_NATIVE_BIN"), "entlib_native_ffi",
-                                Function.Callee_Secure_Buffer_Data,
-                                Function.Callee_Secure_Buffer_Len,
-                                Function.Callee_Secure_Buffer_Free,
-                                Function.Caller_Secure_Buffer_Wipe,
-                                Function.ChaCha20_Poly1305_Encrypt,
-                                Function.ChaCha20_Poly1305_Decrypt),
+                                NativeComponent.Callee_Secure_Buffer_Data,
+                                NativeComponent.Callee_Secure_Buffer_Len,
+                                NativeComponent.Callee_Secure_Buffer_Free,
+                                NativeComponent.Caller_Secure_Buffer_Wipe,
+                                NativeComponent.ChaCha20_Poly1305_Encrypt,
+                                NativeComponent.ChaCha20_Poly1305_Decrypt),
                         HeuristicArenaFactory.ArenaMode.CONFINED)
         );
     }
