@@ -11,8 +11,10 @@ import lombok.extern.slf4j.Slf4j;
 import org.jetbrains.annotations.NotNull;
 import space.qu4nt.entanglementlib.annotations.CallerResponsibility;
 import space.qu4nt.entanglementlib.core.exception.security.checked.ELIBSecurityProcessException;
-import space.qu4nt.entanglementlib.security.entlibnative.EntLibNativeManager;
-import space.qu4nt.entanglementlib.security.entlibnative.Function;
+import space.qu4nt.entanglementlib.core.exception.security.checked.ELIBSecurityUnsafeUsageException;
+import space.qu4nt.entanglementlib.core.exception.security.critical.ELIBSecurityCritical;
+import space.qu4nt.entanglementlib.security.entlibnative.ConstableFactory;
+import space.qu4nt.entanglementlib.security.entlibnative.NativeProcessResult;
 
 import java.io.IOException;
 import java.lang.foreign.Arena;
@@ -102,7 +104,7 @@ public class SensitiveDataContainer implements AutoCloseable {
     @Getter(AccessLevel.PACKAGE)
     private final MemorySegment memorySegment;
 
-    /// 네이티브 메모리에 전달받은 정수 값(바이트 크기) 만큼의 메모리 세그먼트를
+    /// 네이티브 메모리에 전달받은 정수 `int` 값(바이트 크기) 만큼의 메모리 세그먼트를
     /// 생성하여 이 인스턴스를 생성합니다.
     ///
     /// # Safety
@@ -112,13 +114,34 @@ public class SensitiveDataContainer implements AutoCloseable {
     /// 또한, 이 생성자는 제거 예정은 없으나 권장되는 사용이 아닙니다. [SDCScopeContext]를
     /// 통해 세션식 보안 작업을 수행하세요.
     ///
-    /// @param allocateSIze 바이트 크기
+    /// @param allocateSize `int` 바이트 크기
     /// @see #runScope(int, SDCConsumer) 스코프 작업 종료 시 자원 소거를 보장하는 정적 메소드
     /// @see #callScope(int, SDCFunction) 스코프 작업 종료 후 자원을 소거하고 가공된 결과를 반환하는 정적 메소드
     @CallerResponsibility("try-with-resource 사용 또는 close 메소드 직접 호출 필수")
-    public SensitiveDataContainer(final int allocateSIze) {
+    public SensitiveDataContainer(final int allocateSize) throws ELIBSecurityProcessException {
         this.arena = HeuristicArenaFactory.intelligenceCreateArena();
-        this.memorySegment = Objects.requireNonNull(arena.allocate(allocateSIze));
+        this.memorySegment = Objects.requireNonNull(arena.allocate(allocateSize));
+        ConstableFactory.Std.systemCallMemoryLock(false, memorySegment); // TODO: 실제 OS 수정
+    }
+
+    /// 네이티브 메모리에 전달받은 정수 `long` 값(바이트 크기) 만큼의 메모리 세그먼트를
+    /// 생성하여 이 인스턴스를 생성합니다.
+    ///
+    /// # Safety
+    /// 이 생성자를 통해 인스턴스를 생성하면 호출자가 부담하는 보안 책임이 발생합니다.
+    /// 특별한 경우가 아닌 이상 이 방식을 통한 생성은 권장하지 않습니다.
+    ///
+    /// 또한, 이 생성자는 제거 예정은 없으나 권장되는 사용이 아닙니다. [SDCScopeContext]를
+    /// 통해 세션식 보안 작업을 수행하세요.
+    ///
+    /// @param allocateSize `long` 바이트 크기
+    /// @see #runScope(int, SDCConsumer) 스코프 작업 종료 시 자원 소거를 보장하는 정적 메소드
+    /// @see #callScope(int, SDCFunction) 스코프 작업 종료 후 자원을 소거하고 가공된 결과를 반환하는 정적 메소드
+    @CallerResponsibility("try-with-resource 사용 또는 close 메소드 직접 호출 필수")
+    public SensitiveDataContainer(final long allocateSize) throws ELIBSecurityProcessException {
+        this.arena = HeuristicArenaFactory.intelligenceCreateArena();
+        this.memorySegment = Objects.requireNonNull(arena.allocate(allocateSize));
+        ConstableFactory.Std.systemCallMemoryLock(false, memorySegment); // TODO: 실제 OS 수정
     }
 
     /// 원본 바이트 배열을 전달받고 네이티브 메모리에 바인딩하여 이 인스턴스를 생성합니다.
@@ -130,7 +153,8 @@ public class SensitiveDataContainer implements AutoCloseable {
     /// # Safety
     /// 이 생성자를 통해 인스턴스를 생성하면 호출자가 부담하는 보안 책임이 발생합니다.
     /// 특별한 경우가 아닌 이상 이 방식을 통한 생성은 권장하지 않습니다. 또한, 결국
-    /// `heap` 메모리에 데이터를 노출하는 것은 위험합니다.
+    /// `heap` 메모리에 데이터를 노출하는 것은 위험합니다. `forceWipe` 플래그를
+    /// `true`로 설정하는 편이 권장됩니다.
     ///
     /// 또한, 이 생성자는 제거 예정은 없으나 권장되는 사용이 아닙니다. [SDCScopeContext]를
     /// 통해 세션식 보안 작업을 수행하세요.
@@ -139,21 +163,24 @@ public class SensitiveDataContainer implements AutoCloseable {
     /// @param forceWipe 인스턴스에 소유권 이전 여부
     /// @see #runScope(int, SDCConsumer) 스코프 작업 종료 시 자원 소거를 보장하는 정적 메소드
     /// @see #callScope(int, SDCFunction) 스코프 작업 종료 후 자원을 소거하고 가공된 결과를 반환하는 정적 메소드
-    @CallerResponsibility("try-with-resource 사용 또는 close 메소드 직접 호출 필수")
-    public SensitiveDataContainer(final byte @NotNull [] from, boolean forceWipe) {
+    @CallerResponsibility({
+            "try-with-resource 사용 또는 close 메소드 직접 호출 필수",
+            "원본 byte[] 입력 권장"
+    })
+    public SensitiveDataContainer(final byte @NotNull [] from, boolean forceWipe) throws ELIBSecurityProcessException {
         this.arena = HeuristicArenaFactory.intelligenceCreateArena();
         this.memorySegment = Objects.requireNonNull(arena.allocateFrom(ValueLayout.JAVA_BYTE, from));
         if (forceWipe)
             Arrays.fill(from, (byte) 0);
+        ConstableFactory.Std.systemCallMemoryLock(false, memorySegment); // TODO: 실제 OS 수정
     }
 
-    /**
-     * 보안 컨테이너의 생명주기를 자동으로 관리하는 실행 메소드입니다.
-     * Execute-Around-Pattern이 적용되어 작업 완료 즉시 메모리가 소거됨을 보장합니다.
-     *
-     * @param allocateSize 할당할 버퍼 크기
-     * @param action       컨테이너를 사용하여 수행할 보안 로직
-     */
+    /// 보안 컨테이너의 생명주기를 자동으로 관리하는 실행 메소드입니다.
+    /// Execute-Around-Pattern이 적용되어 작업 완료 즉시 메모리가 소거됨을 보장합니다.
+    ///
+    /// @param allocateSize 할당할 버퍼 크기
+    /// @param action       컨테이너를 사용하여 수행할 보안 로직
+    /// @throws ELIBSecurityProcessException 스코프 내 작업 수행 중 발생 가능한 예외
     public static void runScope(int allocateSize, SDCConsumer action) throws ELIBSecurityProcessException {
         try (SensitiveDataContainer sdc = new SensitiveDataContainer(allocateSize)) {
             action.accept(sdc);
@@ -166,13 +193,18 @@ public class SensitiveDataContainer implements AutoCloseable {
     /// @param allocateSize 할당할 버퍼 크기
     /// @param action       컨테이너를 사용하여 수행할 계산 로직
     /// @return 계산 결과
-    public static <R> R callScope(int allocateSize, SDCFunction<R> action) throws ELIBSecurityProcessException {
+    /// @throws ELIBSecurityProcessException     스코프 내 작업 수행 중 발생 가능한 예외
+    /// @throws ELIBSecurityUnsafeUsageException 올바르지 않거나 위험한 반환 시 발생하는 예외
+    public static <R> R callScope(int allocateSize, SDCFunction<R> action) throws ELIBSecurityProcessException, ELIBSecurityUnsafeUsageException {
         try (SensitiveDataContainer sdc = new SensitiveDataContainer(allocateSize)) {
-            return action.apply(sdc);
+            R r = action.apply(sdc);
+            if (r instanceof byte[])
+                throw new ELIBSecurityUnsafeUsageException("SDC 작업 수행에 따른 반환값이 바이트 배열입니다!");
+            return r;
         }
     }
 
-    public static void transmitZeroCopy(SensitiveDataContainer sdc, WritableByteChannel channel) throws ELIBSecurityProcessException {
+    public static void transmitZeroCopy(final SensitiveDataContainer sdc, final WritableByteChannel channel) throws ELIBSecurityProcessException {
         if (!sdc.getArena().scope().isAlive()) {
             throw new IllegalStateException("이미 소거 완료되었거나 유효하지 않은 컨테이너입니다!");
         }
@@ -198,7 +230,6 @@ public class SensitiveDataContainer implements AutoCloseable {
 
     @Override
     public void close() {
-        // 더 이상 하위 바인딩(bindings)을 관리하지 않아 로직 수정 //
         // 스레드 안전성과 다중 호출 시의 멱등성을 보장하기 위해 인스턴스 락 사용
         synchronized (this) {
             // 이미 닫힌 경우 early-return
@@ -208,15 +239,15 @@ public class SensitiveDataContainer implements AutoCloseable {
             }
 
             try {
-                // 호출자 측 네이티브 메모리 완벽 소거 & 할당 해제
-                EntLibNativeManager
-                        .call(Function.Caller_Secure_Buffer_Wipe)
-                        .invokeExact(this.memorySegment, this.memorySegment.byteSize());
-            } catch (Throwable e) {
-                // 네이티브 소거 실패는 치명적 보안 이벤트이기 떄문에 에러 출력
-                log.error("치명적 보안 예외가 발생했습니다!", e);
+                // TODO: 아래 메소드는 FFIStandard 구조체 레이아웃만 받음. 하지만 현재 sdc는 this.memorySegement 값이 해당 구조체만 들어오는게 아님. 이에따라 추가 조치 필요
+                NativeProcessResult<Void> result = ConstableFactory.Std.joepOrder(this.memorySegment);
+                if (result.isSuccess())
+                    log.debug("'{}' 스레드 JOEP 명령 -> Rust측 소거 완료", Thread.currentThread().getName());
+            } catch (ELIBSecurityProcessException e) {
+                throw new ELIBSecurityCritical(e);
             } finally {
-                // 예외 발생 여부와 상관없이 접근 채널은 반드시 닫음
+                // 소거 후 메모리 락 해제
+                ConstableFactory.Std.systemCallMemoryUnlock(false, memorySegment); // TODO: 실제 OS 수정
                 this.arena.close();
             }
         }

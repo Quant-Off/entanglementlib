@@ -6,8 +6,8 @@ import space.qu4nt.entanglementlib.core.exception.security.critical.ELIBSecurity
 import space.qu4nt.entanglementlib.security.data.InternalNativeBridge;
 import space.qu4nt.entanglementlib.security.data.SDCScopeContext;
 import space.qu4nt.entanglementlib.security.data.SensitiveDataContainer;
-import space.qu4nt.entanglementlib.security.entlibnative.EntLibNativeManager;
-import space.qu4nt.entanglementlib.security.entlibnative.Function;
+import space.qu4nt.entanglementlib.security.entlibnative.NativeLinker;
+import space.qu4nt.entanglementlib.security.entlibnative.NativeComponent;
 
 import java.lang.foreign.Arena;
 import java.lang.foreign.MemorySegment;
@@ -38,19 +38,19 @@ public final class RNG {
             MemorySegment errFlag = localArena.allocate(ValueLayout.JAVA_BYTE);
 
             // 혼합 난수 생성기(mixed rng) 인스턴스 초기화
-            MemorySegment rngPtr = (MemorySegment) EntLibNativeManager.call(Function.RNG_MIXED_New_With_Strategy)
+            MemorySegment rngPtr = (MemorySegment) NativeLinker.call(NativeComponent.RNG_MIXED_New_With_Strategy)
                     .invokeExact(entropyStrategy, errFlag);
             checkError(errFlag.get(ValueLayout.JAVA_BYTE, 0));
 
             MemorySegment secureBufPtr = null;
             try {
                 // 난수 버퍼 생성
-                secureBufPtr = (MemorySegment) EntLibNativeManager.call(Function.RNG_MIXED_Generate)
+                secureBufPtr = (MemorySegment) NativeLinker.call(NativeComponent.RNG_MIXED_Generate)
                         .invokeExact(rngPtr, length, errFlag);
                 checkError(errFlag.get(ValueLayout.JAVA_BYTE, 0));
 
                 // 러스트 영역의 보안 버퍼(secure buffer)에서 실제 데이터 포인터 추출
-                MemorySegment dataPtr = (MemorySegment) EntLibNativeManager.call(Function.Callee_Secure_Buffer_Data)
+                MemorySegment dataPtr = (MemorySegment) NativeLinker.call(NativeComponent.Callee_Secure_Buffer_Data)
                         .invokeExact(secureBufPtr);
                 MemorySegment nativeDataSegment = dataPtr.reinterpret(length);
 
@@ -64,10 +64,10 @@ public final class RNG {
             } finally {
                 // 러스트 힙에 할당된 포인터의 강제 해제 및 소거 유도
                 if (secureBufPtr != null && !secureBufPtr.equals(MemorySegment.NULL)) {
-                    EntLibNativeManager.call(Function.Callee_Secure_Buffer_Free).invokeExact(secureBufPtr);
+                    NativeLinker.call(NativeComponent.Callee_Secure_Buffer_Free).invokeExact(secureBufPtr);
                 }
                 if (rngPtr != null && !rngPtr.equals(MemorySegment.NULL)) {
-                    EntLibNativeManager.call(Function.RNG_MIXED_Free).invokeExact(rngPtr);
+                    NativeLinker.call(NativeComponent.RNG_MIXED_Free).invokeExact(rngPtr);
                 }
             }
         } catch (Throwable e) {
@@ -75,6 +75,7 @@ public final class RNG {
         }
     }
 
+    // Q. T. Felix TODO: 좀 더 고차원적인 구현
     private static void checkError(byte errorCode) {
         if (errorCode == 0) return;
         throw switch (errorCode) {

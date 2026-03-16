@@ -29,7 +29,7 @@ public final class NativeLoader {
 
     private static synchronized void loadSuccess() {
         loaded = true;
-        EntLibNativeManager.setup();
+        NativeLinker.setup();
     }
 
     public static synchronized void loadNativeLibrary(final @NotNull EntanglementLibSecurityConfig config) {
@@ -49,7 +49,7 @@ public final class NativeLoader {
 
             log.info(exactExternalFile.toString());
 
-            // 사용자가 파일명까지 포함한 절대 경로를 입력했거나, 디렉터리 경로를 입력한 경우 모두 처리
+            // 사용자가 파일명까지 포함한 절대 경로를 입력했거나, 디렉토리 경로를 입력한 경우 모두 처리
             if (Files.exists(externalPath) && !Files.isDirectory(externalPath)) {
                 System.load(externalPath.toAbsolutePath().toString());
                 loadSuccess();

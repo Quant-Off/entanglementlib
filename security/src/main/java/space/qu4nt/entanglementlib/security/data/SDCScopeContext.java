@@ -2,10 +2,12 @@ package space.qu4nt.entanglementlib.security.data;
 
 import lombok.extern.slf4j.Slf4j;
 import org.jetbrains.annotations.NotNull;
+import space.qu4nt.entanglementlib.core.exception.security.checked.ELIBSecurityProcessException;
 
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.Objects;
 
 /// 보안 작업 흐름 내에서 생성되는 모든 민감 데이터 컨테이너를 추적하고,
 /// 스코프 종료 시 일괄 소거(zeroize)를 보장하는 컨텍스트 클래스입니다.
@@ -20,7 +22,14 @@ public final class SDCScopeContext implements AutoCloseable {
 
     /// 스코프 내에서 새로운 [SensitiveDataContainer]를 할당하는 메소드입니다.
     /// 생성된 컨테이너는 자동으로 현재 스코프에 바인딩됩니다.
-    public SensitiveDataContainer allocate(int size) {
+    public SensitiveDataContainer allocate(int size) throws ELIBSecurityProcessException {
+        checkAlive();
+        SensitiveDataContainer container = new SensitiveDataContainer(size);
+        trackedContainers.add(container);
+        return container;
+    }
+
+    public SensitiveDataContainer allocate(final long size) throws ELIBSecurityProcessException {
         checkAlive();
         SensitiveDataContainer container = new SensitiveDataContainer(size);
         trackedContainers.add(container);
@@ -28,7 +37,7 @@ public final class SDCScopeContext implements AutoCloseable {
     }
 
     /// 기존 바이트 배열로부터 데이터 소유권을 이전받는 컨테이너를 생성하는 메소드입니다.
-    public SensitiveDataContainer allocate(byte[] from, boolean forceWipe) {
+    public SensitiveDataContainer allocate(byte[] from, boolean forceWipe) throws ELIBSecurityProcessException {
         checkAlive();
         SensitiveDataContainer container = new SensitiveDataContainer(from, forceWipe);
         trackedContainers.add(container);

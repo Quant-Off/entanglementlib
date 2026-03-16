@@ -10,7 +10,7 @@ import space.qu4nt.entanglementlib.security.crypto.hash.Hash;
 import space.qu4nt.entanglementlib.security.data.InternalNativeBridge;
 import space.qu4nt.entanglementlib.security.data.SDCScopeContext;
 import space.qu4nt.entanglementlib.security.data.SensitiveDataContainer;
-import space.qu4nt.entanglementlib.security.entlibnative.Function;
+import space.qu4nt.entanglementlib.security.entlibnative.NativeComponent;
 import space.qu4nt.entanglementlib.security.entlibnative.NativeSpecContext;
 
 import java.lang.foreign.MemorySegment;
@@ -28,10 +28,10 @@ class SHA3HashTest {
         EntanglementLibSecurityFacade.initialize(
                 EntanglementLibSecurityConfig.create(
                         new NativeSpecContext(System.getenv("ENTLIB_NATIVE_BIN"), "entlib_native_ffi",
-                                Function.chain(
-                                        Function.withCalleeSecureBuffer(),
-                                        Function.withCallerSecureBuffer(),
-                                        Function.withHash(false))
+                                NativeComponent.chain(
+                                        NativeComponent.withCalleeSecureBuffer(),
+                                        NativeComponent.withCallerSecureBuffer(),
+                                        NativeComponent.withHash(false))
                         ),
                         HeuristicArenaFactory.ArenaMode.CONFINED)
         );

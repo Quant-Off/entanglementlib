@@ -24,6 +24,6 @@ public @interface CallerResponsibility {
      *
      * @return 책임 전가 사유 또는 설명
      */
-    String value() default "";
+    String[] value() default "";
 
 }

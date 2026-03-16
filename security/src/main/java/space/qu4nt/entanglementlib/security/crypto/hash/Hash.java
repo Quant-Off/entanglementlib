@@ -5,8 +5,8 @@ import space.qu4nt.entanglementlib.core.exception.security.checked.ELIBSecurityP
 import space.qu4nt.entanglementlib.security.data.InternalNativeBridge;
 import space.qu4nt.entanglementlib.security.data.SDCScopeContext;
 import space.qu4nt.entanglementlib.security.data.SensitiveDataContainer;
-import space.qu4nt.entanglementlib.security.entlibnative.EntLibNativeManager;
-import space.qu4nt.entanglementlib.security.entlibnative.Function;
+import space.qu4nt.entanglementlib.security.entlibnative.NativeLinker;
+import space.qu4nt.entanglementlib.security.entlibnative.NativeComponent;
 
 import java.lang.foreign.MemorySegment;
 import java.lang.invoke.MethodHandle;
@@ -24,42 +24,42 @@ public final class Hash {
             return null;
 
         // 길이에 맞는 함수 등록
-        Function newContextFunc, updateFunc, finalizeFunc, freeFunc;
+        NativeComponent newContextFunc, updateFunc, finalizeFunc, freeFunc;
         switch (length) {
             case 224 -> {
-                newContextFunc = Function.SHA2_224_New;
-                updateFunc = Function.SHA2_224_Update;
-                finalizeFunc = Function.SHA2_224_Finalize;
-                freeFunc = Function.SHA2_224_Free;
+                newContextFunc = NativeComponent.SHA2_224_New;
+                updateFunc = NativeComponent.SHA2_224_Update;
+                finalizeFunc = NativeComponent.SHA2_224_Finalize;
+                freeFunc = NativeComponent.SHA2_224_Free;
             }
             case 256 -> {
-                newContextFunc = Function.SHA2_256_New;
-                updateFunc = Function.SHA2_256_Update;
-                finalizeFunc = Function.SHA2_256_Finalize;
-                freeFunc = Function.SHA2_256_Free;
+                newContextFunc = NativeComponent.SHA2_256_New;
+                updateFunc = NativeComponent.SHA2_256_Update;
+                finalizeFunc = NativeComponent.SHA2_256_Finalize;
+                freeFunc = NativeComponent.SHA2_256_Free;
             }
             case 384 -> {
-                newContextFunc = Function.SHA2_384_New;
-                updateFunc = Function.SHA2_384_Update;
-                finalizeFunc = Function.SHA2_384_Finalize;
-                freeFunc = Function.SHA2_384_Free;
+                newContextFunc = NativeComponent.SHA2_384_New;
+                updateFunc = NativeComponent.SHA2_384_Update;
+                finalizeFunc = NativeComponent.SHA2_384_Finalize;
+                freeFunc = NativeComponent.SHA2_384_Free;
             }
             case 512 -> {
-                newContextFunc = Function.SHA2_512_New;
-                updateFunc = Function.SHA2_512_Update;
-                finalizeFunc = Function.SHA2_512_Finalize;
-                freeFunc = Function.SHA2_512_Free;
+                newContextFunc = NativeComponent.SHA2_512_New;
+                updateFunc = NativeComponent.SHA2_512_Update;
+                finalizeFunc = NativeComponent.SHA2_512_Finalize;
+                freeFunc = NativeComponent.SHA2_512_Free;
             }
             default -> throw new ELIBSecurityProcessException("불가능한 길이");
         }
 
         // 컨텍스트 생성
-        MemorySegment ctx = (MemorySegment) EntLibNativeManager.call(newContextFunc).invokeExact();
+        MemorySegment ctx = (MemorySegment) NativeLinker.call(newContextFunc).invokeExact();
         boolean isCtxConsumed = false; // double-free 방지를 위한 상태 플래그
 
         try {
             // 데이터 업데이트
-            MethodHandle updateMH = EntLibNativeManager.call(updateFunc);
+            MethodHandle updateMH = NativeLinker.call(updateFunc);
             MemorySegment dataSeg = InternalNativeBridge.unwrapMemorySegment(input);
             int status = (int) updateMH.invokeExact(ctx, dataSeg, dataSeg.byteSize());
             if (status != 0) {
@@ -67,20 +67,20 @@ public final class Hash {
             }
 
             // 연산 수행 -> SecureBuffer* 반환 (ctx 소유권 소비됨)
-            MemorySegment secureBufferPtr = (MemorySegment) EntLibNativeManager.call(finalizeFunc)
+            MemorySegment secureBufferPtr = (MemorySegment) NativeLinker.call(finalizeFunc)
                     .invokeExact(ctx);
             isCtxConsumed = true; // 성공적으로 finalize 되었으므로 플래그 전환
 
             if (secureBufferPtr.equals(MemorySegment.NULL))
                 throw new ELIBSecurityProcessException("해시 연산 결과가 null입니다!");
 
-            return EntLibNativeManager.transferNativeBufferBindToContext(
+            return NativeLinker.transferNativeBufferBindToContext(
                     scope, secureBufferPtr
             ); // 이 작업 내에서 버퍼 소거가 진행됨
         } finally {
             // 예외 발생 등으로 인해 finalize가 호출되지 않은 경우에만 early free
             if (!isCtxConsumed && ctx != null && !ctx.equals(MemorySegment.NULL)) {
-                EntLibNativeManager.call(freeFunc).invokeExact(ctx);
+                NativeLinker.call(freeFunc).invokeExact(ctx);
             }
         }
     }
@@ -95,42 +95,42 @@ public final class Hash {
             return null;
 
         // 길이에 맞는 함수 등록
-        Function newContextFunc, updateFunc, finalizeFunc, freeFunc;
+        NativeComponent newContextFunc, updateFunc, finalizeFunc, freeFunc;
         switch (length) {
             case 224 -> {
-                newContextFunc = Function.SHA3_224_New;
-                updateFunc = Function.SHA3_224_Update;
-                finalizeFunc = Function.SHA3_224_Finalize;
-                freeFunc = Function.SHA3_224_Free;
+                newContextFunc = NativeComponent.SHA3_224_New;
+                updateFunc = NativeComponent.SHA3_224_Update;
+                finalizeFunc = NativeComponent.SHA3_224_Finalize;
+                freeFunc = NativeComponent.SHA3_224_Free;
             }
             case 256 -> {
-                newContextFunc = Function.SHA3_256_New;
-                updateFunc = Function.SHA3_256_Update;
-                finalizeFunc = Function.SHA3_256_Finalize;
-                freeFunc = Function.SHA3_256_Free;
+                newContextFunc = NativeComponent.SHA3_256_New;
+                updateFunc = NativeComponent.SHA3_256_Update;
+                finalizeFunc = NativeComponent.SHA3_256_Finalize;
+                freeFunc = NativeComponent.SHA3_256_Free;
             }
             case 384 -> {
-                newContextFunc = Function.SHA3_384_New;
-                updateFunc = Function.SHA3_384_Update;
-                finalizeFunc = Function.SHA3_384_Finalize;
-                freeFunc = Function.SHA3_384_Free;
+                newContextFunc = NativeComponent.SHA3_384_New;
+                updateFunc = NativeComponent.SHA3_384_Update;
+                finalizeFunc = NativeComponent.SHA3_384_Finalize;
+                freeFunc = NativeComponent.SHA3_384_Free;
             }
             case 512 -> {
-                newContextFunc = Function.SHA3_512_New;
-                updateFunc = Function.SHA3_512_Update;
-                finalizeFunc = Function.SHA3_512_Finalize;
-                freeFunc = Function.SHA3_512_Free;
+                newContextFunc = NativeComponent.SHA3_512_New;
+                updateFunc = NativeComponent.SHA3_512_Update;
+                finalizeFunc = NativeComponent.SHA3_512_Finalize;
+                freeFunc = NativeComponent.SHA3_512_Free;
             }
             default -> throw new ELIBSecurityProcessException("불가능한 길이");
         }
 
         // 컨텍스트 생성
-        MemorySegment ctx = (MemorySegment) EntLibNativeManager.call(newContextFunc).invokeExact();
+        MemorySegment ctx = (MemorySegment) NativeLinker.call(newContextFunc).invokeExact();
         boolean isCtxConsumed = false; // double-free 방지를 위한 상태 플래그
 
         try {
             // 데이터 업데이트
-            MethodHandle updateMH = EntLibNativeManager.call(updateFunc);
+            MethodHandle updateMH = NativeLinker.call(updateFunc);
             MemorySegment dataSeg = InternalNativeBridge.unwrapMemorySegment(input);
             int status = (int) updateMH.invokeExact(ctx, dataSeg, dataSeg.byteSize());
             if (status != 0) {
@@ -138,20 +138,20 @@ public final class Hash {
             }
 
             // 연산 수행 -> SecureBuffer* 반환 (ctx 소유권 소비됨)
-            MemorySegment secureBufferPtr = (MemorySegment) EntLibNativeManager.call(finalizeFunc)
+            MemorySegment secureBufferPtr = (MemorySegment) NativeLinker.call(finalizeFunc)
                     .invokeExact(ctx);
             isCtxConsumed = true; // 성공적으로 finalize 되었으므로 플래그 전환
 
             if (secureBufferPtr.equals(MemorySegment.NULL))
                 throw new ELIBSecurityProcessException("해시 연산 결과가 null입니다!");
 
-            return EntLibNativeManager.transferNativeBufferBindToContext(
+            return NativeLinker.transferNativeBufferBindToContext(
                     scope, secureBufferPtr
             ); // 이 작업 내에서 버퍼 소거가 진행됨
         } finally {
             // 예외 발생 등으로 인해 finalize가 호출되지 않은 경우에만 early free
             if (!isCtxConsumed && ctx != null && !ctx.equals(MemorySegment.NULL)) {
-                EntLibNativeManager.call(freeFunc).invokeExact(ctx);
+                NativeLinker.call(freeFunc).invokeExact(ctx);
             }
         }
     }
@@ -167,30 +167,30 @@ public final class Hash {
             return null;
 
         // 길이에 맞는 함수 등록
-        Function newContextFunc, updateFunc, finalizeFunc, freeFunc;
+        NativeComponent newContextFunc, updateFunc, finalizeFunc, freeFunc;
         switch (length) {
             case 128 -> {
-                newContextFunc = Function.SHA3_SHAKE128_New;
-                updateFunc = Function.SHA3_SHAKE128_Update;
-                finalizeFunc = Function.SHA3_SHAKE128_Finalize;
-                freeFunc = Function.SHA3_SHAKE128_Free;
+                newContextFunc = NativeComponent.SHA3_SHAKE128_New;
+                updateFunc = NativeComponent.SHA3_SHAKE128_Update;
+                finalizeFunc = NativeComponent.SHA3_SHAKE128_Finalize;
+                freeFunc = NativeComponent.SHA3_SHAKE128_Free;
             }
             case 256 -> {
-                newContextFunc = Function.SHA3_SHAKE256_New;
-                updateFunc = Function.SHA3_SHAKE256_Update;
-                finalizeFunc = Function.SHA3_SHAKE256_Finalize;
-                freeFunc = Function.SHA3_SHAKE256_Free;
+                newContextFunc = NativeComponent.SHA3_SHAKE256_New;
+                updateFunc = NativeComponent.SHA3_SHAKE256_Update;
+                finalizeFunc = NativeComponent.SHA3_SHAKE256_Finalize;
+                freeFunc = NativeComponent.SHA3_SHAKE256_Free;
             }
             default -> throw new ELIBSecurityProcessException("불가능한 길이");
         }
 
         // 컨텍스트 생성
-        MemorySegment ctx = (MemorySegment) EntLibNativeManager.call(newContextFunc).invokeExact();
+        MemorySegment ctx = (MemorySegment) NativeLinker.call(newContextFunc).invokeExact();
         boolean isCtxConsumed = false; // double-free 방지를 위한 상태 플래그
 
         try {
             // 데이터 업데이트
-            MethodHandle updateMH = EntLibNativeManager.call(updateFunc);
+            MethodHandle updateMH = NativeLinker.call(updateFunc);
             MemorySegment dataSeg = InternalNativeBridge.unwrapMemorySegment(input);
             int status = (int) updateMH.invokeExact(ctx, dataSeg, dataSeg.byteSize());
             if (status != 0) {
@@ -198,20 +198,20 @@ public final class Hash {
             }
 
             // 연산 수행 -> SecureBuffer* 반환 (ctx 소유권 소비됨)
-            MemorySegment secureBufferPtr = (MemorySegment) EntLibNativeManager.call(finalizeFunc)
+            MemorySegment secureBufferPtr = (MemorySegment) NativeLinker.call(finalizeFunc)
                     .invokeExact(ctx, byteOutLen);
             isCtxConsumed = true; // 성공적으로 finalize 되었으므로 플래그 전환
 
             if (secureBufferPtr.equals(MemorySegment.NULL))
                 throw new ELIBSecurityProcessException("해시 연산 결과가 null입니다.");
 
-            return EntLibNativeManager.transferNativeBufferBindToContext(
+            return NativeLinker.transferNativeBufferBindToContext(
                     scope, secureBufferPtr
             ); // 이 작업 내에서 버퍼 소거가 진행됨
         } finally {
             // 예외 발생 등으로 인해 finalize가 호출되지 않은 경우에만 early free
             if (!isCtxConsumed && ctx != null && !ctx.equals(MemorySegment.NULL)) {
-                EntLibNativeManager.call(freeFunc).invokeExact(ctx);
+                NativeLinker.call(freeFunc).invokeExact(ctx);
             }
         }
     }

@@ -11,7 +11,7 @@ public final class EntanglementLibSecurityFacade {
     }
 
     public static void initialize(@NotNull EntanglementLibSecurityConfig config) {
-        NativeLoader.loadNativeLibrary(config);
+        NativeLoader.loadNativeLibrary(config); // TODO: entlib-native 기본 로더 로직 추가
         HeuristicArenaFactory.setGlobalArenaMode(config.getArenaMode());
     }
 }

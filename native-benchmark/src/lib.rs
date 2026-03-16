@@ -1,3 +1,4 @@
+#![cfg(target_arch = "x86_64")]
 use jni::sys::*;
 use std::arch::x86_64::{
     __m256i, _mm256_add_epi32, _mm256_and_si256, _mm256_cmpgt_epi32, _mm256_loadu_si256,

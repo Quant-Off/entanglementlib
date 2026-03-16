@@ -20,7 +20,7 @@ All designs of EntanglementLib prioritize security for 'military security' and '
 
 EntanglementLib performs all security operations through [Rust-based native](https://github.com/Quant-Off/entlib-native). Native destroys all security weaknesses that can be triggered in the cleaning mechanism of the Garbage Collector (GC) due to `heap` memory allocation. It receives sensitive data from the Java side as `off-heap` to perform tasks, and immediately and safely erases the data of the pointer through the caller or callee pattern.
 
-When interacting with Native from the Java side, simply JNI (Java Native Interface) functions are not used. The core technology is the Linker, FFM API (Foreign Function & Memory API), which is an advanced native call function based on [JEP 389](https://openjdk.org/jeps/389) and [JEP 454](https://openjdk.org/jeps/454) improvements, and on the Native side, it is linked via FFI (Foreign Function Interface) through encapsulated logic.
+When interacting with Native from the Java side, simply JNI (Java Native Interface) nativeComponents are not used. The core technology is the Linker, FFM API (Foreign Function & Memory API), which is an advanced native call nativeComponent based on [JEP 389](https://openjdk.org/jeps/389) and [JEP 454](https://openjdk.org/jeps/454) improvements, and on the Native side, it is linked via FFI (Foreign Function Interface) through encapsulated logic.
 
 > [!TIP]
 > If you are curious about the background and overview of Native, please refer to [here](https://qu4nt.space/projects/entlib-native).
@@ -35,8 +35,8 @@ EntanglementLib is now a multi-module project. The role of each module is divide
 
 | Module          | Function                                                                                                                                  |
 |-----------------|-------------------------------------------------------------------------------------------------------------------------------------------|
-| `security`      | Core security module. Provides logic for interaction with Native and various security functions linked via FFI.                           |
-| `core`          | Provides utility functions managing exceptions, internationalization and asynchronous, chunk operations, strings, and data structures.    |
+| `security`      | Core security module. Provides logic for interaction with Native and various security nativeComponents linked via FFI.                           |
+| `core`          | Provides utility nativeComponents managing exceptions, internationalization and asynchronous, chunk operations, strings, and data structures.    |
 | `annotations`   | Includes annotations for easy code design and improving user's code understanding complexity.                                             |
 
 
@@ -46,7 +46,7 @@ Detailed technical specifications for EntanglementLib are being written.
 
 ## Benchmarking Records
 
-We are performing bridge benchmarking for various operations such as nanosecond delays occurring when calling Rust native functions using FFM API in EntanglementLib. This work is directly related to performance and security, and plays an important role in creating optimal code.
+We are performing bridge benchmarking for various operations such as nanosecond delays occurring when calling Rust native nativeComponents using FFM API in EntanglementLib. This work is directly related to performance and security, and plays an important role in creating optimal code.
 
 Many benchmarking tasks are scheduled in this alpha version. We plan to proceed with this work through JMH (Java Microbenchmark Harness), and we will organize it in a new document as soon as it is completed.
 
@@ -58,10 +58,11 @@ This project is currently `Alpha` version, and is still lacking a lot. We are al
 
 EntanglementLib wants to clarify the following TODOs so that it can be used in financial and security infrastructure production in the future.
 
+- [ ] Develop Local Hosted Web for useful use in closed network environments
 - [ ] Add TLS communication logic
 - [ ] Prepare and perform complex verification tasks
 - [ ] Custom Exception Optimization
-- [ ] Apply JPMS
+- [ ] Apply JPMS (Package modularization within multi-modules)
     - Once secure encapsulation and consistent call (or usage) patterns are completed, we intend to manage encapsulated packages as modules through JPMS.
 - [ ] Minimize external dependencies
     - Now, from the `1.1.0` release, we have minimized `BouncyCastle` dependencies and finally succeeded in removing them. Dependencies that provide some useful tools needed for current code writing still remain, but these will also be minimized eventually.
@@ -81,7 +82,7 @@ EntanglementLib wants to clarify the following TODOs so that it can be used in f
     - In `ChaCha20Poly1305`, `InternalFactory.getSafeRandom()` is used to generate nonce value `Nonce`. If `Nonce` is reused with the same key, the security of `ChaCha20Poly1305` collapses completely.
         - **Resolution**: This problem was also solved with the `entlib-native` native library. Now, `ChaCha20`-based `CSPRNG` is created on the `Rust` side, and used only on the `Rust` side. In other words, all cryptographic operations are now performed only by `Rust`!
 - [X] Writing Technical Specifications for Security Functions
-    - **Resolution**: Important security-related functions of EntanglementLib have been written in a [separate document](TECHNICAL.md).
+    - **Resolution**: Important security-related nativeComponents of EntanglementLib have been written in a [separate document](TECHNICAL.md).
 
 ## License
 

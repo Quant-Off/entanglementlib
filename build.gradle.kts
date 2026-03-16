@@ -14,7 +14,7 @@ val quantPublicDir = project.findProperty("quantPublicDir") as? String
 
 val lombokVersion = "org.projectlombok:lombok:1.18.42"
 
-val entLibVersion = "1.1.2-Alpha3"
+val entLibVersion = "1.1.2"
 
 allprojects {
     group = "{$commonGroupId}.entanglementlib"
@@ -45,9 +45,6 @@ subprojects {
         // Logging
         // https://mvnrepository.com/artifact/org.slf4j/slf4j-api
         implementation("org.slf4j:slf4j-api:2.0.17")
-        // bridger
-        // https://mvnrepository.com/artifact/org.slf4j/jul-to-slf4j
-        implementation("org.slf4j:jul-to-slf4j:2.0.17")
         // Logging Provider (Logback)
         // https://mvnrepository.com/artifact/ch.qos.logback/logback-classic
         implementation("ch.qos.logback:logback-classic:1.5.26")
