@@ -14,7 +14,7 @@ val quantPublicDir = project.findProperty("quantPublicDir") as? String
 
 val lombokVersion = "org.projectlombok:lombok:1.18.42"
 
-val entLibVersion = "1.1.2-Alpha3"
+val entLibVersion = "1.1.2"
 
 allprojects {
     group = "{$commonGroupId}.entanglementlib"
