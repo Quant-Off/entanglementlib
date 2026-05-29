@@ -14,6 +14,7 @@ import space.qu4nt.entanglementlib.security.data.InternalNativeBridge;
 import space.qu4nt.entanglementlib.security.data.SDCScopeContext;
 import space.qu4nt.entanglementlib.security.data.SensitiveDataContainer;
 import space.qu4nt.entanglementlib.security.entlibnative.NativeSpecContext;
+import space.qu4nt.entanglementlib.security.provider.CryptoProviderConfig;
 
 import java.lang.foreign.MemorySegment;
 import java.lang.foreign.ValueLayout;
@@ -30,7 +31,8 @@ class RNGTest {
         EntanglementLibSecurityFacade.initialize(
                 EntanglementLibSecurityConfig.create(
                         new NativeSpecContext(System.getenv("ENTLIB_NATIVE_BIN"), "entlib_native_ffi"),
-                        HeuristicArenaFactory.ArenaMode.CONFINED)
+                        HeuristicArenaFactory.ArenaMode.CONFINED,
+                        CryptoProviderConfig.nativeDefaults())
         );
     }
 
