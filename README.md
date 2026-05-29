@@ -26,17 +26,58 @@ Java 측에서 네이티브와 상호 작용할 때 JNI(Java Native Interface) �
 
 얽힘 라이브러리는 멀티모듈 프로젝트입니다. 각 모듈의 역할은 작업 및 실용적 어노테이션과 각종 편의성 도구를 포함한 유틸리티로 나눠집니다. 어노테이션 및 코어 모듈은 보안 모듈에서 핵심적으로 사용되지만, 보안 모듈은 다른 모듈에서 절대로 사용되지 않습니다.
 
-| 모듈            | 기능                                                               |
-|---------------|------------------------------------------------------------------|
-| `security`    | 핵심 보안 모듈입니다. 네이티브와의 상호 작용을 위한 로직과, FFI를 통해 연동된 갖가지 보안 기능을 제공합니다. |
-| `core`        | 예외, 국제화 및 비동기, 청크 작업, 문자열, 자료구조를 관리하는 유틸리티 기능을 제공합니다.            |
-| `annotations` | 간편한 코드 설계 및 사용자의 코드 이해 복잡도를 개선하기 위한 어노테이션이 포함되어 있습니다.            |
+| 모듈                       | 기능                                                               |
+|--------------------------|------------------------------------------------------------------|
+| `security`               | 핵심 보안 모듈입니다. 네이티브와의 상호 작용을 위한 로직과, FFI를 통해 연동된 갖가지 보안 기능을 제공합니다. |
+| `core`                   | 예외, 국제화 및 비동기, 청크 작업, 문자열, 자료구조를 관리하는 유틸리티 기능을 제공합니다.            |
+| `annotations`            | 간편한 코드 설계 및 사용자의 코드 이해 복잡도를 개선하기 위한 어노테이션이 포함되어 있습니다.            |
+| `internal-shared-server` | 폐쇄 환경의 인프라를 형성 및 관리할 수 있는 기능이 포함되어 있습니다.                         |
 
 ## 주의 및 보안 공급자 설정
 
 **얽힘 라이브러리(Java)에서 네이티브로 호출되는 보안 기능(Rust)의 암호학적 검증이 충분히 이루어지지 않았습니다.** Team Quant는 `entlib-native`의 완전한 검증을 이루기 위해 노력하고 있습니다.
 
+> [!IMPORTANT]
+> 암호 모듈을 검증받는 데에는 많은 시간이 필요합니다. 따라서 `entlib-native` 공급자는 **"반드시 실험(연구)적 용도로만"** 사용해주세요.
+
 여러분은 Rust 레이어에 구현된 '보안 기능 공급자'를 `entlib-native`가 아닌, '이미 검증된 안전한 공급자'를 사용하도록 설정할 수 있습니다.
+
+### 공급자 설정
+
+FFI 경계를 통해 사용되는 모든 보안 기능(다이제스트, 인코딩, AEAD, 난수)은 `CryptoProviderConfig`로 백엔드를 선택할 수 있습니다. 선택지는 다음과 같습니다.
+
+- `CryptoBackend#JDK_VERIFIED` - JDK 표준 JCA(`MessageDigest`, `Cipher`, `SecureRandom`, `java.util.Base64`, `HexFormat`)를 사용하는 검증된 백엔드 (**기본값**)
+- `CryptoBackend#ENTLIB_NATIVE` - `entlib-native` FFI 백엔드 (미검증, 실험용)
+- 사용자가 직접 구현한 검증 공급자 인스턴스 주입 (예: HSM, PKCS#11, 사내 검증 라이브러리)
+
+기본값은 **검증된 JDK 백엔드**입니다. 따라서 별도 설정 없이 초기화하면 미검증 네이티브 대신 검증된 공급자가 사용됩니다.
+
+```java
+// 1) 기본값 (전체 검증된 JDK 백엔드)
+EntanglementLibSecurityFacade.initialize(
+        EntanglementLibSecurityConfig.create(null, HeuristicArenaFactory.ArenaMode.AUTO));
+
+// 2) 전역 + 기능별 혼합 + 외부 JCA 공급자(BouncyCastle 등) + 커스텀 공급자 주입
+CryptoProviderConfig providers = CryptoProviderConfig.builder()
+        .useVerifiedProviders()            // 전역 기본을 검증된 JDK로
+        .aead(CryptoBackend.ENTLIB_NATIVE) // AEAD만 네이티브로 (실험)
+        .jcaProviderName("BC")             // 검증 백엔드가 사용할 JCA 공급자명
+        .random(myVerifiedRandomProvider)  // 난수는 사용자 정의 검증 공급자
+        .build();
+
+EntanglementLibSecurityFacade.initialize(
+        EntanglementLibSecurityConfig.create(
+                nativeSpecContext, HeuristicArenaFactory.ArenaMode.AUTO, providers));
+
+// 3) 전체 entlib-native (실험용)
+EntanglementLibSecurityConfig.create(nativeSpecContext, null, CryptoProviderConfig.nativeDefaults());
+```
+
+> [!TIP]
+> 모든 기능이 검증된(또는 커스텀) 공급자로 해석되면(`requiresNative() == false`) 얽힘 라이브러리는 미검증 네이티브 바이너리를 **로드하지 않습니다.** 폐쇄 환경에서 네이티브 바이너리를 배포하지 않고도 검증된 보안 연산만 사용할 수 있습니다.
+
+> [!NOTE]
+> **검증된 JDK 백엔드는 JCA 특성상 연산 시간 동안 민감 데이터가 JVM `heap`에 잠시 노출**됩니다. 라이브러리는 사용한 임시 `byte[]`를 즉시 0으로 소거하지만, 이는 검증된 정확성을 위한 의도된 절충입니다. 또한 **SHAKE(XOF) 가변 길이 출력과 양자 네트워크 난수는 JDK 표준에 대응이 없어 검증된 백엔드에서 지원하지 않습니다**(네이티브 또는 XOF 지원 공급자 필요).
 
 ## 기여
 
@@ -53,7 +94,7 @@ Java 측에서 네이티브와 상호 작용할 때 JNI(Java Native Interface) �
 - [ ] JPMS 적용 (멀티모듈 내에서도 패키지 모듈화)
   - 안전한 캡슐화와 일관된 호출(또는 사용) 패턴이 완성되면 JPMS를 통해 캡슐화된 패키지를 모듈로서 관리하려고 합니다.
 - [ ] 외부 의존성 최소화
-  - 이제 `1.1.0` 릴리즈부턴 `BouncyCastle` 의존성을 최소화하며, 끝내 제거하는 데 성공했습니다. 현재 코드 작성에 필요한 몇 가지 유용한 도구를 제공하는 의존성은 여전히 남아 있지만, 이들도 끝내 최소화될 예정입니다.
+  - `1.1.0` 릴리즈부턴 `BouncyCastle` 의존성을 사용하지 않습니다. 현재 코드 작성에 필요한 몇 가지 유용한 도구를 제공하는 의존성은 여전히 남아 있지만, 이들도 끝내 최소화될 예정입니다.
 - [ ] `i18n` 업데이트
   - 최신 릴리즈 개발을 수행하며 다국어 지원을 많이 누락했습니다. 구성 설정에 따라 각 언어별로 로깅을 지원할 수 있도록 수정해야 합니다.
 
