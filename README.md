@@ -1,6 +1,7 @@
 # EntanglementLib
 
 [![Version](https://img.shields.io/badge/version-1.2.0-blue?style=for-the-badge)](https://github.com/Quant-Off/entanglementlib)
+[![README-Language](https://img.shields.io/badge/README-English_Ver-blue?style=for-the-badge)](README_EN.md)
 [![License](https://img.shields.io/badge/license-PolyForm%20Noncommercial%20License%201.0.0-green?style=for-the-badge)](LICENSE)
 [![Language](https://img.shields.io/badge/language-Java-orange?style=for-the-badge)](https://github.com/Quant-Off/entanglementlib)
 [![Qu4nt-Space-Discord](https://img.shields.io/badge/Qu4nt_Space-5865F2?style=for-the-badge&logo=discord&logoColor=white)](https://discord.gg/9utg4hp3m8)
