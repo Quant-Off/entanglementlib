@@ -11,6 +11,7 @@ public/native-sources/
 !**/src/test/**/build/
 native-benchmark/target/
 native-benchmark/Cargo.lock
+*.psk
 
 ### IntelliJ IDEA ###
 .idea/modules.xml

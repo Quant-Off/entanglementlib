@@ -80,6 +80,84 @@ EntanglementLibSecurityConfig.create(nativeSpecContext, null, CryptoProviderConf
 > [!NOTE]
 > **검증된 JDK 백엔드는 JCA 특성상 연산 시간 동안 민감 데이터가 JVM `heap`에 잠시 노출**됩니다. 라이브러리는 사용한 임시 `byte[]`를 즉시 0으로 소거하지만, 이는 검증된 정확성을 위한 의도된 절충입니다. 또한 **SHAKE(XOF) 가변 길이 출력과 양자 네트워크 난수는 JDK 표준에 대응이 없어 검증된 백엔드에서 지원하지 않습니다**(네이티브 또는 XOF 지원 공급자 필요).
 
+## 폐쇄망 공유 서버
+
+`internal-shared-server`(ISS) 모듈은 폐쇄망에서 여러 내부 노드가 접속하는 보안 공유 서버입니다. 공개 인터넷 CA 신뢰 체인을 배제하고 사전 공유 키(PSK)로 양측을 상호 인증하며, 모든 레코드는 `ChaCha20-Poly1305`로 보호됩니다. 검증된 JDK 공급자만으로 동작하므로 네이티브 바이너리 배포 없이 사용할 수 있습니다. 코드레벨 임베드 API(`ISSServer`·`ISSClient`)와 CLI 두 경로로 제어합니다.
+
+> [!NOTE]
+> 키 확립에 DH/KEM을 사용하지 않으므로 순방향 비밀성(PFS)은 제공하지 않습니다. PSK가 노출되면 과거·미래 트래픽이 위험하므로 강한 PSK와 주기적 교체로 운용하세요. 서버는 기본적으로 루프백(127.0.0.1)에만 바인드하며, LAN 노출은 명시적 옵트인(opt-in)이 필요합니다.
+
+### 실행 파일 준비
+
+애플리케이션 배포본을 생성하면 실행 스크립트가 만들어집니다.
+
+```bash
+./gradlew :internal-shared-server:installDist
+# 생성 위치
+# internal-shared-server/build/install/internal-shared-server/bin/internal-shared-server
+
+# 편의상 alias 등록 (선택)
+alias iss="$(pwd)/internal-shared-server/build/install/internal-shared-server/bin/internal-shared-server"
+```
+
+또는 Gradle로 바로 실행할 수 있습니다.
+
+```bash
+./gradlew :internal-shared-server:run --args="--help"
+```
+
+### CLI 사용법
+
+```text
+iss serve   --port N [--bind 127.0.0.1] (--psk-file F | --psk-env VAR)
+            [--max-conn 64] [--allow-nonloopback] [--allow-peer IP]...
+iss ping    --port N [--host 127.0.0.1] (--psk-file F | --psk-env VAR)
+iss put     --port N [--host H] (--psk-file F | --psk-env VAR)
+            --key K (--value V | --value-file F | --stdin)
+iss get     --port N [--host H] (--psk-file F | --psk-env VAR) --key K [--out FILE]
+iss del     --port N [--host H] (--psk-file F | --psk-env VAR) --key K
+iss list    --port N [--host H] (--psk-file F | --psk-env VAR)
+iss status  --port N [--host H] (--psk-file F | --psk-env VAR)
+iss gen-psk [--bytes 32] [--out FILE]
+iss --help | --version
+```
+
+| 명령        | 설명                                               |
+|-----------|--------------------------------------------------|
+| `serve`   | 서버를 바인드하고 연결 수용 시작 (Ctrl-C 로 종료)                 |
+| `ping`    | 핸드셰이크 후 서버 응답 확인                                 |
+| `put`     | 키에 값을 저장 (값은 인자·파일·표준입력 중 하나)                    |
+| `get`     | 키의 값을 조회 (`--out` 지정 시 파일 저장, 없으면 표준출력, 미존재 시 1) |
+| `del`     | 키를 삭제                                            |
+| `list`    | 저장된 키 목록 출력                                      |
+| `status`  | 서버 상태 조회                                         |
+| `gen-psk` | 보안 난수로 PSK 생성 (`--out` 없으면 hex 를 표준출력)           |
+
+> [!IMPORTANT]
+> PSK는 평문 명령행 인자로 받지 않습니다(프로세스 목록 노출 방지). raw 바이트 키 파일(`--psk-file`) 또는 hex 환경변수(`--psk-env`)로만 입력하며, 최소 32바이트를 요구합니다. 로그는 표준오류로, 명령 결과 데이터는 표준출력으로 분리됩니다.
+
+### 빠른 시작
+
+```bash
+# 1) PSK 생성 (raw 32바이트 키 파일, 소유자 전용 권한으로 저장)
+iss gen-psk --out infra.psk
+
+# 2) 서버 기동 (루프백 기본)
+iss serve --port 8443 --psk-file infra.psk
+
+# 3) 다른 터미널에서 클라이언트 명령
+iss ping   --port 8443 --psk-file infra.psk
+iss put    --port 8443 --psk-file infra.psk --key greeting --value "Hello"
+iss get    --port 8443 --psk-file infra.psk --key greeting
+iss list   --port 8443 --psk-file infra.psk
+iss status --port 8443 --psk-file infra.psk
+iss del    --port 8443 --psk-file infra.psk --key greeting
+
+# 환경변수(hex)로 PSK 전달
+export ISS_PSK=$(iss gen-psk)
+iss ping --port 8443 --psk-env ISS_PSK
+```
+
 ## 기여
 
 여러분의 피드백을 적극적으로 받을 준비가 되어 있습니다. 얽힘 라이브러리는 단순히 PQC 알고리즘을 제공하는 것만이 아닌, 체계적으로 사용자 환경의 인프라 보안을 감시하고 사용자에게 해결책을 찾아주는 유능한 도구로써 사용되도록 개발됩니다. 최신 릴리즈부턴 이 신념에 강력한 초점을 맞출 것입니다.
@@ -89,15 +167,20 @@ EntanglementLibSecurityConfig.create(nativeSpecContext, null, CryptoProviderConf
 얽힘 라이브러리는 미래에 금융 및 보안 인프라 프로덕션에서 사용할 수 있도록 다음의 TODO를 명확히 하고자 합니다.
 
 - [ ] 폐쇄망 환경 유용한 사용을 위한 Local Hosted 웹 개발
+  - 현재 ISS는 CLI와 임베드 API(`ISSServer`·`ISSClient`)로만 제어합니다. 웹 기반 관리 콘솔은 아직 없습니다.
 - [ ] TLS 통신 로직 추가
+  - ISS의 PSK 상호 인증 + ChaCha20-Poly1305 보안 채널은 구현을 완료했습니다.
+  - `security` 모듈에 `ExternalTLS` 파사드 골격을 추가했으나, ML-KEM 키 확립과 ChaCha20-Poly1305 레코드 AEAD, RNG nonce 생성이 네이티브 FFI에 노출되기 전까지 핸드셰이크는 비활성(스텁) 상태입니다.
 - [ ] 복합 검증 작업 준비 및 수행
-- [ ] 커스텀 예외 최적화
+  - 보안 공급자 SPI(`CryptoProviderConfig`)를 추가해 미검증 네이티브 대신 검증된 JDK 공급자(또는 커스텀 공급자)를 선택할 수 있습니다. `entlib-native` 자체의 암호학적 검증은 계속 진행 중입니다.
+- [x] 커스텀 예외 최적화
+  - checked/unchecked 및 core/security 계층으로 분리한 예외 체계와 i18n 연동 `ExceptionLogger`를 구성했습니다.
 - [ ] JPMS 적용 (멀티모듈 내에서도 패키지 모듈화)
   - 안전한 캡슐화와 일관된 호출(또는 사용) 패턴이 완성되면 JPMS를 통해 캡슐화된 패키지를 모듈로서 관리하려고 합니다.
 - [ ] 외부 의존성 최소화
-  - `1.1.0` 릴리즈부턴 `BouncyCastle` 의존성을 사용하지 않습니다. 현재 코드 작성에 필요한 몇 가지 유용한 도구를 제공하는 의존성은 여전히 남아 있지만, 이들도 끝내 최소화될 예정입니다.
+  - `1.1.0` 릴리즈부턴 `BouncyCastle` 의존성을 사용하지 않으며, `Lombok` 의존성도 제거했습니다. 현재 코드 작성에 필요한 몇 가지 유용한 도구를 제공하는 의존성은 여전히 남아 있지만, 이들도 끝내 최소화될 예정입니다.
 - [ ] `i18n` 업데이트
-  - 최신 릴리즈 개발을 수행하며 다국어 지원을 많이 누락했습니다. 구성 설정에 따라 각 언어별로 로깅을 지원할 수 있도록 수정해야 합니다.
+  - `core`의 `EntanglementLibCoreI18n`과 `en_US`·`ko_KR` 메시지 번들을 갖췄습니다. 다만 구성 설정에 따라 각 언어별 로깅을 자동 적용하는 연동은 아직 더 다듬어야 합니다.
 
 ## 라이선스
 

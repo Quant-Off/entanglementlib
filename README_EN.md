@@ -80,6 +80,84 @@ EntanglementLibSecurityConfig.create(nativeSpecContext, null, CryptoProviderConf
 > [!NOTE]
 > **The verified JDK backend briefly exposes sensitive data on the JVM `heap` during computation due to JCA characteristics.** The library immediately zeroes temporary `byte[]` instances it uses, but this is an intentional trade-off for verified correctness. Additionally, **SHAKE (XOF) variable-length output and quantum network randomness are not supported in the verified backend** as they have no JDK standard equivalent (native or XOF-capable providers are required).
 
+## Air-gapped Shared Server
+
+The `internal-shared-server` (ISS) module is a secure shared server that multiple internal nodes connect to within an air-gapped network. It excludes the public internet CA trust chain, mutually authenticates both sides with a pre-shared key (PSK), and protects every record with `ChaCha20-Poly1305`. Since it operates using only the verified JDK provider, it can be used without deploying native binaries. It is controlled through two paths: the code-level embedded API (`ISSServer` / `ISSClient`) and the CLI.
+
+> [!NOTE]
+> Because it does not use DH/KEM for key establishment, it does not provide forward secrecy (PFS). If the PSK is exposed, past and future traffic is at risk, so operate it with a strong PSK and periodic rotation. By default the server binds only to loopback (127.0.0.1); LAN exposure requires explicit opt-in.
+
+### Preparing the Executable
+
+Generating an application distribution produces a launch script.
+
+```bash
+./gradlew :internal-shared-server:installDist
+# Output location
+# internal-shared-server/build/install/internal-shared-server/bin/internal-shared-server
+
+# Register an alias for convenience (optional)
+alias iss="$(pwd)/internal-shared-server/build/install/internal-shared-server/bin/internal-shared-server"
+```
+
+Or you can run it directly with Gradle.
+
+```bash
+./gradlew :internal-shared-server:run --args="--help"
+```
+
+### CLI Usage
+
+```text
+iss serve   --port N [--bind 127.0.0.1] (--psk-file F | --psk-env VAR)
+            [--max-conn 64] [--allow-nonloopback] [--allow-peer IP]...
+iss ping    --port N [--host 127.0.0.1] (--psk-file F | --psk-env VAR)
+iss put     --port N [--host H] (--psk-file F | --psk-env VAR)
+            --key K (--value V | --value-file F | --stdin)
+iss get     --port N [--host H] (--psk-file F | --psk-env VAR) --key K [--out FILE]
+iss del     --port N [--host H] (--psk-file F | --psk-env VAR) --key K
+iss list    --port N [--host H] (--psk-file F | --psk-env VAR)
+iss status  --port N [--host H] (--psk-file F | --psk-env VAR)
+iss gen-psk [--bytes 32] [--out FILE]
+iss --help | --version
+```
+
+| Command   | Description                                                                 |
+|-----------|----------------------------------------------------------------------------|
+| `serve`   | Bind the server and start accepting connections (exit with Ctrl-C)         |
+| `ping`    | Verify the server response after the handshake                             |
+| `put`     | Store a value under a key (value from argument, file, or stdin)            |
+| `get`     | Retrieve a key's value (saves to file with `--out`, else stdout; 1 if absent) |
+| `del`     | Delete a key                                                               |
+| `list`    | Print the list of stored keys                                             |
+| `status`  | Query the server status                                                    |
+| `gen-psk` | Generate a PSK from a secure RNG (prints hex to stdout if no `--out`)      |
+
+> [!IMPORTANT]
+> The PSK is not accepted as a plaintext command-line argument (to prevent exposure in the process list). It is supplied only via a raw-byte key file (`--psk-file`) or a hex environment variable (`--psk-env`), and a minimum of 32 bytes is required. Logs go to standard error, while command result data is separated to standard output.
+
+### Quick Start
+
+```bash
+# 1) Generate a PSK (raw 32-byte key file, saved with owner-only permissions)
+iss gen-psk --out infra.psk
+
+# 2) Start the server (loopback by default)
+iss serve --port 8443 --psk-file infra.psk
+
+# 3) Run client commands from another terminal
+iss ping   --port 8443 --psk-file infra.psk
+iss put    --port 8443 --psk-file infra.psk --key greeting --value "Hello"
+iss get    --port 8443 --psk-file infra.psk --key greeting
+iss list   --port 8443 --psk-file infra.psk
+iss status --port 8443 --psk-file infra.psk
+iss del    --port 8443 --psk-file infra.psk --key greeting
+
+# Pass the PSK via an environment variable (hex)
+export ISS_PSK=$(iss gen-psk)
+iss ping --port 8443 --psk-env ISS_PSK
+```
+
 ## Contributing
 
 We are ready to actively receive your feedback. EntanglementLib is developed not merely to provide PQC algorithms, but to serve as a capable tool that systematically monitors infrastructure security in user environments and provides solutions. Recent releases put a strong emphasis on this belief.
@@ -89,15 +167,20 @@ We are ready to actively receive your feedback. EntanglementLib is developed not
 EntanglementLib aims to clear the following TODOs so it can be used in financial and security infrastructure production in the future.
 
 - [ ] Local-hosted web development for useful usage in air-gapped environments
+  - ISS is currently controlled only through the CLI and the embedded API (`ISSServer` / `ISSClient`). A web-based management console does not exist yet.
 - [ ] Additional TLS communication logic
+  - The ISS PSK mutual-authentication + ChaCha20-Poly1305 secure channel has been fully implemented.
+  - An `ExternalTLS` facade skeleton was added to the `security` module, but the handshake remains inactive (a stub) until ML-KEM key establishment, ChaCha20-Poly1305 record AEAD, and RNG nonce generation are exposed in the native FFI.
 - [ ] Preparation and execution of comprehensive verification tasks
-- [ ] Custom exception optimization
+  - A crypto provider SPI (`CryptoProviderConfig`) was added so you can choose a verified JDK provider (or a custom provider) instead of unverified native code. Cryptographic verification of `entlib-native` itself is still ongoing.
+- [x] Custom exception optimization
+  - An exception hierarchy split into checked/unchecked and core/security layers, along with an i18n-integrated `ExceptionLogger`, has been established.
 - [ ] JPMS application (package modularization even within multi-module)
   - Once secure encapsulation and consistent call (or usage) patterns are established, we plan to manage encapsulated packages as modules via JPMS.
 - [ ] Minimize external dependencies
-  - Starting from release `1.1.0`, we no longer depend on `BouncyCastle`. Some useful dependency-provided tools needed for current code still remain, but these will also ultimately be minimized.
+  - Starting from release `1.1.0`, we no longer depend on `BouncyCastle`, and the `Lombok` dependency has also been removed. Some useful dependency-provided tools needed for current code still remain, but these will also ultimately be minimized.
 - [ ] `i18n` updates
-  - Many internationalization support features were missed during recent release development. Logging needs to be adjusted to support per-language localization based on configuration settings.
+  - The `core` module's `EntanglementLibCoreI18n` and the `en_US` / `ko_KR` message bundles are in place. However, the integration that automatically applies per-language logging based on configuration settings still needs further refinement.
 
 ## License
 
