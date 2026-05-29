@@ -7,7 +7,7 @@ plugins {
     java
 }
 
-val entLibVersion = "1.1.2"
+val entLibVersion = "1.2.0"
 
 allprojects {
     group = "space.qu4nt.entanglementlib"
