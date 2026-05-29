@@ -245,10 +245,16 @@ public class SensitiveDataContainer implements AutoCloseable {
             }
 
             try {
-                // TODO: 아래 메소드는 FFIStandard 구조체 레이아웃만 받음. 하지만 현재 sdc는 this.memorySegement 값이 해당 구조체만 들어오는게 아님. 이에따라 추가 조치 필요
-                NativeProcessResult<Void> result = ConstableFactory.Std.joepOrder(this.memorySegment);
-                if (result.isSuccess())
-                    log.debug("'{}' 스레드 JOEP 명령 -> Rust측 소거 완료", Thread.currentThread().getName());
+                if (ConstableFactory.Std.isNativeZeroizeAvailable()) {
+                    // TODO: 아래 메소드는 FFIStandard 구조체 레이아웃만 받음. 하지만 현재 sdc는 this.memorySegement 값이 해당 구조체만 들어오는게 아님. 이에따라 추가 조치 필요
+                    NativeProcessResult<Void> result = ConstableFactory.Std.joepOrder(this.memorySegment);
+                    if (result.isSuccess())
+                        log.debug("'{}' 스레드 JOEP 명령 -> Rust측 소거 완료", Thread.currentThread().getName());
+                } else {
+                    // 검증 전용 모드 -> 네이티브 위임 없이 Java가 직접 off-heap 메모리를 0으로 소거
+                    this.memorySegment.fill((byte) 0);
+                    log.debug("'{}' 스레드 -> Java 측 off-heap zeroize 완료", Thread.currentThread().getName());
+                }
             } catch (ELIBSecurityProcessException e) {
                 throw new ELIBSecurityCritical(e);
             } finally {

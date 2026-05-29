@@ -29,7 +29,8 @@ public final class ConstableFactory {
     static final Map<NativeComponent, MethodHandle> withoutOSMethodHandles = NativeLinker.withoutOSMethodHandles;
 
     public static @Nullable MethodHandle getImportedComponentMethodHandle(final @NotNull NativeComponent component) {
-        if (withoutOSMethodHandles.containsKey(component))
+        // 검증 전용 모드에선 네이티브가 로드되지 않아 맵이 null일 수 있음
+        if (withoutOSMethodHandles != null && withoutOSMethodHandles.containsKey(component))
             return withoutOSMethodHandles.get(component);
         return null;
     }
@@ -124,11 +125,13 @@ public final class ConstableFactory {
 
         static {
             // OSStd
+            // 검증 전용 모드에선 네이티브가 로드되지 않아 맵이 null일 수 있음 -> OS 핸들은 null로 두고
+            // 페이지 잠금(mlock)은 생략 (Java 측 zeroize로 메모리 소거는 보장됨)
             final Map<NativeComponent, MethodHandle> osDefaultMethodHandles = NativeLinker.osDefaultMethodHandles;
-            OS_SC_VIRTUAL_LOCK = osDefaultMethodHandles.get(NativeComponent.OS_SC_VIRTUAL_LOCK);
-            OS_SC_VIRTUAL_UNLOCK = osDefaultMethodHandles.get(NativeComponent.OS_SC_VIRTUAL_UNLOCK);
-            OS_SC_MLOCK = osDefaultMethodHandles.get(NativeComponent.OS_SC_MLOCK);
-            OS_SC_MUNLOCK = osDefaultMethodHandles.get(NativeComponent.OS_SC_MUNLOCK);
+            OS_SC_VIRTUAL_LOCK = osDefaultMethodHandles == null ? null : osDefaultMethodHandles.get(NativeComponent.OS_SC_VIRTUAL_LOCK);
+            OS_SC_VIRTUAL_UNLOCK = osDefaultMethodHandles == null ? null : osDefaultMethodHandles.get(NativeComponent.OS_SC_VIRTUAL_UNLOCK);
+            OS_SC_MLOCK = osDefaultMethodHandles == null ? null : osDefaultMethodHandles.get(NativeComponent.OS_SC_MLOCK);
+            OS_SC_MUNLOCK = osDefaultMethodHandles == null ? null : osDefaultMethodHandles.get(NativeComponent.OS_SC_MUNLOCK);
 
             // EntLibResult
             final StructLayout entlibResult = NativeComponent.STRUCT_ENTLIB_RESULT.getStructInfo().toStructLayout();
@@ -147,6 +150,8 @@ public final class ConstableFactory {
         }
 
         public static void systemCallMemoryLock(boolean windows, final @NotNull MemorySegment target) {
+            // 검증 전용 모드 등으로 OS 핸들이 미설정이면 페이지 잠금을 생략 (best-effort 하드닝)
+            if (windows ? OS_SC_VIRTUAL_LOCK == null : OS_SC_MLOCK == null) return;
             int result;
             try {
                 if (windows) {
@@ -174,6 +179,8 @@ public final class ConstableFactory {
         }
 
         public static void systemCallMemoryUnlock(boolean windows, final @NotNull MemorySegment target) {
+            // 페이지 잠금을 생략한 경우 잠금 해제도 생략
+            if (windows ? OS_SC_VIRTUAL_UNLOCK == null : OS_SC_MUNLOCK == null) return;
             int result;
             try {
                 if (windows) {
@@ -201,6 +208,12 @@ public final class ConstableFactory {
 
         public static NativeProcessResult<Void> joepOrder(final @NotNull MemorySegment target) throws ELIBSecurityProcessException {
             return wrapInvoke(FUNC_JOEP, null, target);
+        }
+
+        /// 네이티브 측 JOEP(메모리 소거 지시) 함수가 로드되어 사용 가능한지 여부입니다.
+        /// `false`(검증 전용 모드)이면 Java 측에서 직접 메모리를 소거해야 합니다.
+        public static boolean isNativeZeroizeAvailable() {
+            return FUNC_JOEP != null;
         }
 
         /// Rust FFI 통신을 위한 표준 규격 구조체를 안전하게 할당하고 초기화하는 메소드입니다.
