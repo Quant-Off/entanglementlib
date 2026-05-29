@@ -1,0 +1,23 @@
+<!--
+  ~ Copyright © 2025-2026 Quant.
+  ~ Under License "PolyForm Noncommercial License 1.0.0".
+  -->
+
+<configuration>
+
+  <!-- 로그는 stderr 로 보내 CLI 표준 출력(데이터)을 깨끗하게 유지한다 -->
+  <appender name="STDERR" class="ch.qos.logback.core.ConsoleAppender">
+    <target>System.err</target>
+    <encoder>
+      <pattern>[%d{HH:mm:ss.SSS}] %-5level %logger{0} - %msg%n</pattern>
+    </encoder>
+  </appender>
+
+  <!-- ISS 자체 로그는 INFO (서버 생명주기 등), 그 외 라이브러리 잡음은 WARN 이상만 -->
+  <logger name="space.qu4nt.entanglementlib.iss" level="INFO"/>
+
+  <root level="WARN">
+    <appender-ref ref="STDERR"/>
+  </root>
+
+</configuration>
