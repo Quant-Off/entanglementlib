@@ -7,7 +7,7 @@ package space.qu4nt.entanglementlib.iss.service;
 
 import org.jetbrains.annotations.NotNull;
 import space.qu4nt.entanglementlib.iss.handler.HandlerRegistry;
-import space.qu4nt.entanglementlib.iss.handler.IssResponse;
+import space.qu4nt.entanglementlib.iss.handler.ISSResponse;
 import space.qu4nt.entanglementlib.iss.handler.KvCodec;
 
 import java.nio.charset.StandardCharsets;
@@ -42,35 +42,35 @@ public final class BuiltinHandlers {
                                    final @NotNull SharedStore store,
                                    final @NotNull Supplier<String> statusText) {
 
-        registry.register(PING, context -> IssResponse.ok("pong".getBytes(StandardCharsets.UTF_8)));
+        registry.register(PING, context -> ISSResponse.ok("pong".getBytes(StandardCharsets.UTF_8)));
 
-        registry.register(STATUS, context -> IssResponse.ok(statusText.get().getBytes(StandardCharsets.UTF_8)));
+        registry.register(STATUS, context -> ISSResponse.ok(statusText.get().getBytes(StandardCharsets.UTF_8)));
 
         registry.register(PUT, context -> {
             final KvCodec.KeyValue kv = KvCodec.decodeKeyValue(context.payload());
             store.put(kv.key(), kv.value());
-            return IssResponse.ok();
+            return ISSResponse.ok();
         });
 
         registry.register(GET, context -> {
             final String key = KvCodec.decodeKey(context.payload());
             final byte[] value = store.get(key);
-            return value == null ? IssResponse.notFound() : IssResponse.ok(value);
+            return value == null ? ISSResponse.notFound() : ISSResponse.ok(value);
         });
 
         registry.register(DEL, context -> {
             final String key = KvCodec.decodeKey(context.payload());
-            return store.delete(key) ? IssResponse.ok() : IssResponse.notFound();
+            return store.delete(key) ? ISSResponse.ok() : ISSResponse.notFound();
         });
 
         registry.register(EXISTS, context -> {
             final String key = KvCodec.decodeKey(context.payload());
-            return IssResponse.ok(new byte[]{(byte) (store.exists(key) ? 1 : 0)});
+            return ISSResponse.ok(new byte[]{(byte) (store.exists(key) ? 1 : 0)});
         });
 
         registry.register(LIST, context -> {
             final String joined = String.join("\n", store.keys());
-            return IssResponse.ok(joined.getBytes(StandardCharsets.UTF_8));
+            return ISSResponse.ok(joined.getBytes(StandardCharsets.UTF_8));
         });
     }
 }

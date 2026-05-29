@@ -4,9 +4,9 @@ import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.Timeout;
-import space.qu4nt.entanglementlib.iss.exception.IssException;
-import space.qu4nt.entanglementlib.iss.handler.IssResponse;
-import space.qu4nt.entanglementlib.iss.security.IssPsk;
+import space.qu4nt.entanglementlib.iss.exception.ISSException;
+import space.qu4nt.entanglementlib.iss.handler.ISSResponse;
+import space.qu4nt.entanglementlib.iss.security.ISSPSK;
 import space.qu4nt.entanglementlib.security.data.SensitiveDataContainer;
 
 import java.nio.charset.StandardCharsets;
@@ -14,26 +14,26 @@ import java.nio.charset.StandardCharsets;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
-class IssIntegrationTest {
+class ISSIntegrationTest {
 
     private static final String PSK_HEX = "0123456789abcdef".repeat(4); // 32 bytes
     private static final String OTHER_PSK_HEX = "fedcba9876543210".repeat(4);
 
     @BeforeAll
     static void init() {
-        Iss.initializeVerified();
+        ISS.initializeVerified();
     }
 
     @Test
     @Timeout(30)
     @DisplayName("핸드셰이크 후 PING/PUT/GET/EXISTS/LIST/DEL/STATUS 전 과정이 동작한다")
     void fullRoundTrip() throws Exception {
-        try (SensitiveDataContainer serverPsk = IssPsk.fromHex(PSK_HEX);
-             IssServer server = IssServer.builder().port(0).psk(serverPsk).build()) {
+        try (SensitiveDataContainer serverPsk = ISSPSK.fromHex(PSK_HEX);
+             ISSServer server = ISSServer.builder().port(0).psk(serverPsk).build()) {
             server.start();
 
-            try (SensitiveDataContainer clientPsk = IssPsk.fromHex(PSK_HEX);
-                 IssClient client = connectTo(server.port(), clientPsk)) {
+            try (SensitiveDataContainer clientPsk = ISSPSK.fromHex(PSK_HEX);
+                 ISSClient client = connectTo(server.port(), clientPsk)) {
 
                 client.ping();
 
@@ -55,15 +55,15 @@ class IssIntegrationTest {
     @Timeout(30)
     @DisplayName("커스텀 핸들러를 등록하여 호출할 수 있다")
     void customHandler() throws Exception {
-        try (SensitiveDataContainer serverPsk = IssPsk.fromHex(PSK_HEX);
-             IssServer server = IssServer.builder().port(0).psk(serverPsk).build()) {
-            server.register("ECHO", context -> IssResponse.of(context.payload()));
+        try (SensitiveDataContainer serverPsk = ISSPSK.fromHex(PSK_HEX);
+             ISSServer server = ISSServer.builder().port(0).psk(serverPsk).build()) {
+            server.register("ECHO", context -> ISSResponse.of(context.payload()));
             server.start();
 
-            try (SensitiveDataContainer clientPsk = IssPsk.fromHex(PSK_HEX);
-                 IssClient client = connectTo(server.port(), clientPsk)) {
+            try (SensitiveDataContainer clientPsk = ISSPSK.fromHex(PSK_HEX);
+                 ISSClient client = connectTo(server.port(), clientPsk)) {
 
-                final IssResponse response = client.request("ECHO", "ping-back".getBytes(StandardCharsets.UTF_8));
+                final ISSResponse response = client.request("ECHO", "ping-back".getBytes(StandardCharsets.UTF_8));
                 assertThat(response.status().isOk()).isTrue();
                 assertThat(response.bodyAsText()).isEqualTo("ping-back");
             }
@@ -74,16 +74,16 @@ class IssIntegrationTest {
     @Timeout(30)
     @DisplayName("바이너리 값도 무손실로 왕복한다")
     void binaryValueRoundTrip() throws Exception {
-        try (SensitiveDataContainer serverPsk = IssPsk.fromHex(PSK_HEX);
-             IssServer server = IssServer.builder().port(0).psk(serverPsk).build()) {
+        try (SensitiveDataContainer serverPsk = ISSPSK.fromHex(PSK_HEX);
+             ISSServer server = ISSServer.builder().port(0).psk(serverPsk).build()) {
             server.start();
 
             final byte[] value = new byte[512];
             for (int i = 0; i < value.length; i++)
                 value[i] = (byte) (i * 31 + 7);
 
-            try (SensitiveDataContainer clientPsk = IssPsk.fromHex(PSK_HEX);
-                 IssClient client = connectTo(server.port(), clientPsk)) {
+            try (SensitiveDataContainer clientPsk = ISSPSK.fromHex(PSK_HEX);
+                 ISSClient client = connectTo(server.port(), clientPsk)) {
                 client.put("blob", value);
                 assertThat(client.get("blob")).isEqualTo(value);
             }
@@ -94,19 +94,19 @@ class IssIntegrationTest {
     @Timeout(30)
     @DisplayName("PSK 가 다르면 키 확인 단계에서 인증이 실패한다 (fail-closed)")
     void mismatchedPskFails() throws Exception {
-        try (SensitiveDataContainer serverPsk = IssPsk.fromHex(PSK_HEX);
-             IssServer server = IssServer.builder().port(0).psk(serverPsk).build()) {
+        try (SensitiveDataContainer serverPsk = ISSPSK.fromHex(PSK_HEX);
+             ISSServer server = ISSServer.builder().port(0).psk(serverPsk).build()) {
             server.start();
 
-            try (SensitiveDataContainer wrongPsk = IssPsk.fromHex(OTHER_PSK_HEX)) {
+            try (SensitiveDataContainer wrongPsk = ISSPSK.fromHex(OTHER_PSK_HEX)) {
                 final int port = server.port();
-                assertThatThrownBy(() -> connectTo(port, wrongPsk)).isInstanceOf(IssException.class);
+                assertThatThrownBy(() -> connectTo(port, wrongPsk)).isInstanceOf(ISSException.class);
             }
         }
     }
 
-    private static IssClient connectTo(final int port, final SensitiveDataContainer psk) throws IssException {
-        return IssClient.connect(IssClientConfig.builder()
+    private static ISSClient connectTo(final int port, final SensitiveDataContainer psk) throws ISSException {
+        return ISSClient.connect(ISSClientConfig.builder()
                 .host("127.0.0.1")
                 .port(port)
                 .psk(psk)

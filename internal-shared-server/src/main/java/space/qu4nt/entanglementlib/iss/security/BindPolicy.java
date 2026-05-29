@@ -8,7 +8,7 @@ package space.qu4nt.entanglementlib.iss.security;
 import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import space.qu4nt.entanglementlib.iss.exception.IssException;
+import space.qu4nt.entanglementlib.iss.exception.ISSException;
 
 import java.net.InetAddress;
 import java.net.UnknownHostException;
@@ -30,23 +30,23 @@ public final class BindPolicy {
     }
 
     /// 바인드 호스트 문자열을 주소로 해석합니다.
-    public static @NotNull InetAddress resolve(final @NotNull String host) throws IssException {
+    public static @NotNull InetAddress resolve(final @NotNull String host) throws ISSException {
         try {
             return InetAddress.getByName(host);
         } catch (UnknownHostException e) {
-            throw new IssException("바인드 주소를 해석할 수 없습니다: " + host, e);
+            throw new ISSException("바인드 주소를 해석할 수 없습니다: " + host, e);
         }
     }
 
     /// 바인드 주소가 정책을 충족하는지 검증합니다.
     ///
-    /// @throws IssException 비루프백 주소인데 옵트인이 없을 때
+    /// @throws ISSException 비루프백 주소인데 옵트인이 없을 때
     public static void validateBind(final @NotNull InetAddress address, final boolean allowNonLoopback)
-            throws IssException {
+            throws ISSException {
         if (address.isLoopbackAddress())
             return;
         if (!allowNonLoopback)
-            throw new IssException("비루프백 주소 바인드는 기본 차단됩니다 (allowNonLoopback 옵트인 필요): "
+            throw new ISSException("비루프백 주소 바인드는 기본 차단됩니다 (allowNonLoopback 옵트인 필요): "
                     + address.getHostAddress());
         log.warn("비루프백 주소에 바인드합니다. 폐쇄망 격리가 약화됩니다: {}", address.getHostAddress());
     }

@@ -14,16 +14,16 @@ import java.io.Serial;
 /// 일반화하고 상세 원인은 로컬 로깅으로만 남기는 fail-closed 원칙을 따릅니다.
 ///
 /// @author Q. T. Felix
-public class IssAuthException extends IssException {
+public class ISSAuthException extends ISSException {
 
     @Serial
     private static final long serialVersionUID = 7_842_001_001_000_003L;
 
-    public IssAuthException(final String message) {
+    public ISSAuthException(final String message) {
         super(message);
     }
 
-    public IssAuthException(final String message, final Throwable cause) {
+    public ISSAuthException(final String message, final Throwable cause) {
         super(message, cause);
     }
 }

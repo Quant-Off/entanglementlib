@@ -18,9 +18,9 @@ import space.qu4nt.entanglementlib.security.provider.CryptoProviderConfig;
 /// 공유가 필요하므로 `SHARED` arena 모드로 초기화합니다.
 ///
 /// @author Q. T. Felix
-public final class Iss {
+public final class ISS {
 
-    private Iss() {
+    private ISS() {
         throw new UnsupportedOperationException("cannot access");
     }
 

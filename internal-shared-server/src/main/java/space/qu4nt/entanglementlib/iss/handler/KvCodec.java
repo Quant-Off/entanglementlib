@@ -6,7 +6,7 @@
 package space.qu4nt.entanglementlib.iss.handler;
 
 import org.jetbrains.annotations.NotNull;
-import space.qu4nt.entanglementlib.iss.exception.IssProtocolException;
+import space.qu4nt.entanglementlib.iss.exception.ISSProtocolException;
 
 import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
@@ -44,16 +44,16 @@ public final class KvCodec {
         return out;
     }
 
-    public static @NotNull String decodeKey(final byte @NotNull [] body) throws IssProtocolException {
+    public static @NotNull String decodeKey(final byte @NotNull [] body) throws ISSProtocolException {
         return decodeKeyValue(body).key();
     }
 
-    public static @NotNull KeyValue decodeKeyValue(final byte @NotNull [] body) throws IssProtocolException {
+    public static @NotNull KeyValue decodeKeyValue(final byte @NotNull [] body) throws ISSProtocolException {
         if (body.length < 2)
-            throw new IssProtocolException("키 길이 헤더가 없습니다");
+            throw new ISSProtocolException("키 길이 헤더가 없습니다");
         final int keyLen = ((body[0] & 0xFF) << 8) | (body[1] & 0xFF);
         if (2 + keyLen > body.length)
-            throw new IssProtocolException("키 길이가 본문을 초과했습니다");
+            throw new ISSProtocolException("키 길이가 본문을 초과했습니다");
         final String key = new String(body, 2, keyLen, StandardCharsets.UTF_8);
         final byte[] value = Arrays.copyOfRange(body, 2 + keyLen, body.length);
         return new KeyValue(key, value);

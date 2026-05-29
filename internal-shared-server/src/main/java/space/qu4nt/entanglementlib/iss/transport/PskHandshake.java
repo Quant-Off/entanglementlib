@@ -7,10 +7,10 @@ package space.qu4nt.entanglementlib.iss.transport;
 
 import org.jetbrains.annotations.NotNull;
 import space.qu4nt.entanglementlib.core.exception.security.checked.ELIBSecurityProcessException;
-import space.qu4nt.entanglementlib.iss.exception.IssAuthException;
-import space.qu4nt.entanglementlib.iss.exception.IssException;
-import space.qu4nt.entanglementlib.iss.exception.IssProtocolException;
-import space.qu4nt.entanglementlib.iss.internal.SdcBytes;
+import space.qu4nt.entanglementlib.iss.exception.ISSAuthException;
+import space.qu4nt.entanglementlib.iss.exception.ISSException;
+import space.qu4nt.entanglementlib.iss.exception.ISSProtocolException;
+import space.qu4nt.entanglementlib.iss.internal.SDCBytes;
 import space.qu4nt.entanglementlib.iss.protocol.FrameHeader;
 import space.qu4nt.entanglementlib.iss.protocol.WireConstants;
 import space.qu4nt.entanglementlib.security.crypto.rng.RNG;
@@ -43,14 +43,14 @@ final class PskHandshake {
 
     /// 핸드셰이크를 수행하고 확립된 세션 키를 반환합니다. 대칭키는 `connScope`에 귀속됩니다.
     ///
-    /// @throws IssAuthException     Finished 불일치(PSK 불일치 또는 변조) 시
-    /// @throws IssProtocolException 와이어 포맷 위반 또는 다운그레이드 시도 시
+    /// @throws ISSAuthException     Finished 불일치(PSK 불일치 또는 변조) 시
+    /// @throws ISSProtocolException 와이어 포맷 위반 또는 다운그레이드 시도 시
     static @NotNull SessionKeys perform(final @NotNull ReadableByteChannel in,
                                         final @NotNull WritableByteChannel out,
                                         final @NotNull Role role,
                                         final @NotNull SensitiveDataContainer psk,
                                         final @NotNull SDCScopeContext connScope)
-            throws IssException {
+            throws ISSException {
         try (SDCScopeContext hs = new SDCScopeContext()) {
             final byte[] clientRandom;
             final byte[] serverRandom;
@@ -61,17 +61,17 @@ final class PskHandshake {
                 writeClientHello(out, suite, clientRandom);
                 final byte[] serverHello = readExactly(in, WireConstants.RANDOM_LEN + 1);
                 if (serverHello[WireConstants.RANDOM_LEN] != suite)
-                    throw new IssProtocolException("서버가 스위트를 다운그레이드했습니다");
+                    throw new ISSProtocolException("서버가 스위트를 다운그레이드했습니다");
                 serverRandom = Arrays.copyOf(serverHello, WireConstants.RANDOM_LEN);
             } else {
                 final byte[] clientHello = readExactly(in, 4 + 1 + 1 + WireConstants.RANDOM_LEN);
                 final ByteBuffer hb = ByteBuffer.wrap(clientHello);
                 if (hb.getInt() != WireConstants.MAGIC)
-                    throw new IssProtocolException("프로토콜 식별자가 일치하지 않습니다");
+                    throw new ISSProtocolException("프로토콜 식별자가 일치하지 않습니다");
                 if (hb.get() != WireConstants.VERSION)
-                    throw new IssProtocolException("지원하지 않는 프로토콜 버전입니다");
+                    throw new ISSProtocolException("지원하지 않는 프로토콜 버전입니다");
                 if (hb.get() != suite)
-                    throw new IssProtocolException("지원하지 않는 암호 스위트입니다");
+                    throw new ISSProtocolException("지원하지 않는 암호 스위트입니다");
                 clientRandom = new byte[WireConstants.RANDOM_LEN];
                 hb.get(clientRandom);
                 serverRandom = randomBytes(hs, WireConstants.RANDOM_LEN);
@@ -102,11 +102,11 @@ final class PskHandshake {
                 writeExactly(out, clientFinished);
                 final byte[] peer = readExactly(in, 32);
                 if (!MessageDigest.isEqual(peer, serverFinished))
-                    throw new IssAuthException("서버 키 확인에 실패했습니다 (PSK 불일치 또는 변조)");
+                    throw new ISSAuthException("서버 키 확인에 실패했습니다 (PSK 불일치 또는 변조)");
             } else {
                 final byte[] peer = readExactly(in, 32);
                 if (!MessageDigest.isEqual(peer, clientFinished))
-                    throw new IssAuthException("클라이언트 키 확인에 실패했습니다 (PSK 불일치 또는 변조)");
+                    throw new ISSAuthException("클라이언트 키 확인에 실패했습니다 (PSK 불일치 또는 변조)");
                 writeExactly(out, serverFinished);
             }
             Arrays.fill(clientFinished, (byte) 0);
@@ -120,13 +120,13 @@ final class PskHandshake {
                     ? new SessionKeys(kc2sSdc, ks2cSdc, ivC2s, ivS2c)
                     : new SessionKeys(ks2cSdc, kc2sSdc, ivS2c, ivC2s);
         } catch (ELIBSecurityProcessException e) {
-            throw new IssException("핸드셰이크 암호 연산에 실패했습니다", e);
+            throw new ISSException("핸드셰이크 암호 연산에 실패했습니다", e);
         }
     }
 
     private static byte @NotNull [] derivePsk32(final SDCScopeContext hs, final SensitiveDataContainer psk)
             throws ELIBSecurityProcessException {
-        final byte[] raw = SdcBytes.export(psk);
+        final byte[] raw = SDCBytes.export(psk);
         try {
             return Kdf.sha3_256(hs, new byte[]{WireConstants.PSK_CANON_DOMAIN}, raw);
         } finally {
@@ -147,7 +147,7 @@ final class PskHandshake {
     private static byte @NotNull [] randomBytes(final SDCScopeContext scope, final int len)
             throws ELIBSecurityProcessException {
         final SensitiveDataContainer r = RNG.generateRNG(RNG.LOCAL_HARDWARE, scope, len);
-        return SdcBytes.export(r);
+        return SDCBytes.export(r);
     }
 
     private static byte @NotNull [] first(final byte[] source, final int len) {
@@ -157,7 +157,7 @@ final class PskHandshake {
     }
 
     private static void writeClientHello(final WritableByteChannel out, final byte suite, final byte[] clientRandom)
-            throws IssProtocolException {
+            throws ISSProtocolException {
         final ByteBuffer buf = ByteBuffer.allocate(4 + 1 + 1 + clientRandom.length);
         buf.putInt(WireConstants.MAGIC);
         buf.put(WireConstants.VERSION);
@@ -168,7 +168,7 @@ final class PskHandshake {
     }
 
     private static void writeServerHello(final WritableByteChannel out, final byte suite, final byte[] serverRandom)
-            throws IssProtocolException {
+            throws ISSProtocolException {
         final ByteBuffer buf = ByteBuffer.allocate(serverRandom.length + 1);
         buf.put(serverRandom);
         buf.put(suite);
@@ -177,14 +177,14 @@ final class PskHandshake {
     }
 
     private static byte @NotNull [] readExactly(final ReadableByteChannel in, final int len)
-            throws IssProtocolException {
+            throws ISSProtocolException {
         final ByteBuffer buf = ByteBuffer.allocate(len);
         FrameHeader.readFully(in, buf);
         return buf.array();
     }
 
     private static void writeExactly(final WritableByteChannel out, final byte[] data)
-            throws IssProtocolException {
+            throws ISSProtocolException {
         FrameHeader.writeFully(out, ByteBuffer.wrap(data));
     }
 }

@@ -10,9 +10,9 @@ import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import space.qu4nt.entanglementlib.core.exception.security.checked.ELIBSecurityProcessException;
-import space.qu4nt.entanglementlib.iss.exception.IssException;
-import space.qu4nt.entanglementlib.iss.exception.IssProtocolException;
-import space.qu4nt.entanglementlib.iss.internal.SdcBytes;
+import space.qu4nt.entanglementlib.iss.exception.ISSException;
+import space.qu4nt.entanglementlib.iss.exception.ISSProtocolException;
+import space.qu4nt.entanglementlib.iss.internal.SDCBytes;
 import space.qu4nt.entanglementlib.iss.protocol.FrameHeader;
 import space.qu4nt.entanglementlib.iss.protocol.Opcode;
 import space.qu4nt.entanglementlib.iss.protocol.WireConstants;
@@ -72,12 +72,12 @@ public final class SecureChannel implements AutoCloseable {
     /// @param psk                   사전 공유 키 (호출자 소유 컨테이너, 이 메소드가 소거하지 않음)
     /// @param handshakeTimeoutMillis 핸드셰이크 제한 시간
     /// @param idleTimeoutMillis     데이터 단계 유휴 읽기 제한 시간
-    /// @throws IssException 핸드셰이크 실패 또는 IO 오류 시 (자원은 정리됨)
+    /// @throws ISSException 핸드셰이크 실패 또는 IO 오류 시 (자원은 정리됨)
     public static @NotNull SecureChannel open(final @NotNull Socket socket,
                                               final @NotNull Role role,
                                               final @NotNull SensitiveDataContainer psk,
                                               final int handshakeTimeoutMillis,
-                                              final int idleTimeoutMillis) throws IssException {
+                                              final int idleTimeoutMillis) throws ISSException {
         SDCScopeContext connScope = null;
         try {
             socket.setTcpNoDelay(true);
@@ -90,25 +90,25 @@ public final class SecureChannel implements AutoCloseable {
             return new SecureChannel(socket, in, out, connScope, keys);
         } catch (IOException e) {
             closeQuietly(connScope, socket);
-            throw new IssProtocolException("핸드셰이크 IO 오류", e);
-        } catch (IssException e) {
+            throw new ISSProtocolException("핸드셰이크 IO 오류", e);
+        } catch (ISSException e) {
             closeQuietly(connScope, socket);
             throw e;
         } catch (RuntimeException e) {
             closeQuietly(connScope, socket);
-            throw new IssException("핸드셰이크 중 예기치 못한 오류", e);
+            throw new ISSException("핸드셰이크 중 예기치 못한 오류", e);
         }
     }
 
     /// 애플리케이션 페이로드를 AEAD 보호 레코드로 전송합니다.
-    public void writeData(final byte @NotNull [] payload) throws IssException {
+    public void writeData(final byte @NotNull [] payload) throws ISSException {
         writeRecord(Opcode.DATA, payload);
     }
 
     /// 다음 애플리케이션 레코드를 수신·복호화하여 평문을 반환합니다.
     ///
     /// @return 평문 페이로드. 상대가 인증된 [Opcode#CLOSE]를 보낸 경우 `null`
-    public byte @Nullable [] readData() throws IssException {
+    public byte @Nullable [] readData() throws ISSException {
         final Plain plain = readRecord();
         if (plain.opcode() == Opcode.CLOSE) {
             this.closeReceived = true;
@@ -118,7 +118,7 @@ public final class SecureChannel implements AutoCloseable {
     }
 
     /// 인증된 종료 레코드를 전송합니다(트렁케이션 방어). 멱등합니다.
-    public void sendClose() throws IssException {
+    public void sendClose() throws ISSException {
         if (closeSent)
             return;
         writeRecord(Opcode.CLOSE, new byte[]{0});
@@ -130,11 +130,11 @@ public final class SecureChannel implements AutoCloseable {
         return closeReceived;
     }
 
-    private void writeRecord(final Opcode opcode, final byte[] payload) throws IssException {
+    private void writeRecord(final Opcode opcode, final byte[] payload) throws ISSException {
         if (seqTx == -1L)
-            throw new IssProtocolException("시퀀스 한계 도달 (재연결 필요)");
+            throw new ISSProtocolException("시퀀스 한계 도달 (재연결 필요)");
         if (payload.length > WireConstants.MAX_FRAME - WireConstants.TAG_LEN)
-            throw new IssProtocolException("페이로드가 최대 프레임 크기를 초과했습니다");
+            throw new ISSProtocolException("페이로드가 최대 프레임 크기를 초과했습니다");
 
         final long seq = seqTx++;
         final int cipherLen = payload.length + WireConstants.TAG_LEN;
@@ -148,17 +148,17 @@ public final class SecureChannel implements AutoCloseable {
             FrameHeader.writeFully(out, ByteBuffer.wrap(headerBytes));
             SensitiveDataContainer.transmitZeroCopy(ciphertext, out);
         } catch (ELIBSecurityProcessException e) {
-            throw new IssException("레코드 암호화에 실패했습니다", e);
+            throw new ISSException("레코드 암호화에 실패했습니다", e);
         }
     }
 
-    private @NotNull Plain readRecord() throws IssException {
+    private @NotNull Plain readRecord() throws ISSException {
         final byte[] headerBytes = new byte[WireConstants.HEADER_LEN];
         FrameHeader.readFully(in, ByteBuffer.wrap(headerBytes));
         final FrameHeader header = FrameHeader.decode(headerBytes);
 
         if (header.seq() != seqRx)
-            throw new IssProtocolException("시퀀스 번호가 일치하지 않습니다 (재전송/재정렬 거부)");
+            throw new ISSProtocolException("시퀀스 번호가 일치하지 않습니다 (재전송/재정렬 거부)");
 
         final byte[] body = new byte[header.cipherLen()];
         FrameHeader.readFully(in, ByteBuffer.wrap(body));
@@ -169,10 +169,10 @@ public final class SecureChannel implements AutoCloseable {
             final SensitiveDataContainer ciphertext = rec.allocate(body, true);
             final SensitiveDataContainer plaintext = ChaCha20.decrypt(rec, keys.keyRx, nonce, aad, ciphertext);
             seqRx++;
-            final byte[] result = SdcBytes.export(plaintext);
+            final byte[] result = SDCBytes.export(plaintext);
             return new Plain(header.opcode(), header.opcode() == Opcode.CLOSE ? new byte[0] : result);
         } catch (ELIBSecurityProcessException e) {
-            throw new IssException("레코드 복호화에 실패했습니다 (인증 태그 불일치 또는 변조)", e);
+            throw new ISSException("레코드 복호화에 실패했습니다 (인증 태그 불일치 또는 변조)", e);
         }
     }
 

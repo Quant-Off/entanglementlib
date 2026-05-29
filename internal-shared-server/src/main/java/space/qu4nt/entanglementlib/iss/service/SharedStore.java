@@ -8,8 +8,8 @@ package space.qu4nt.entanglementlib.iss.service;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import space.qu4nt.entanglementlib.core.exception.security.checked.ELIBSecurityProcessException;
-import space.qu4nt.entanglementlib.iss.exception.IssException;
-import space.qu4nt.entanglementlib.iss.internal.SdcBytes;
+import space.qu4nt.entanglementlib.iss.exception.ISSException;
+import space.qu4nt.entanglementlib.iss.internal.SDCBytes;
 import space.qu4nt.entanglementlib.security.data.SensitiveDataContainer;
 
 import java.util.HashMap;
@@ -31,7 +31,7 @@ public final class SharedStore implements AutoCloseable {
     private boolean closed = false;
 
     /// 키에 값을 저장합니다(덮어쓰기). 이전 값이 있으면 소거합니다.
-    public synchronized void put(final @NotNull String key, final byte @NotNull [] value) throws IssException {
+    public synchronized void put(final @NotNull String key, final byte @NotNull [] value) throws ISSException {
         ensureOpen();
         final SensitiveDataContainer previous = store.put(key, allocate(value));
         if (previous != null)
@@ -39,15 +39,15 @@ public final class SharedStore implements AutoCloseable {
     }
 
     /// 키의 값을 `heap` 바이트로 반환합니다. 없으면 `null`.
-    public synchronized byte @Nullable [] get(final @NotNull String key) throws IssException {
+    public synchronized byte @Nullable [] get(final @NotNull String key) throws ISSException {
         ensureOpen();
         final SensitiveDataContainer sdc = store.get(key);
         if (sdc == null)
             return null;
         try {
-            return SdcBytes.export(sdc);
+            return SDCBytes.export(sdc);
         } catch (ELIBSecurityProcessException e) {
-            throw new IssException("저장 값 추출에 실패했습니다", e);
+            throw new ISSException("저장 값 추출에 실패했습니다", e);
         }
     }
 
@@ -75,11 +75,11 @@ public final class SharedStore implements AutoCloseable {
         return store.size();
     }
 
-    private SensitiveDataContainer allocate(final byte[] value) throws IssException {
+    private SensitiveDataContainer allocate(final byte[] value) throws ISSException {
         try {
             return new SensitiveDataContainer(value.clone(), true);
         } catch (ELIBSecurityProcessException e) {
-            throw new IssException("저장 값 컨테이너 생성에 실패했습니다", e);
+            throw new ISSException("저장 값 컨테이너 생성에 실패했습니다", e);
         }
     }
 

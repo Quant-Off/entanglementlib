@@ -7,7 +7,7 @@ package space.qu4nt.entanglementlib.iss.transport;
 
 import org.jetbrains.annotations.NotNull;
 import space.qu4nt.entanglementlib.core.exception.security.checked.ELIBSecurityProcessException;
-import space.qu4nt.entanglementlib.iss.internal.SdcBytes;
+import space.qu4nt.entanglementlib.iss.internal.SDCBytes;
 import space.qu4nt.entanglementlib.security.crypto.hash.Hash;
 import space.qu4nt.entanglementlib.security.data.SDCScopeContext;
 import space.qu4nt.entanglementlib.security.data.SensitiveDataContainer;
@@ -44,7 +44,7 @@ public final class Kdf {
         final byte[] concat = concat(parts);
         final SensitiveDataContainer input = scope.allocate(concat, true);
         final SensitiveDataContainer digest = Hash.sha3(256, scope, input);
-        return SdcBytes.export(digest);
+        return SDCBytes.export(digest);
     }
 
     /// 라벨 문자열을 US-ASCII 바이트로 변환합니다(도메인 분리 라벨 전용).

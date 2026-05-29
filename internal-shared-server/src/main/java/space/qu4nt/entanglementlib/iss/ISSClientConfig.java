@@ -11,10 +11,10 @@ import space.qu4nt.entanglementlib.security.data.SensitiveDataContainer;
 
 import java.util.Objects;
 
-/// [IssClient] 구성입니다. [#builder()]로 생성합니다.
+/// [ISSClient] 구성입니다. [#builder()]로 생성합니다.
 ///
 /// @author Q. T. Felix
-public final class IssClientConfig {
+public final class ISSClientConfig {
 
     private final String host;
     private final int port;
@@ -23,7 +23,7 @@ public final class IssClientConfig {
     private final int handshakeTimeoutMillis;
     private final int idleTimeoutMillis;
 
-    private IssClientConfig(final Builder builder) {
+    private ISSClientConfig(final Builder builder) {
         this.host = builder.host;
         this.port = builder.port;
         this.psk = Objects.requireNonNull(builder.psk, "psk");
@@ -60,7 +60,7 @@ public final class IssClientConfig {
         return idleTimeoutMillis;
     }
 
-    /// [IssClientConfig] 빌더입니다.
+    /// [ISSClientConfig] 빌더입니다.
     public static final class Builder {
 
         private String host = "127.0.0.1";
@@ -103,10 +103,10 @@ public final class IssClientConfig {
             return this;
         }
 
-        public @NotNull IssClientConfig build() {
+        public @NotNull ISSClientConfig build() {
             if (port < 1 || port > 65535)
                 throw new IllegalArgumentException("포트가 유효하지 않습니다: " + port);
-            return new IssClientConfig(this);
+            return new ISSClientConfig(this);
         }
     }
 }

@@ -6,7 +6,7 @@
 package space.qu4nt.entanglementlib.iss.protocol;
 
 import org.jetbrains.annotations.NotNull;
-import space.qu4nt.entanglementlib.iss.exception.IssProtocolException;
+import space.qu4nt.entanglementlib.iss.exception.ISSProtocolException;
 
 /// 전송 계층 레코드 종류입니다. 애플리케이션 명령(PING/PUT 등)은 [#DATA] 레코드의 암호화된
 /// 본문 안에 별도로 인코딩되며, 와이어 관찰자에게 노출되지 않습니다.
@@ -30,11 +30,11 @@ public enum Opcode {
         return code;
     }
 
-    public static @NotNull Opcode from(final byte code) throws IssProtocolException {
+    public static @NotNull Opcode from(final byte code) throws ISSProtocolException {
         return switch (code) {
             case 0x01 -> DATA;
             case 0x02 -> CLOSE;
-            default -> throw new IssProtocolException("알 수 없는 레코드 opcode 입니다");
+            default -> throw new ISSProtocolException("알 수 없는 레코드 opcode 입니다");
         };
     }
 }

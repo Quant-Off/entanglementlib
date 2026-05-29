@@ -14,7 +14,7 @@ import org.jetbrains.annotations.NotNull;
 ///
 /// @author Q. T. Felix
 @FunctionalInterface
-public interface IssRequestHandler {
+public interface ISSRequestHandler {
 
-    @NotNull IssResponse handle(@NotNull IssRequestContext context) throws Exception;
+    @NotNull ISSResponse handle(@NotNull ISSRequestContext context) throws Exception;
 }

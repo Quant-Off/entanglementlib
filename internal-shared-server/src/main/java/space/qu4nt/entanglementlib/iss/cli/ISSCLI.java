@@ -5,14 +5,14 @@
 
 package space.qu4nt.entanglementlib.iss.cli;
 
-import space.qu4nt.entanglementlib.iss.Iss;
-import space.qu4nt.entanglementlib.iss.IssClient;
-import space.qu4nt.entanglementlib.iss.IssClientConfig;
-import space.qu4nt.entanglementlib.iss.IssServer;
-import space.qu4nt.entanglementlib.iss.exception.IssException;
-import space.qu4nt.entanglementlib.iss.internal.SdcBytes;
+import space.qu4nt.entanglementlib.iss.ISS;
+import space.qu4nt.entanglementlib.iss.ISSClient;
+import space.qu4nt.entanglementlib.iss.ISSClientConfig;
+import space.qu4nt.entanglementlib.iss.ISSServer;
+import space.qu4nt.entanglementlib.iss.exception.ISSException;
+import space.qu4nt.entanglementlib.iss.internal.SDCBytes;
 import space.qu4nt.entanglementlib.iss.security.BindPolicy;
-import space.qu4nt.entanglementlib.iss.security.IssPsk;
+import space.qu4nt.entanglementlib.iss.security.ISSPSK;
 import space.qu4nt.entanglementlib.security.crypto.rng.RNG;
 import space.qu4nt.entanglementlib.security.data.SDCScopeContext;
 import space.qu4nt.entanglementlib.security.data.SensitiveDataContainer;
@@ -37,12 +37,12 @@ import java.util.concurrent.CountDownLatch;
 /// 파일(`--psk-file`) 또는 환경변수(`--psk-env`, hex)로만 받습니다.
 ///
 /// @author Q. T. Felix
-public final class IssCli {
+public final class ISSCLI {
 
     private static final String VERSION = "1.2.0";
     private static final Set<String> BOOLEAN_FLAGS = Set.of("--stdin", "--allow-nonloopback");
 
-    private IssCli() {
+    private ISSCLI() {
         throw new UnsupportedOperationException("cannot access");
     }
 
@@ -82,13 +82,13 @@ public final class IssCli {
         }
     }
 
-    private static void serve(final Args args) throws IssException, InterruptedException {
-        Iss.initializeVerified();
+    private static void serve(final Args args) throws ISSException, InterruptedException {
+        ISS.initializeVerified();
         final int port = args.requireInt("--port");
         final String bind = args.get("--bind", "127.0.0.1");
 
         final SensitiveDataContainer psk = loadPsk(args);
-        final IssServer.Builder builder = IssServer.builder()
+        final ISSServer.Builder builder = ISSServer.builder()
                 .bindHost(bind)
                 .port(port)
                 .psk(psk)
@@ -98,7 +98,7 @@ public final class IssCli {
         for (final String peer : args.getAll("--allow-peer"))
             builder.allowPeer(BindPolicy.resolve(peer));
 
-        final IssServer server = builder.build();
+        final ISSServer server = builder.build();
         final CountDownLatch latch = new CountDownLatch(1);
         Runtime.getRuntime().addShutdownHook(new Thread(() -> {
             server.close();
@@ -167,14 +167,14 @@ public final class IssCli {
     }
 
     private static void genPsk(final Args args) throws Exception {
-        Iss.initializeVerified();
+        ISS.initializeVerified();
         final int bytes = args.has("--bytes") ? args.requireInt("--bytes") : 32;
         if (bytes < 32)
-            throw new IssException("PSK 길이는 최소 32바이트여야 합니다");
+            throw new ISSException("PSK 길이는 최소 32바이트여야 합니다");
 
         try (SDCScopeContext scope = new SDCScopeContext()) {
             final SensitiveDataContainer random = RNG.generateRNG(RNG.LOCAL_HARDWARE, scope, bytes);
-            final byte[] raw = SdcBytes.export(random);
+            final byte[] raw = SDCBytes.export(random);
             try {
                 if (args.has("--out")) {
                     final Path out = Path.of(args.get("--out", null));
@@ -191,9 +191,9 @@ public final class IssCli {
     }
 
     private static void withClient(final Args args, final ClientAction action) throws Exception {
-        Iss.initializeVerified();
+        ISS.initializeVerified();
         final SensitiveDataContainer psk = loadPsk(args);
-        try (psk; IssClient client = IssClient.connect(IssClientConfig.builder()
+        try (psk; ISSClient client = ISSClient.connect(ISSClientConfig.builder()
                 .host(args.get("--host", "127.0.0.1"))
                 .port(args.requireInt("--port"))
                 .psk(psk)
@@ -202,12 +202,12 @@ public final class IssCli {
         }
     }
 
-    private static SensitiveDataContainer loadPsk(final Args args) throws IssException {
+    private static SensitiveDataContainer loadPsk(final Args args) throws ISSException {
         if (args.has("--psk-file"))
-            return IssPsk.fromFile(Path.of(args.get("--psk-file", null)));
+            return ISSPSK.fromFile(Path.of(args.get("--psk-file", null)));
         if (args.has("--psk-env"))
-            return IssPsk.fromEnv(args.get("--psk-env", null));
-        throw new IssException("PSK 소스가 필요합니다 (--psk-file <경로> 또는 --psk-env <변수명>)");
+            return ISSPSK.fromEnv(args.get("--psk-env", null));
+        throw new ISSException("PSK 소스가 필요합니다 (--psk-file <경로> 또는 --psk-env <변수명>)");
     }
 
     private static byte[] resolveValue(final Args args) throws Exception {
@@ -217,7 +217,7 @@ public final class IssCli {
             return Files.readAllBytes(Path.of(args.get("--value-file", null)));
         if (args.has("--value"))
             return args.get("--value", "").getBytes(StandardCharsets.UTF_8);
-        throw new IssException("값 소스가 필요합니다 (--value, --value-file, 또는 --stdin)");
+        throw new ISSException("값 소스가 필요합니다 (--value, --value-file, 또는 --stdin)");
     }
 
     private static byte[] readAll(final InputStream in) throws IOException {
@@ -276,7 +276,7 @@ public final class IssCli {
 
     @FunctionalInterface
     private interface ClientAction {
-        void run(IssClient client) throws Exception;
+        void run(ISSClient client) throws Exception;
     }
 
     /// 경량 명령행 인자 파서입니다.
@@ -320,17 +320,17 @@ public final class IssCli {
             return (list == null || list.isEmpty()) ? defaultValue : list.getFirst();
         }
 
-        String require(final String key) throws IssException {
+        String require(final String key) throws ISSException {
             if (!has(key))
-                throw new IssException("필수 인자 누락: " + key);
+                throw new ISSException("필수 인자 누락: " + key);
             return get(key, null);
         }
 
-        int requireInt(final String key) throws IssException {
+        int requireInt(final String key) throws ISSException {
             try {
                 return Integer.parseInt(require(key));
             } catch (NumberFormatException e) {
-                throw new IssException("정수 인자가 올바르지 않습니다: " + key);
+                throw new ISSException("정수 인자가 올바르지 않습니다: " + key);
             }
         }
 

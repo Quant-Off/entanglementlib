@@ -6,7 +6,7 @@
 package space.qu4nt.entanglementlib.iss.protocol;
 
 import org.jetbrains.annotations.NotNull;
-import space.qu4nt.entanglementlib.iss.exception.IssProtocolException;
+import space.qu4nt.entanglementlib.iss.exception.ISSProtocolException;
 
 import java.io.IOException;
 import java.nio.ByteBuffer;
@@ -39,19 +39,19 @@ public record FrameHeader(@NotNull Opcode opcode, byte flags, long seq, int ciph
 
     /// 수신한 19바이트 헤더를 파싱하고 무결성을 검증합니다.
     ///
-    /// @throws IssProtocolException MAGIC/VERSION 불일치 또는 `cipher_len` 경계 위반 시
-    public static @NotNull FrameHeader decode(final byte @NotNull [] header) throws IssProtocolException {
+    /// @throws ISSProtocolException MAGIC/VERSION 불일치 또는 `cipher_len` 경계 위반 시
+    public static @NotNull FrameHeader decode(final byte @NotNull [] header) throws ISSProtocolException {
         if (header.length != WireConstants.HEADER_LEN)
-            throw new IssProtocolException("헤더 길이가 올바르지 않습니다");
+            throw new ISSProtocolException("헤더 길이가 올바르지 않습니다");
 
         final ByteBuffer buf = ByteBuffer.wrap(header);
         final int magic = buf.getInt();
         if (magic != WireConstants.MAGIC)
-            throw new IssProtocolException("프로토콜 식별자가 일치하지 않습니다");
+            throw new ISSProtocolException("프로토콜 식별자가 일치하지 않습니다");
 
         final byte version = buf.get();
         if (version != WireConstants.VERSION)
-            throw new IssProtocolException("지원하지 않는 프로토콜 버전입니다");
+            throw new ISSProtocolException("지원하지 않는 프로토콜 버전입니다");
 
         final Opcode opcode = Opcode.from(buf.get());
         final byte flags = buf.get();
@@ -60,7 +60,7 @@ public record FrameHeader(@NotNull Opcode opcode, byte flags, long seq, int ciph
         // 부호 없는 해석 후 경계 검증 (할당 이전)
         final long cipherLen = Integer.toUnsignedLong(buf.getInt());
         if (cipherLen < WireConstants.TAG_LEN || cipherLen > WireConstants.MAX_FRAME)
-            throw new IssProtocolException("레코드 본문 길이가 허용 범위를 벗어났습니다");
+            throw new ISSProtocolException("레코드 본문 길이가 허용 범위를 벗어났습니다");
 
         return new FrameHeader(opcode, flags, seq, (int) cipherLen);
     }
@@ -68,29 +68,29 @@ public record FrameHeader(@NotNull Opcode opcode, byte flags, long seq, int ciph
     /// 채널에서 정확히 `buffer.remaining()` 바이트를 모두 읽을 때까지 반복합니다.
     /// 부분 읽기(short read)는 NIO에서 정상이므로 반드시 드레인 루프가 필요합니다.
     ///
-    /// @throws IssProtocolException 상대가 데이터를 마치기 전에 스트림을 닫은 경우(트렁케이션)
+    /// @throws ISSProtocolException 상대가 데이터를 마치기 전에 스트림을 닫은 경우(트렁케이션)
     public static void readFully(final @NotNull ReadableByteChannel channel, final @NotNull ByteBuffer buffer)
-            throws IssProtocolException {
+            throws ISSProtocolException {
         while (buffer.hasRemaining()) {
             final int n;
             try {
                 n = channel.read(buffer);
             } catch (IOException e) {
-                throw new IssProtocolException("채널 읽기 실패", e);
+                throw new ISSProtocolException("채널 읽기 실패", e);
             }
             if (n < 0)
-                throw new IssProtocolException("상대가 레코드 수신 도중 연결을 종료했습니다 (트렁케이션)");
+                throw new ISSProtocolException("상대가 레코드 수신 도중 연결을 종료했습니다 (트렁케이션)");
         }
     }
 
     /// 채널에 버퍼의 모든 바이트를 기록할 때까지 반복합니다.
     public static void writeFully(final @NotNull WritableByteChannel channel, final @NotNull ByteBuffer buffer)
-            throws IssProtocolException {
+            throws ISSProtocolException {
         while (buffer.hasRemaining()) {
             try {
                 channel.write(buffer);
             } catch (IOException e) {
-                throw new IssProtocolException("채널 쓰기 실패", e);
+                throw new ISSProtocolException("채널 쓰기 실패", e);
             }
         }
     }

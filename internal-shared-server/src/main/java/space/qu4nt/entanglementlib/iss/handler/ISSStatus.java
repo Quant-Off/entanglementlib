@@ -10,7 +10,7 @@ import org.jetbrains.annotations.NotNull;
 /// 애플리케이션 응답 상태 코드입니다.
 ///
 /// @author Q. T. Felix
-public enum IssStatus {
+public enum ISSStatus {
 
     OK((byte) 0),
     NOT_FOUND((byte) 1),
@@ -20,7 +20,7 @@ public enum IssStatus {
 
     private final byte code;
 
-    IssStatus(final byte code) {
+    ISSStatus(final byte code) {
         this.code = code;
     }
 
@@ -32,8 +32,8 @@ public enum IssStatus {
         return this == OK;
     }
 
-    public static @NotNull IssStatus from(final byte code) {
-        for (final IssStatus s : values()) {
+    public static @NotNull ISSStatus from(final byte code) {
+        for (final ISSStatus s : values()) {
             if (s.code == code)
                 return s;
         }

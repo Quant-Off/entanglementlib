@@ -8,12 +8,12 @@ package space.qu4nt.entanglementlib.iss;
 import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import space.qu4nt.entanglementlib.iss.exception.IssException;
+import space.qu4nt.entanglementlib.iss.exception.ISSException;
 import space.qu4nt.entanglementlib.iss.handler.HandlerRegistry;
-import space.qu4nt.entanglementlib.iss.handler.IssRequest;
-import space.qu4nt.entanglementlib.iss.handler.IssRequestContext;
-import space.qu4nt.entanglementlib.iss.handler.IssRequestHandler;
-import space.qu4nt.entanglementlib.iss.handler.IssResponse;
+import space.qu4nt.entanglementlib.iss.handler.ISSRequest;
+import space.qu4nt.entanglementlib.iss.handler.ISSRequestContext;
+import space.qu4nt.entanglementlib.iss.handler.ISSRequestHandler;
+import space.qu4nt.entanglementlib.iss.handler.ISSResponse;
 import space.qu4nt.entanglementlib.iss.protocol.WireConstants;
 import space.qu4nt.entanglementlib.iss.security.BindPolicy;
 import space.qu4nt.entanglementlib.iss.service.BuiltinHandlers;
@@ -47,11 +47,11 @@ import java.util.concurrent.TimeUnit;
 /// 초기화해야 합니다. 그렇지 않으면 교차 스레드 접근 시 오류가 발생합니다.
 ///
 /// @author Q. T. Felix
-public final class IssServer implements AutoCloseable {
+public final class ISSServer implements AutoCloseable {
 
-    private static final Logger log = LoggerFactory.getLogger(IssServer.class);
+    private static final Logger log = LoggerFactory.getLogger(ISSServer.class);
 
-    private final IssServerConfig config;
+    private final ISSServerConfig config;
     private final HandlerRegistry registry = new HandlerRegistry();
     private final SharedStore store = new SharedStore();
     private final Semaphore connectionLimit;
@@ -63,7 +63,7 @@ public final class IssServer implements AutoCloseable {
     private Thread acceptThread;
     private int boundPort = -1;
 
-    private IssServer(final IssServerConfig config) {
+    private ISSServer(final ISSServerConfig config) {
         this.config = config;
         this.connectionLimit = new Semaphore(config.maxConnections());
         BuiltinHandlers.registerAll(registry, store, this::statusText);
@@ -74,7 +74,7 @@ public final class IssServer implements AutoCloseable {
     }
 
     /// 커스텀 명령 핸들러를 등록합니다(시작 전·후 모두 가능).
-    public void register(final @NotNull String command, final @NotNull IssRequestHandler handler) {
+    public void register(final @NotNull String command, final @NotNull ISSRequestHandler handler) {
         registry.register(command, handler);
     }
 
@@ -89,9 +89,9 @@ public final class IssServer implements AutoCloseable {
     }
 
     /// 서버를 바인드하고 수용 루프를 시작합니다. 비차단입니다.
-    public synchronized void start() throws IssException {
+    public synchronized void start() throws ISSException {
         if (running)
-            throw new IssException("서버가 이미 실행 중입니다");
+            throw new ISSException("서버가 이미 실행 중입니다");
 
         final InetAddress address = BindPolicy.resolve(config.bindHost());
         BindPolicy.validateBind(address, config.allowNonLoopback());
@@ -102,7 +102,7 @@ public final class IssServer implements AutoCloseable {
             serverSocket.bind(new InetSocketAddress(address, config.port()), 16);
             boundPort = serverSocket.getLocalPort();
         } catch (IOException e) {
-            throw new IssException("서버 바인드에 실패했습니다", e);
+            throw new ISSException("서버 바인드에 실패했습니다", e);
         }
 
         running = true;
@@ -153,24 +153,24 @@ public final class IssServer implements AutoCloseable {
         }
     }
 
-    private void serve(final SecureChannel channel, final InetAddress peer) throws IssException {
+    private void serve(final SecureChannel channel, final InetAddress peer) throws ISSException {
         while (running) {
             final byte[] requestBytes = channel.readData();
             if (requestBytes == null)
                 break; // 인증된 종료 수신
 
-            IssResponse response;
+            ISSResponse response;
             try {
-                final IssRequest request = IssRequest.decode(requestBytes);
-                final IssRequestHandler handler = registry.resolve(request.command());
+                final ISSRequest request = ISSRequest.decode(requestBytes);
+                final ISSRequestHandler handler = registry.resolve(request.command());
                 if (handler == null) {
-                    response = IssResponse.unknownCommand(request.command());
+                    response = ISSResponse.unknownCommand(request.command());
                 } else {
-                    response = handler.handle(new IssRequestContext(request.command(), request.body(), peer));
+                    response = handler.handle(new ISSRequestContext(request.command(), request.body(), peer));
                 }
             } catch (Exception e) {
                 log.debug("요청 처리 오류(fail-closed): {}", e.toString());
-                response = IssResponse.error("요청 처리에 실패했습니다");
+                response = ISSResponse.error("요청 처리에 실패했습니다");
             }
             channel.writeData(response.encode());
         }
@@ -214,7 +214,7 @@ public final class IssServer implements AutoCloseable {
         }
     }
 
-    /// [IssServer] 빌더입니다.
+    /// [ISSServer] 빌더입니다.
     public static final class Builder {
 
         private String bindHost = "127.0.0.1";
@@ -269,13 +269,13 @@ public final class IssServer implements AutoCloseable {
             return this;
         }
 
-        public @NotNull IssServer build() {
+        public @NotNull ISSServer build() {
             Objects.requireNonNull(psk, "psk");
             if (port < 0 || port > 65535)
                 throw new IllegalArgumentException("포트가 유효하지 않습니다: " + port);
             if (maxConnections < 1)
                 throw new IllegalArgumentException("최대 연결 수는 1 이상이어야 합니다");
-            return new IssServer(new IssServerConfig(
+            return new ISSServer(new ISSServerConfig(
                     bindHost, port, psk, maxConnections,
                     handshakeTimeoutMillis, idleTimeoutMillis, allowNonLoopback,
                     List.copyOf(peerAllowlist)));

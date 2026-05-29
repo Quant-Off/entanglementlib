@@ -5,9 +5,9 @@
 
 package space.qu4nt.entanglementlib.iss;
 
-import space.qu4nt.entanglementlib.iss.cli.IssCli;
+import space.qu4nt.entanglementlib.iss.cli.ISSCLI;
 
-/// 폐쇄망 내부 공유 서버(ISS) 실행 진입점입니다. 명령행 처리는 [IssCli]에 위임합니다.
+/// 폐쇄망 내부 공유 서버(ISS) 실행 진입점입니다. 명령행 처리는 [ISSCLI]에 위임합니다.
 ///
 /// @author Q. T. Felix
 public final class ISSRunner {
@@ -17,6 +17,6 @@ public final class ISSRunner {
     }
 
     public static void main(final String[] args) {
-        IssCli.main(args);
+        ISSCLI.main(args);
     }
 }

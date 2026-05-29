@@ -15,21 +15,21 @@ import java.util.TreeSet;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
-/// 명령 이름 -> [IssRequestHandler] 레지스트리입니다. 다수의 연결 스레드가 동시에 조회하므로
+/// 명령 이름 -> [ISSRequestHandler] 레지스트리입니다. 다수의 연결 스레드가 동시에 조회하므로
 /// 스레드 안전합니다.
 ///
 /// @author Q. T. Felix
 public final class HandlerRegistry {
 
-    private final ConcurrentMap<String, IssRequestHandler> handlers = new ConcurrentHashMap<>();
+    private final ConcurrentMap<String, ISSRequestHandler> handlers = new ConcurrentHashMap<>();
 
-    public void register(final @NotNull String command, final @NotNull IssRequestHandler handler) {
+    public void register(final @NotNull String command, final @NotNull ISSRequestHandler handler) {
         Objects.requireNonNull(command, "command");
         Objects.requireNonNull(handler, "handler");
         handlers.put(command, handler);
     }
 
-    public @Nullable IssRequestHandler resolve(final @NotNull String command) {
+    public @Nullable ISSRequestHandler resolve(final @NotNull String command) {
         return handlers.get(command);
     }
 

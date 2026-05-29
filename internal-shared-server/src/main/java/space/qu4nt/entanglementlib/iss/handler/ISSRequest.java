@@ -6,7 +6,7 @@
 package space.qu4nt.entanglementlib.iss.handler;
 
 import org.jetbrains.annotations.NotNull;
-import space.qu4nt.entanglementlib.iss.exception.IssProtocolException;
+import space.qu4nt.entanglementlib.iss.exception.ISSProtocolException;
 
 import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
@@ -18,7 +18,7 @@ import java.util.Arrays;
 /// @param command 명령 이름 (최대 255바이트 UTF-8)
 /// @param body    명령별 본문
 /// @author Q. T. Felix
-public record IssRequest(@NotNull String command, byte @NotNull [] body) {
+public record ISSRequest(@NotNull String command, byte @NotNull [] body) {
 
     public byte @NotNull [] encode() {
         final byte[] cmd = command.getBytes(StandardCharsets.UTF_8);
@@ -31,14 +31,14 @@ public record IssRequest(@NotNull String command, byte @NotNull [] body) {
         return out;
     }
 
-    public static @NotNull IssRequest decode(final byte @NotNull [] payload) throws IssProtocolException {
+    public static @NotNull ISSRequest decode(final byte @NotNull [] payload) throws ISSProtocolException {
         if (payload.length < 1)
-            throw new IssProtocolException("요청 페이로드가 비어 있습니다");
+            throw new ISSProtocolException("요청 페이로드가 비어 있습니다");
         final int cmdLen = payload[0] & 0xFF;
         if (1 + cmdLen > payload.length)
-            throw new IssProtocolException("명령 이름 길이가 페이로드를 초과했습니다");
+            throw new ISSProtocolException("명령 이름 길이가 페이로드를 초과했습니다");
         final String command = new String(payload, 1, cmdLen, StandardCharsets.UTF_8);
         final byte[] body = Arrays.copyOfRange(payload, 1 + cmdLen, payload.length);
-        return new IssRequest(command, body);
+        return new ISSRequest(command, body);
     }
 }

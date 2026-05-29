@@ -24,9 +24,9 @@ import java.nio.channels.WritableByteChannel;
 /// 직전 짧은 노출로 제한됩니다.
 ///
 /// @author Q. T. Felix
-public final class SdcBytes {
+public final class SDCBytes {
 
-    private SdcBytes() {
+    private SDCBytes() {
         throw new AssertionError("cannot access");
     }
 

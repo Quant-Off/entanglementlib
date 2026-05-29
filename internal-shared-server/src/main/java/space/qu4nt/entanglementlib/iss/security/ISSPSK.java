@@ -7,7 +7,7 @@ package space.qu4nt.entanglementlib.iss.security;
 
 import org.jetbrains.annotations.NotNull;
 import space.qu4nt.entanglementlib.core.exception.security.checked.ELIBSecurityProcessException;
-import space.qu4nt.entanglementlib.iss.exception.IssException;
+import space.qu4nt.entanglementlib.iss.exception.ISSException;
 import space.qu4nt.entanglementlib.iss.protocol.WireConstants;
 import space.qu4nt.entanglementlib.security.data.SensitiveDataContainer;
 
@@ -28,45 +28,45 @@ import java.util.Arrays;
 /// 교차 스레드 접근이 허용됩니다.
 ///
 /// @author Q. T. Felix
-public final class IssPsk {
+public final class ISSPSK {
 
-    private IssPsk() {
+    private ISSPSK() {
         throw new AssertionError("cannot access");
     }
 
     /// raw 바이트 키 파일에서 PSK를 적재합니다.
-    public static @NotNull SensitiveDataContainer fromFile(final @NotNull Path path) throws IssException {
+    public static @NotNull SensitiveDataContainer fromFile(final @NotNull Path path) throws ISSException {
         final byte[] raw;
         try {
             raw = Files.readAllBytes(path);
         } catch (IOException e) {
-            throw new IssException("PSK 파일을 읽을 수 없습니다: " + path, e);
+            throw new ISSException("PSK 파일을 읽을 수 없습니다: " + path, e);
         }
         return wrap(raw);
     }
 
     /// 환경변수에 담긴 hex 인코딩 PSK를 적재합니다.
-    public static @NotNull SensitiveDataContainer fromEnv(final @NotNull String variableName) throws IssException {
+    public static @NotNull SensitiveDataContainer fromEnv(final @NotNull String variableName) throws ISSException {
         final String value = System.getenv(variableName);
         if (value == null || value.isBlank())
-            throw new IssException("환경변수가 비어 있습니다: " + variableName);
+            throw new ISSException("환경변수가 비어 있습니다: " + variableName);
         return fromHex(value.trim());
     }
 
     /// hex 문자열로부터 PSK를 적재합니다.
-    public static @NotNull SensitiveDataContainer fromHex(final @NotNull String hex) throws IssException {
+    public static @NotNull SensitiveDataContainer fromHex(final @NotNull String hex) throws ISSException {
         return wrap(decodeHex(hex));
     }
 
-    private static @NotNull SensitiveDataContainer wrap(final byte[] raw) throws IssException {
+    private static @NotNull SensitiveDataContainer wrap(final byte[] raw) throws ISSException {
         try {
             if (raw.length < WireConstants.MIN_PSK_LEN)
-                throw new IssException("PSK 길이가 최소 요구치(" + WireConstants.MIN_PSK_LEN + "바이트) 미만입니다");
+                throw new ISSException("PSK 길이가 최소 요구치(" + WireConstants.MIN_PSK_LEN + "바이트) 미만입니다");
             if (isAllZero(raw))
-                throw new IssException("PSK 엔트로피가 유효하지 않습니다 (전부 0)");
+                throw new ISSException("PSK 엔트로피가 유효하지 않습니다 (전부 0)");
             return new SensitiveDataContainer(raw, true);
         } catch (ELIBSecurityProcessException e) {
-            throw new IssException("PSK 컨테이너 생성에 실패했습니다", e);
+            throw new ISSException("PSK 컨테이너 생성에 실패했습니다", e);
         } finally {
             Arrays.fill(raw, (byte) 0);
         }
@@ -79,10 +79,10 @@ public final class IssPsk {
         return acc == 0;
     }
 
-    private static byte @NotNull [] decodeHex(final String hex) throws IssException {
+    private static byte @NotNull [] decodeHex(final String hex) throws ISSException {
         final String clean = hex.startsWith("0x") || hex.startsWith("0X") ? hex.substring(2) : hex;
         if ((clean.length() & 1) != 0)
-            throw new IssException("hex 길이가 홀수입니다");
+            throw new ISSException("hex 길이가 홀수입니다");
         final byte[] out = new byte[clean.length() / 2];
         for (int i = 0; i < out.length; i++) {
             final int hi = digit(clean.charAt(i * 2));
@@ -92,10 +92,10 @@ public final class IssPsk {
         return out;
     }
 
-    private static int digit(final char c) throws IssException {
+    private static int digit(final char c) throws ISSException {
         if (c >= '0' && c <= '9') return c - '0';
         if (c >= 'a' && c <= 'f') return c - 'a' + 10;
         if (c >= 'A' && c <= 'F') return c - 'A' + 10;
-        throw new IssException("유효하지 않은 hex 문자입니다");
+        throw new ISSException("유효하지 않은 hex 문자입니다");
     }
 }

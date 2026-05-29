@@ -10,16 +10,16 @@ import java.io.Serial;
 /// 와이어 프레임 파싱, 경계 검증, 시퀀스 위반 등 프로토콜 무결성 위반 시 발생합니다.
 ///
 /// @author Q. T. Felix
-public class IssProtocolException extends IssException {
+public class ISSProtocolException extends ISSException {
 
     @Serial
     private static final long serialVersionUID = 7_842_001_001_000_002L;
 
-    public IssProtocolException(final String message) {
+    public ISSProtocolException(final String message) {
         super(message);
     }
 
-    public IssProtocolException(final String message, final Throwable cause) {
+    public ISSProtocolException(final String message, final Throwable cause) {
         super(message, cause);
     }
 }

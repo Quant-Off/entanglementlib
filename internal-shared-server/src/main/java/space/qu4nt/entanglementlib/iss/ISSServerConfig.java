@@ -11,7 +11,7 @@ import space.qu4nt.entanglementlib.security.data.SensitiveDataContainer;
 import java.net.InetAddress;
 import java.util.List;
 
-/// [IssServer] 구성입니다. [IssServer#builder()]로 생성합니다.
+/// [ISSServer] 구성입니다. [ISSServer#builder()]로 생성합니다.
 ///
 /// @param bindHost              바인드 호스트 (기본 127.0.0.1)
 /// @param port                  바인드 포트 (0이면 임의 포트)
@@ -22,7 +22,7 @@ import java.util.List;
 /// @param allowNonLoopback      비루프백 바인드 허용 여부
 /// @param peerAllowlist         피어 IP 허용목록 (비어 있으면 임의 피어 허용, PSK는 별도 강제)
 /// @author Q. T. Felix
-public record IssServerConfig(@NotNull String bindHost,
+public record ISSServerConfig(@NotNull String bindHost,
                               int port,
                               @NotNull SensitiveDataContainer psk,
                               int maxConnections,
