@@ -1,14 +1,10 @@
 package space.qu4nt.entanglementlib.security;
 
-import lombok.Getter;
-import lombok.Setter;
 import org.jetbrains.annotations.Nullable;
 import space.qu4nt.entanglementlib.core.util.Nill;
 import space.qu4nt.entanglementlib.security.data.HeuristicArenaFactory;
 import space.qu4nt.entanglementlib.security.entlibnative.NativeSpecContext;
 
-@Getter
-@Setter
 public class EntanglementLibSecurityConfig {
 
     private NativeSpecContext nativeContext;
@@ -28,5 +24,21 @@ public class EntanglementLibSecurityConfig {
                 Nill.nullDef(nativeContext, NativeSpecContext::defaults),
                 Nill.nullDef(arenaMode, () -> HeuristicArenaFactory.ArenaMode.AUTO)
         );
+    }
+
+    public NativeSpecContext getNativeContext() {
+        return nativeContext;
+    }
+
+    public void setNativeContext(NativeSpecContext nativeContext) {
+        this.nativeContext = nativeContext;
+    }
+
+    public HeuristicArenaFactory.ArenaMode getArenaMode() {
+        return arenaMode;
+    }
+
+    public void setArenaMode(HeuristicArenaFactory.ArenaMode arenaMode) {
+        this.arenaMode = arenaMode;
     }
 }

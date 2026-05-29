@@ -1,7 +1,8 @@
 package space.qu4nt.entanglementlib.security.entlibnative;
 
-import lombok.extern.slf4j.Slf4j;
 import org.jetbrains.annotations.NotNull;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import space.qu4nt.entanglementlib.core.exception.security.checked.ELIBSecurityIOException;
 import space.qu4nt.entanglementlib.core.exception.security.critical.ELIBSecurityNativeCritical;
 import space.qu4nt.entanglementlib.security.EntanglementLibSecurityConfig;
@@ -18,8 +19,9 @@ import java.nio.file.attribute.PosixFilePermissions;
 import java.util.Set;
 
 // todo 이 클래스 호출 시점에 국제화 파일 로드돼잇을거임
-@Slf4j
 public final class NativeLoader {
+
+    private static final Logger log = LoggerFactory.getLogger(NativeLoader.class);
 
     private static volatile boolean loaded = false;
 

@@ -5,13 +5,15 @@
 
 package space.qu4nt.entanglementlib.security.data;
 
-import lombok.extern.slf4j.Slf4j;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.lang.foreign.Arena;
 import java.util.Locale;
 
-@Slf4j
 public final class HeuristicArenaFactory {
+
+    private static final Logger log = LoggerFactory.getLogger(HeuristicArenaFactory.class);
 
     /// 사용자가 코드 레벨에서 설정을 강제할 수 있는 전역 변수입니다.
     private static volatile ArenaMode GLOBAL_MODE = ArenaMode.AUTO;

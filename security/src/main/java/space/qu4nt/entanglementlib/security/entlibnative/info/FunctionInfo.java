@@ -1,19 +1,15 @@
 package space.qu4nt.entanglementlib.security.entlibnative.info;
 
-import lombok.Getter;
-import lombok.Setter;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-import java.lang.constant.Constable;
 import java.lang.foreign.FunctionDescriptor;
 import java.lang.foreign.MemoryLayout;
+import java.util.ArrayList;
 import java.util.List;
 
 public class FunctionInfo {
 
-    @Getter
-    @Setter
     private String functionName;
     private @Nullable MemoryLayout returnType;
     private List<@NotNull MemoryLayout> argLayouts;
@@ -25,11 +21,12 @@ public class FunctionInfo {
     }
 
     public static FunctionInfo of(final String functionName, @NotNull FunctionInfo ref) {
-        return new FunctionInfo(functionName, ref.returnType, ref.argLayouts);
+        // ref의 인자 레이아웃을 가변 리스트로 복사하여 andArg 변형이 ref를 오염시키지 않도록 함
+        return new FunctionInfo(functionName, ref.returnType, copyOf(ref.argLayouts));
     }
 
     public static FunctionInfo ofVoid(final String functionName, @NotNull FunctionInfo ref) {
-        return new FunctionInfo(functionName, null, ref.argLayouts);
+        return new FunctionInfo(functionName, null, copyOf(ref.argLayouts));
     }
 
     public static FunctionInfo of(final String functionName, @NotNull MemoryLayout returnType, MemoryLayout... args) {
@@ -41,17 +38,34 @@ public class FunctionInfo {
     }
 
     public FunctionInfo andArg(final @NotNull MemoryLayout additional) {
+        if (this.argLayouts == null)
+            this.argLayouts = new ArrayList<>();
         this.argLayouts.add(additional);
         return this;
     }
 
     public FunctionDescriptor toFunctionDescriptor() {
+        final MemoryLayout[] args = argLayouts == null
+                ? new MemoryLayout[0]
+                : argLayouts.toArray(MemoryLayout[]::new);
         if (returnType == null)
-            return FunctionDescriptor.ofVoid(argLayouts.toArray(MemoryLayout[]::new));
-        return FunctionDescriptor.of(returnType, argLayouts.toArray(MemoryLayout[]::new));
+            return FunctionDescriptor.ofVoid(args);
+        return FunctionDescriptor.of(returnType, args);
+    }
+
+    public String getFunctionName() {
+        return functionName;
+    }
+
+    public void setFunctionName(String functionName) {
+        this.functionName = functionName;
     }
 
     private static List<MemoryLayout> calibration(MemoryLayout[] args) {
-        return args.length == 0 ? null : List.of(args);
+        return args.length == 0 ? new ArrayList<>() : new ArrayList<>(List.of(args));
+    }
+
+    private static List<MemoryLayout> copyOf(@Nullable List<MemoryLayout> source) {
+        return source == null ? new ArrayList<>() : new ArrayList<>(source);
     }
 }

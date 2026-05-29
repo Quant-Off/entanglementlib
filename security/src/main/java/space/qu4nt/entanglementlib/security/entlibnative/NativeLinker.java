@@ -76,50 +76,25 @@ public final class NativeLinker {
         return handle;
     }
 
+    /// Rust-Owned(RO) 패턴 전송 메소드입니다. Rust가 할당한 SecureBuffer 포인터의 내용을
+    /// Java가 관리하는 [SensitiveDataContainer]로 복사하고 원본 네이티브 버퍼를 즉시 소거합니다.
+    ///
+    /// # Status
+    /// 이 경로는 네이티브 측 callee secure-buffer 함수(`secure_buffer_len`,
+    /// `secure_buffer_copy_and_free`, `secure_buffer_free`)에 의존하지만 현재 `entlib-native`
+    /// FFI에 노출되지 않았습니다. 현재 모든 보안 연산(base64/hex/SHA-2/SHA-3)은 Java-Owned(JO)
+    /// 원샷 패턴으로, 출력 버퍼를 Java가 사전 할당하여 전달하므로 이 RO 경로가 필요하지 않습니다.
+    ///
+    /// 해당 callee 함수가 노출되면 단일 FFI 호출(copy-and-free)로 복사 및 원본 소거를 수행하도록
+    /// 구현합니다.
+    ///
+    /// @throws ELIBSecurityProcessException callee secure-buffer FFI 미노출로 항상 발생
     public static @NotNull SensitiveDataContainer transferNativeBufferBindToContext(
             final @NotNull SDCScopeContext context,
             final @NotNull MemorySegment data
     ) throws ELIBSecurityProcessException {
-        return null;
-//        // Rust 측에서 메모리 해제가 완료되었는지 추적하여 Double-Free를 방지하기 위한 플래그
-//        boolean isFreedByNative = false;
-//
-//        try {
-//            long len = (long) MH_CALLEE_SECURE_BUFFER_LEN.invokeExact(data);
-//
-//            // Off-heap 메모리 할당 (OutOfMemoryError 등 예외 발생 가능 구간)
-//            SensitiveDataContainer result = context.allocate((int) len);
-//
-//            // 네이티브에서 직접 복사 및 원본 즉시 소거 (단 1회의 FFI 호출로 압축)
-//            long copied = (long) MH_CALLEE_SECURE_BUFFER_COPY_AND_FREE.invokeExact(
-//                    data,
-//                    InternalNativeBridge.unwrapMemorySegment(result),
-//                    len
-//            );
-//
-//            // invokeExact가 예외 없이 통과했다면 Rust의 Box::from_raw에 의해 무조건 소멸
-//            isFreedByNative = true;
-//
-//            // 용량 불일치 등 논리적 오류 검증
-//            if (copied != len)
-//                throw new ELIBSecurityCritical("네이티브 버퍼 복사 중 크기 불일치 또는 오류가 발생했습니다.");
-//
-//            return result;
-//        } catch (Throwable e) {
-//            // context.allocate() 실패 등 Rust로 제어권이 넘어가기 전에 예외가 발생한 경우 메모리 누수 방지
-//            if (!isFreedByNative) {
-//                try {
-//                    MH_CALLEE_SECURE_BUFFER_FREE.invokeExact(data);
-//                } catch (Throwable ex) {
-//                    // 원본 예외 유실을 막기 위해 억제된 예외로 병합
-//                    e.addSuppressed(ex);
-//                    throw new ELIBSecurityCritical("네이티브 데이터를 소거하는 중 치명적 오류가 발생했습니다!", e);
-//                }
-//            }
-//
-//            // 이미 Critical 예외인 경우 그대로 던짐
-//            if (e instanceof ELIBSecurityCritical) throw (ELIBSecurityCritical) e;
-//            throw new ELIBSecurityProcessException("네이티브 버퍼 획득 및 전송 중 예외가 발생했습니다!", e);
-//        }
+        throw new ELIBSecurityProcessException(
+                "RO(Rust-Owned) 전송 경로는 아직 entlib-native FFI에 노출되지 않았습니다. " +
+                "현재는 JO(Java-Owned) 원샷 패턴만 지원됩니다.");
     }
 }

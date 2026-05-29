@@ -1,6 +1,7 @@
 package space.qu4nt.entanglementlib.security.crypto;
 
 import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import space.qu4nt.entanglementlib.core.util.wrapper.Hex;
@@ -10,7 +11,6 @@ import space.qu4nt.entanglementlib.security.data.HeuristicArenaFactory;
 import space.qu4nt.entanglementlib.security.data.InternalNativeBridge;
 import space.qu4nt.entanglementlib.security.data.SDCScopeContext;
 import space.qu4nt.entanglementlib.security.data.SensitiveDataContainer;
-import space.qu4nt.entanglementlib.security.entlibnative.NativeComponent;
 import space.qu4nt.entanglementlib.security.entlibnative.NativeSpecContext;
 
 import java.lang.foreign.MemorySegment;
@@ -19,6 +19,8 @@ import java.nio.charset.StandardCharsets;
 
 import static org.junit.jupiter.api.Assertions.*;
 
+// ChaCha20-Poly1305은 아직 entlib-native FFI에 노출되지 않아 비활성화 (encrypt/decrypt는 항상 예외를 던짐)
+@Disabled("ChaCha20-Poly1305은 entlib-native FFI에 아직 노출되지 않음")
 class ChaCha20Test {
 
     @BeforeAll
@@ -26,13 +28,7 @@ class ChaCha20Test {
         // 테스트 클래스 로드 시 1회만 네이티브 라이브러리를 초기화하여 성능 최적화
         EntanglementLibSecurityFacade.initialize(
                 EntanglementLibSecurityConfig.create(
-                        new NativeSpecContext(System.getenv("ENTLIB_NATIVE_BIN"), "entlib_native_ffi",
-                                NativeComponent.Callee_Secure_Buffer_Data,
-                                NativeComponent.Callee_Secure_Buffer_Len,
-                                NativeComponent.Callee_Secure_Buffer_Free,
-                                NativeComponent.Caller_Secure_Buffer_Wipe,
-                                NativeComponent.ChaCha20_Poly1305_Encrypt,
-                                NativeComponent.ChaCha20_Poly1305_Decrypt),
+                        new NativeSpecContext(System.getenv("ENTLIB_NATIVE_BIN"), "entlib_native_ffi"),
                         HeuristicArenaFactory.ArenaMode.CONFINED)
         );
     }

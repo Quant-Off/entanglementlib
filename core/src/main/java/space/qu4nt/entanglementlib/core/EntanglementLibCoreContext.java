@@ -1,6 +1,5 @@
 package space.qu4nt.entanglementlib.core;
 
-import lombok.Getter;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import space.qu4nt.entanglementlib.core.exception.core.ELIBCoreIllegalArgumentException;
@@ -10,7 +9,6 @@ import java.util.Locale;
 
 public final class EntanglementLibCoreContext {
 
-    @Getter
     private static volatile boolean initialized = false;
 
     private EntanglementLibCoreContext() {

@@ -5,11 +5,6 @@
 
 package space.qu4nt.entanglementlib.core.util.wrapper;
 
-import lombok.AllArgsConstructor;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
-import lombok.Setter;
-
 /**
  * 세 개의 타입을 래핑하는 클래스입니다.
  *
@@ -19,19 +14,48 @@ import lombok.Setter;
  * @author Q. T. Felix
  * @since 1.0.0
  */
-@Setter
-@Getter
-@NoArgsConstructor
-@AllArgsConstructor
 public class Tuple<F, S, T> {
 
     private F first;
     private S second;
     private T third;
 
+    public Tuple() {
+    }
+
+    public Tuple(F first, S second, T third) {
+        this.first = first;
+        this.second = second;
+        this.third = third;
+    }
+
     public void set(F first, S second, T third) {
         this.first = first;
         this.second = second;
+        this.third = third;
+    }
+
+    public F getFirst() {
+        return first;
+    }
+
+    public void setFirst(F first) {
+        this.first = first;
+    }
+
+    public S getSecond() {
+        return second;
+    }
+
+    public void setSecond(S second) {
+        this.second = second;
+    }
+
+    public T getThird() {
+        return third;
+    }
+
+    public void setThird(T third) {
         this.third = third;
     }
 }

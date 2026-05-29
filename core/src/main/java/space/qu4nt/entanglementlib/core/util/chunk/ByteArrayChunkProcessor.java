@@ -5,7 +5,8 @@
 
 package space.qu4nt.entanglementlib.core.util.chunk;
 
-import lombok.extern.slf4j.Slf4j;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.Objects;
 import java.util.stream.IntStream;
@@ -16,8 +17,9 @@ import java.util.stream.IntStream;
  * @author Q. T. Felix
  * @since 1.0.0
  */
-@Slf4j
 public class ByteArrayChunkProcessor {
+
+    private static final Logger log = LoggerFactory.getLogger(ByteArrayChunkProcessor.class);
 
     /**
      * 대용량 바이트 배열을 청크 단위로 처리하기 위한 메소드입니다.

@@ -5,10 +5,9 @@
 
 package space.qu4nt.entanglementlib.security.data;
 
-import lombok.AccessLevel;
-import lombok.Getter;
-import lombok.extern.slf4j.Slf4j;
 import org.jetbrains.annotations.NotNull;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import space.qu4nt.entanglementlib.annotations.CallerResponsibility;
 import space.qu4nt.entanglementlib.core.exception.security.checked.ELIBSecurityProcessException;
 import space.qu4nt.entanglementlib.core.exception.security.checked.ELIBSecurityUnsafeUsageException;
@@ -81,14 +80,14 @@ import java.util.Objects;
 /// 각 메소드의 모든 작업은 `try-with-resources` 블럭 내에서 사용됩니다.
 ///
 /// # Safety
-/// 이 객체의 인스턴스를 직접 생성해야 하는 경우 다음과 같이 네이티브에 메모리 할당 해제 함수를
-/// 호출하여 사용해야 합니다.
+/// 이 객체의 인스턴스를 직접 생성하는 경우 반드시 `try-with-resources` 또는 [#close()] 호출로
+/// 자원을 소거해야 합니다. [#close()]는 JOEP(Java-Owned End Process) 명령을 네이티브로 전달하여
+/// 메모리를 소거하고 OS 메모리 잠금을 해제합니다.
 /// ```java
-/// SensitiveDataContainer sdc = ...;
-/// final MemorySegment ms = sdc.getMemorySegment();
-/// // ...Secure stuff...
-/// EntLibNativeManager.call(Function.Caller_Secure_Buffer_Wipe)
-///                    .invokeExact(ms, ms.byteSize());
+/// try (SensitiveDataContainer sdc = new SensitiveDataContainer(32)) {
+///     final MemorySegment ms = sdc.getMemorySegment();
+///     // ...Secure stuff...
+/// } // close() -> JOEP -> Rust 측 소거
 /// ```
 /// 이 객체를 상속받아 사용되는 경우도 일관된 사용법을 따를 수 있습니다.
 ///
@@ -96,13 +95,20 @@ import java.util.Objects;
 /// @see HeuristicArenaFactory Arena 자동 할당을 수행하는 클래스
 /// @see SDCScopeContext
 /// @since 1.1.0
-@Slf4j
 public class SensitiveDataContainer implements AutoCloseable {
 
-    @Getter(AccessLevel.PACKAGE)
+    private static final Logger log = LoggerFactory.getLogger(SensitiveDataContainer.class);
+
     private final Arena arena;
-    @Getter(AccessLevel.PACKAGE)
     private final MemorySegment memorySegment;
+
+    Arena getArena() {
+        return arena;
+    }
+
+    MemorySegment getMemorySegment() {
+        return memorySegment;
+    }
 
     /// 네이티브 메모리에 전달받은 정수 `int` 값(바이트 크기) 만큼의 메모리 세그먼트를
     /// 생성하여 이 인스턴스를 생성합니다.

@@ -1,7 +1,8 @@
 package space.qu4nt.entanglementlib.security.data;
 
-import lombok.extern.slf4j.Slf4j;
 import org.jetbrains.annotations.NotNull;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import space.qu4nt.entanglementlib.core.exception.security.checked.ELIBSecurityProcessException;
 
 import java.util.ArrayList;
@@ -14,8 +15,9 @@ import java.util.Objects;
 ///
 /// @author Q. T. Felix
 /// @since 1.1.1
-@Slf4j
 public final class SDCScopeContext implements AutoCloseable {
+
+    private static final Logger log = LoggerFactory.getLogger(SDCScopeContext.class);
 
     private final List<@NotNull SensitiveDataContainer> trackedContainers = Collections.synchronizedList(new ArrayList<>());
     private volatile boolean isAlive = true;

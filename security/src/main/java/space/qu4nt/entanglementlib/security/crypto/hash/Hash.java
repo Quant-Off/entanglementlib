@@ -2,217 +2,157 @@ package space.qu4nt.entanglementlib.security.crypto.hash;
 
 import org.jetbrains.annotations.NotNull;
 import space.qu4nt.entanglementlib.core.exception.security.checked.ELIBSecurityProcessException;
+import space.qu4nt.entanglementlib.core.exception.security.unchecked.ELIBSecurityIllegalArgumentException;
 import space.qu4nt.entanglementlib.security.data.InternalNativeBridge;
 import space.qu4nt.entanglementlib.security.data.SDCScopeContext;
 import space.qu4nt.entanglementlib.security.data.SensitiveDataContainer;
-import space.qu4nt.entanglementlib.security.entlibnative.NativeLinker;
-import space.qu4nt.entanglementlib.security.entlibnative.NativeComponent;
+import space.qu4nt.entanglementlib.security.entlibnative.ConstableFactory;
+import space.qu4nt.entanglementlib.security.entlibnative.NativeProcessResult;
 
+import java.lang.foreign.Arena;
 import java.lang.foreign.MemorySegment;
-import java.lang.invoke.MethodHandle;
-import java.util.stream.IntStream;
 
+/// 네이티브 메모리 기반의 안전한 해시(SHA-2 / SHA-3 / SHAKE) 유틸리티입니다.
+///
+/// 모든 입출력은 [SensitiveDataContainer]를 통해 소유권(ownership)이 통제되며,
+/// 가비지 컬렉터가 관리하는 자바 `heap` 메모리에 민감 데이터를 노출하지 않습니다.
+///
+/// 입력 컨테이너와 출력 컨테이너를 원샷(one-shot) FFI 함수로 전달하여
+/// `entlib-native`의 다이제스트 연산을 수행합니다. 입출력 컨테이너의 생명 주기는
+/// 호출자가 전달한 [SDCScopeContext]가 책임집니다.
+///
+/// @author Q. T. Felix
 public final class Hash {
 
+    private Hash() {
+        throw new AssertionError("cannot access");
+    }
+
+    /// SHA-2 다이제스트를 계산합니다.
+    ///
+    /// @param length 다이제스트 비트 길이 (224, 256, 384, 512)
+    /// @param scope  데이터 생명주기를 통제할 스코프 컨텍스트
+    /// @param input  해시 대상 컨테이너
+    /// @return 다이제스트 결과가 담긴 새로운 보안 컨테이너 (스코프에 귀속됨)
     public static SensitiveDataContainer sha2(
             final int length,
-            @NotNull SDCScopeContext scope,
-            @NotNull SensitiveDataContainer input
-    ) throws Throwable {
-        final int[] ableLens = {224, 256, 384, 512};
-        if (IntStream.of(ableLens).noneMatch(l -> l == length))
-            return null;
+            final @NotNull SDCScopeContext scope,
+            final @NotNull SensitiveDataContainer input
+    ) throws ELIBSecurityProcessException {
+        final int digestBytes = digestByteSize(length);
+        validate(scope, input);
 
-        // 길이에 맞는 함수 등록
-        NativeComponent newContextFunc, updateFunc, finalizeFunc, freeFunc;
-        switch (length) {
-            case 224 -> {
-                newContextFunc = NativeComponent.SHA2_224_New;
-                updateFunc = NativeComponent.SHA2_224_Update;
-                finalizeFunc = NativeComponent.SHA2_224_Finalize;
-                freeFunc = NativeComponent.SHA2_224_Free;
-            }
-            case 256 -> {
-                newContextFunc = NativeComponent.SHA2_256_New;
-                updateFunc = NativeComponent.SHA2_256_Update;
-                finalizeFunc = NativeComponent.SHA2_256_Finalize;
-                freeFunc = NativeComponent.SHA2_256_Free;
-            }
-            case 384 -> {
-                newContextFunc = NativeComponent.SHA2_384_New;
-                updateFunc = NativeComponent.SHA2_384_Update;
-                finalizeFunc = NativeComponent.SHA2_384_Finalize;
-                freeFunc = NativeComponent.SHA2_384_Free;
-            }
-            case 512 -> {
-                newContextFunc = NativeComponent.SHA2_512_New;
-                updateFunc = NativeComponent.SHA2_512_Update;
-                finalizeFunc = NativeComponent.SHA2_512_Finalize;
-                freeFunc = NativeComponent.SHA2_512_Free;
-            }
-            default -> throw new ELIBSecurityProcessException("불가능한 길이");
+        final SensitiveDataContainer output = scope.allocate(digestBytes);
+        try (Arena transientArena = Arena.ofConfined()) {
+            final MemorySegment in = ConstableFactory.Std.allocateJOStandard(transientArena, input);
+            final MemorySegment out = ConstableFactory.Std.allocateJOStandard(transientArena, output);
+
+            final NativeProcessResult<Long> result = switch (length) {
+                case 224 -> ConstableFactory.Hash.SHA2.sha224(in, out);
+                case 256 -> ConstableFactory.Hash.SHA2.sha256(in, out);
+                case 384 -> ConstableFactory.Hash.SHA2.sha384(in, out);
+                case 512 -> ConstableFactory.Hash.SHA2.sha512(in, out);
+                default -> throw new ELIBSecurityIllegalArgumentException("지원하지 않는 SHA-2 길이입니다: " + length);
+            };
+            if (!result.isSuccess())
+                throw new ELIBSecurityProcessException("Rust 네이티브 측 SHA-2 연산 실패 (상태 코드: " + result.getStatusCode() + ")");
+        } catch (ELIBSecurityProcessException e) {
+            throw e;
+        } catch (Throwable t) {
+            throw new ELIBSecurityProcessException("SHA-2 FFI 호출 중 치명적 예외가 발생했습니다!", t);
         }
-
-        // 컨텍스트 생성
-        MemorySegment ctx = (MemorySegment) NativeLinker.call(newContextFunc).invokeExact();
-        boolean isCtxConsumed = false; // double-free 방지를 위한 상태 플래그
-
-        try {
-            // 데이터 업데이트
-            MethodHandle updateMH = NativeLinker.call(updateFunc);
-            MemorySegment dataSeg = InternalNativeBridge.unwrapMemorySegment(input);
-            int status = (int) updateMH.invokeExact(ctx, dataSeg, dataSeg.byteSize());
-            if (status != 0) {
-                throw new ELIBSecurityProcessException("업데이트 실패, 상태 코드: " + status);
-            }
-
-            // 연산 수행 -> SecureBuffer* 반환 (ctx 소유권 소비됨)
-            MemorySegment secureBufferPtr = (MemorySegment) NativeLinker.call(finalizeFunc)
-                    .invokeExact(ctx);
-            isCtxConsumed = true; // 성공적으로 finalize 되었으므로 플래그 전환
-
-            if (secureBufferPtr.equals(MemorySegment.NULL))
-                throw new ELIBSecurityProcessException("해시 연산 결과가 null입니다!");
-
-            return NativeLinker.transferNativeBufferBindToContext(
-                    scope, secureBufferPtr
-            ); // 이 작업 내에서 버퍼 소거가 진행됨
-        } finally {
-            // 예외 발생 등으로 인해 finalize가 호출되지 않은 경우에만 early free
-            if (!isCtxConsumed && ctx != null && !ctx.equals(MemorySegment.NULL)) {
-                NativeLinker.call(freeFunc).invokeExact(ctx);
-            }
-        }
+        return output;
     }
 
+    /// SHA-3 다이제스트를 계산합니다.
+    ///
+    /// @param length 다이제스트 비트 길이 (224, 256, 384, 512)
+    /// @param scope  데이터 생명주기를 통제할 스코프 컨텍스트
+    /// @param input  해시 대상 컨테이너
+    /// @return 다이제스트 결과가 담긴 새로운 보안 컨테이너 (스코프에 귀속됨)
     public static SensitiveDataContainer sha3(
             final int length,
-            @NotNull SDCScopeContext scope,
-            @NotNull SensitiveDataContainer input
-    ) throws Throwable {
-        final int[] ableLens = {224, 256, 384, 512};
-        if (IntStream.of(ableLens).noneMatch(l -> l == length))
-            return null;
+            final @NotNull SDCScopeContext scope,
+            final @NotNull SensitiveDataContainer input
+    ) throws ELIBSecurityProcessException {
+        final int digestBytes = digestByteSize(length);
+        validate(scope, input);
 
-        // 길이에 맞는 함수 등록
-        NativeComponent newContextFunc, updateFunc, finalizeFunc, freeFunc;
-        switch (length) {
-            case 224 -> {
-                newContextFunc = NativeComponent.SHA3_224_New;
-                updateFunc = NativeComponent.SHA3_224_Update;
-                finalizeFunc = NativeComponent.SHA3_224_Finalize;
-                freeFunc = NativeComponent.SHA3_224_Free;
-            }
-            case 256 -> {
-                newContextFunc = NativeComponent.SHA3_256_New;
-                updateFunc = NativeComponent.SHA3_256_Update;
-                finalizeFunc = NativeComponent.SHA3_256_Finalize;
-                freeFunc = NativeComponent.SHA3_256_Free;
-            }
-            case 384 -> {
-                newContextFunc = NativeComponent.SHA3_384_New;
-                updateFunc = NativeComponent.SHA3_384_Update;
-                finalizeFunc = NativeComponent.SHA3_384_Finalize;
-                freeFunc = NativeComponent.SHA3_384_Free;
-            }
-            case 512 -> {
-                newContextFunc = NativeComponent.SHA3_512_New;
-                updateFunc = NativeComponent.SHA3_512_Update;
-                finalizeFunc = NativeComponent.SHA3_512_Finalize;
-                freeFunc = NativeComponent.SHA3_512_Free;
-            }
-            default -> throw new ELIBSecurityProcessException("불가능한 길이");
+        final SensitiveDataContainer output = scope.allocate(digestBytes);
+        try (Arena transientArena = Arena.ofConfined()) {
+            final MemorySegment in = ConstableFactory.Std.allocateJOStandard(transientArena, input);
+            final MemorySegment out = ConstableFactory.Std.allocateJOStandard(transientArena, output);
+
+            final NativeProcessResult<Long> result = switch (length) {
+                case 224 -> ConstableFactory.Hash.SHA3.sha224(in, out);
+                case 256 -> ConstableFactory.Hash.SHA3.sha256(in, out);
+                case 384 -> ConstableFactory.Hash.SHA3.sha384(in, out);
+                case 512 -> ConstableFactory.Hash.SHA3.sha512(in, out);
+                default -> throw new ELIBSecurityIllegalArgumentException("지원하지 않는 SHA-3 길이입니다: " + length);
+            };
+            if (!result.isSuccess())
+                throw new ELIBSecurityProcessException("Rust 네이티브 측 SHA-3 연산 실패 (상태 코드: " + result.getStatusCode() + ")");
+        } catch (ELIBSecurityProcessException e) {
+            throw e;
+        } catch (Throwable t) {
+            throw new ELIBSecurityProcessException("SHA-3 FFI 호출 중 치명적 예외가 발생했습니다!", t);
         }
-
-        // 컨텍스트 생성
-        MemorySegment ctx = (MemorySegment) NativeLinker.call(newContextFunc).invokeExact();
-        boolean isCtxConsumed = false; // double-free 방지를 위한 상태 플래그
-
-        try {
-            // 데이터 업데이트
-            MethodHandle updateMH = NativeLinker.call(updateFunc);
-            MemorySegment dataSeg = InternalNativeBridge.unwrapMemorySegment(input);
-            int status = (int) updateMH.invokeExact(ctx, dataSeg, dataSeg.byteSize());
-            if (status != 0) {
-                throw new ELIBSecurityProcessException("업데이트 실패, 상태 코드: " + status);
-            }
-
-            // 연산 수행 -> SecureBuffer* 반환 (ctx 소유권 소비됨)
-            MemorySegment secureBufferPtr = (MemorySegment) NativeLinker.call(finalizeFunc)
-                    .invokeExact(ctx);
-            isCtxConsumed = true; // 성공적으로 finalize 되었으므로 플래그 전환
-
-            if (secureBufferPtr.equals(MemorySegment.NULL))
-                throw new ELIBSecurityProcessException("해시 연산 결과가 null입니다!");
-
-            return NativeLinker.transferNativeBufferBindToContext(
-                    scope, secureBufferPtr
-            ); // 이 작업 내에서 버퍼 소거가 진행됨
-        } finally {
-            // 예외 발생 등으로 인해 finalize가 호출되지 않은 경우에만 early free
-            if (!isCtxConsumed && ctx != null && !ctx.equals(MemorySegment.NULL)) {
-                NativeLinker.call(freeFunc).invokeExact(ctx);
-            }
-        }
+        return output;
     }
 
+    /// SHAKE 가변 길이 출력 함수(XOF)를 계산합니다.
+    ///
+    /// @param length     SHAKE 변형 (128 또는 256)
+    /// @param byteOutLen 생성할 출력 바이트 길이
+    /// @param scope      데이터 생명주기를 통제할 스코프 컨텍스트
+    /// @param input      해시 대상 컨테이너
+    /// @return SHAKE 출력이 담긴 새로운 보안 컨테이너 (스코프에 귀속됨)
     public static SensitiveDataContainer sha3Shake(
             final int length,
             final long byteOutLen,
-            @NotNull SDCScopeContext scope,
-            @NotNull SensitiveDataContainer input
-    ) throws Throwable {
-        final int[] ableLens = {128, 256};
-        if (IntStream.of(ableLens).noneMatch(l -> l == length))
-            return null;
+            final @NotNull SDCScopeContext scope,
+            final @NotNull SensitiveDataContainer input
+    ) throws ELIBSecurityProcessException {
+        if (length != 128 && length != 256)
+            throw new ELIBSecurityIllegalArgumentException("지원하지 않는 SHAKE 변형입니다: " + length);
+        if (byteOutLen <= 0 || byteOutLen > Integer.MAX_VALUE)
+            throw new ELIBSecurityIllegalArgumentException("유효하지 않은 SHAKE 출력 길이입니다: " + byteOutLen);
+        validate(scope, input);
 
-        // 길이에 맞는 함수 등록
-        NativeComponent newContextFunc, updateFunc, finalizeFunc, freeFunc;
-        switch (length) {
-            case 128 -> {
-                newContextFunc = NativeComponent.SHA3_SHAKE128_New;
-                updateFunc = NativeComponent.SHA3_SHAKE128_Update;
-                finalizeFunc = NativeComponent.SHA3_SHAKE128_Finalize;
-                freeFunc = NativeComponent.SHA3_SHAKE128_Free;
-            }
-            case 256 -> {
-                newContextFunc = NativeComponent.SHA3_SHAKE256_New;
-                updateFunc = NativeComponent.SHA3_SHAKE256_Update;
-                finalizeFunc = NativeComponent.SHA3_SHAKE256_Finalize;
-                freeFunc = NativeComponent.SHA3_SHAKE256_Free;
-            }
-            default -> throw new ELIBSecurityProcessException("불가능한 길이");
+        final SensitiveDataContainer output = scope.allocate((int) byteOutLen);
+        try (Arena transientArena = Arena.ofConfined()) {
+            final MemorySegment in = ConstableFactory.Std.allocateJOStandard(transientArena, input);
+            final MemorySegment out = ConstableFactory.Std.allocateJOStandard(transientArena, output);
+
+            final NativeProcessResult<Long> result = switch (length) {
+                case 128 -> ConstableFactory.Hash.SHA3.shake128(in, out);
+                case 256 -> ConstableFactory.Hash.SHA3.shake256(in, out);
+                default -> throw new ELIBSecurityIllegalArgumentException("지원하지 않는 SHAKE 변형입니다: " + length);
+            };
+            if (!result.isSuccess())
+                throw new ELIBSecurityProcessException("Rust 네이티브 측 SHAKE 연산 실패 (상태 코드: " + result.getStatusCode() + ")");
+        } catch (ELIBSecurityProcessException e) {
+            throw e;
+        } catch (Throwable t) {
+            throw new ELIBSecurityProcessException("SHAKE FFI 호출 중 치명적 예외가 발생했습니다!", t);
         }
+        return output;
+    }
 
-        // 컨텍스트 생성
-        MemorySegment ctx = (MemorySegment) NativeLinker.call(newContextFunc).invokeExact();
-        boolean isCtxConsumed = false; // double-free 방지를 위한 상태 플래그
+    private static int digestByteSize(final int length) throws ELIBSecurityProcessException {
+        return switch (length) {
+            case 224 -> 28;
+            case 256 -> 32;
+            case 384 -> 48;
+            case 512 -> 64;
+            default -> throw new ELIBSecurityIllegalArgumentException("지원하지 않는 다이제스트 길이입니다: " + length);
+        };
+    }
 
-        try {
-            // 데이터 업데이트
-            MethodHandle updateMH = NativeLinker.call(updateFunc);
-            MemorySegment dataSeg = InternalNativeBridge.unwrapMemorySegment(input);
-            int status = (int) updateMH.invokeExact(ctx, dataSeg, dataSeg.byteSize());
-            if (status != 0) {
-                throw new ELIBSecurityProcessException("업데이트 실패, 상태 코드: " + status);
-            }
-
-            // 연산 수행 -> SecureBuffer* 반환 (ctx 소유권 소비됨)
-            MemorySegment secureBufferPtr = (MemorySegment) NativeLinker.call(finalizeFunc)
-                    .invokeExact(ctx, byteOutLen);
-            isCtxConsumed = true; // 성공적으로 finalize 되었으므로 플래그 전환
-
-            if (secureBufferPtr.equals(MemorySegment.NULL))
-                throw new ELIBSecurityProcessException("해시 연산 결과가 null입니다.");
-
-            return NativeLinker.transferNativeBufferBindToContext(
-                    scope, secureBufferPtr
-            ); // 이 작업 내에서 버퍼 소거가 진행됨
-        } finally {
-            // 예외 발생 등으로 인해 finalize가 호출되지 않은 경우에만 early free
-            if (!isCtxConsumed && ctx != null && !ctx.equals(MemorySegment.NULL)) {
-                NativeLinker.call(freeFunc).invokeExact(ctx);
-            }
-        }
+    private static void validate(final SDCScopeContext scope, final SensitiveDataContainer input) {
+        if (scope == null)
+            throw new ELIBSecurityIllegalArgumentException("유효하지 않은 스코프 컨텍스트입니다!");
+        if (input == null || !InternalNativeBridge.unwrapArena(input).scope().isAlive())
+            throw new ELIBSecurityIllegalArgumentException("유효하지 않거나 이미 소거된 입력 컨테이너입니다!");
     }
 }

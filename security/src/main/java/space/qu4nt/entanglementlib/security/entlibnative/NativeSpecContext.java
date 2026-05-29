@@ -1,14 +1,7 @@
 package space.qu4nt.entanglementlib.security.entlibnative;
 
-import lombok.Getter;
-import lombok.Setter;
-
 import java.util.Set;
 
-import static space.qu4nt.entanglementlib.security.entlibnative.NativeComponent.*;
-
-@Getter
-@Setter
 public class NativeSpecContext {
 
     private String nativeDirName;
@@ -28,8 +21,30 @@ public class NativeSpecContext {
     }
 
     public static NativeSpecContext defaults() {
-        return new NativeSpecContext("/native", "entlib_native_ffi", Set.of(
-                // TODO:
-        ));
+        return new NativeSpecContext("/native", "entlib_native_ffi", Set.of());
+    }
+
+    public String getNativeDirName() {
+        return nativeDirName;
+    }
+
+    public void setNativeDirName(String nativeDirName) {
+        this.nativeDirName = nativeDirName;
+    }
+
+    public String getNativeFilename() {
+        return nativeFilename;
+    }
+
+    public void setNativeFilename(String nativeFilename) {
+        this.nativeFilename = nativeFilename;
+    }
+
+    public Set<NativeComponent> getNativeComponents() {
+        return nativeComponents;
+    }
+
+    public void setNativeComponents(Set<NativeComponent> nativeComponents) {
+        this.nativeComponents = nativeComponents;
     }
 }

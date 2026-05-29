@@ -1,12 +1,10 @@
 package space.qu4nt.entanglementlib.security.entlibnative;
 
-import lombok.Getter;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.HashMap;
 import java.util.Map;
 
-@Getter
 public class NativeProcessResult<A> {
 
     private final FFIStructEntLibResult<A> result;
@@ -27,6 +25,30 @@ public class NativeProcessResult<A> {
 
     private String message() {
         return MatchMessage.resolve(this.typeId, this.statusCode);
+    }
+
+    public FFIStructEntLibResult<A> getResult() {
+        return result;
+    }
+
+    public boolean isSuccess() {
+        return success;
+    }
+
+    public byte getTypeId() {
+        return typeId;
+    }
+
+    public byte getStatusCode() {
+        return statusCode;
+    }
+
+    public String getMessage() {
+        return message;
+    }
+
+    public @Nullable A getAdditionalData() {
+        return additionalData;
     }
 
     /// typeId(크레이트 식별자) + statusCode(결과 코드)를 메시지 문자열로 매핑하는 클래스입니다.

@@ -1,21 +1,18 @@
 package space.qu4nt.entanglementlib.security.entlibnative.info;
 
-import lombok.Getter;
-import lombok.Setter;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-import java.lang.constant.Constable;
 import java.lang.foreign.MemoryLayout;
 import java.lang.foreign.StructLayout;
 import java.lang.invoke.VarHandle;
+import java.util.LinkedHashMap;
 import java.util.Map;
 
 public class StructInfo {
 
-    @Getter
-    @Setter
     private @NotNull String structName;
+    /// 구조체 필드의 선언 순서가 곧 메모리 레이아웃 순서이므로 삽입 순서를 보존하는 맵을 사용
     private final Map<String, MemoryLayout> params;
 
     private StructInfo(@NotNull String structName, Map<String, MemoryLayout> params) {
@@ -24,20 +21,29 @@ public class StructInfo {
     }
 
     public static StructInfo of(final @NotNull String structName, final @NotNull String paramName, final @NotNull MemoryLayout paramType) {
-        return new StructInfo(structName, Map.of(paramName, paramType));
+        final Map<String, MemoryLayout> params = new LinkedHashMap<>();
+        params.put(paramName, paramType);
+        return new StructInfo(structName, params);
     }
 
     public static StructInfo of(final @NotNull String structName,
                                 final @NotNull String paramName1, final @NotNull MemoryLayout paramType1,
                                 final @NotNull String paramName2, final @NotNull MemoryLayout paramType2) {
-        return new StructInfo(structName, Map.of(paramName1, paramType1, paramName2, paramType2));
+        final Map<String, MemoryLayout> params = new LinkedHashMap<>();
+        params.put(paramName1, paramType1);
+        params.put(paramName2, paramType2);
+        return new StructInfo(structName, params);
     }
 
     public static StructInfo of(final @NotNull String structName,
                                 final @NotNull String paramName1, final @NotNull MemoryLayout paramType1,
                                 final @NotNull String paramName2, final @NotNull MemoryLayout paramType2,
                                 final @NotNull String paramName3, final @NotNull MemoryLayout paramType3) {
-        return new StructInfo(structName, Map.of(paramName1, paramType1, paramName2, paramType2, paramName3, paramType3));
+        final Map<String, MemoryLayout> params = new LinkedHashMap<>();
+        params.put(paramName1, paramType1);
+        params.put(paramName2, paramType2);
+        params.put(paramName3, paramType3);
+        return new StructInfo(structName, params);
     }
 
     public static StructInfo of(@NotNull String structName,
@@ -45,13 +51,16 @@ public class StructInfo {
                                 final @NotNull String paramName2, final @NotNull MemoryLayout paramType2,
                                 final @NotNull String paramName3, final @NotNull MemoryLayout paramType3,
                                 final @NotNull String paramName4, final @NotNull MemoryLayout paramType4) {
-        return new StructInfo(structName, Map.of(paramName1, paramType1, paramName2, paramType2, paramName3, paramType3, paramName4, paramType4));
+        final Map<String, MemoryLayout> params = new LinkedHashMap<>();
+        params.put(paramName1, paramType1);
+        params.put(paramName2, paramType2);
+        params.put(paramName3, paramType3);
+        params.put(paramName4, paramType4);
+        return new StructInfo(structName, params);
     }
 
     public @Nullable MemoryLayout getParameterLayout(final @NotNull String paramName) {
-        if (params.containsKey(paramName))
-            return params.get(paramName);
-        return null;
+        return params.get(paramName);
     }
 
     public StructLayout toStructLayout() {
@@ -68,5 +77,13 @@ public class StructInfo {
 
     public VarHandle accessField(final @NotNull String paramName) {
         return toStructLayout().varHandle(MemoryLayout.PathElement.groupElement(paramName));
+    }
+
+    public @NotNull String getStructName() {
+        return structName;
+    }
+
+    public void setStructName(@NotNull String structName) {
+        this.structName = structName;
     }
 }

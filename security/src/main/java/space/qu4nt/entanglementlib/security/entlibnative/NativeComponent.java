@@ -1,6 +1,5 @@
 package space.qu4nt.entanglementlib.security.entlibnative;
 
-import lombok.Getter;
 import org.jetbrains.annotations.NotNull;
 import space.qu4nt.entanglementlib.annotations.Only;
 import space.qu4nt.entanglementlib.security.entlibnative.info.FunctionInfo;
@@ -12,7 +11,6 @@ import java.util.ArrayList;
 import java.util.List;
 
 /// NOTE: 사용자는 확장되거나 구체화된 entlib-native 바이너리를 제공했을 수 있음. 따라서 이 클래스 형식은 유효
-@Getter
 public class NativeComponent {
 
     protected static final List<NativeComponent> LOADED = new ArrayList<>();
@@ -41,7 +39,7 @@ public class NativeComponent {
     public static final NativeComponent STRUCT_FFI_STANDARD = NativeComponent.ofStruct(
             StructInfo.of("FFIStandard",
                     "ptr", ValueLayout.ADDRESS,
-                    "len", ValueLayout.JAVA_BYTE,
+                    "len", ValueLayout.JAVA_LONG,
                     "is_rust_owned", ValueLayout.JAVA_BOOLEAN));
     /// Java-Owned End Process order 함수 컴포넌트입니다. Java 측 연산 종료 후, Rust에게 메모리 소거를 지시할 때 사용됩니다.
     static final NativeComponent FUNC_JOEP = NativeComponent.ofFunction(
@@ -108,7 +106,6 @@ public class NativeComponent {
         FUNC_HASH_SHA3_SHAKE256_BITS = NativeComponent.ofFunction(FunctionInfo.of("ffi_shake256_bits", defaultHashBitsFuncLayout));
     }
 
-    @Getter
     private final boolean isOsDefault;
     private final FunctionInfo functionInfo;
     private final StructInfo structInfo;
@@ -117,6 +114,18 @@ public class NativeComponent {
         this.isOsDefault = isOsDefault;
         this.functionInfo = functionInfo;
         this.structInfo = structInfo;
+    }
+
+    public boolean isOsDefault() {
+        return isOsDefault;
+    }
+
+    public FunctionInfo getFunctionInfo() {
+        return functionInfo;
+    }
+
+    public StructInfo getStructInfo() {
+        return structInfo;
     }
 
     public static NativeComponent ofOSFunction(final @NotNull FunctionInfo functionInfo) {

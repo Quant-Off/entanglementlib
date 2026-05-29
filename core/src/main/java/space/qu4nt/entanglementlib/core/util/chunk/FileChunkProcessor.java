@@ -5,7 +5,8 @@
 
 package space.qu4nt.entanglementlib.core.util.chunk;
 
-import lombok.extern.slf4j.Slf4j;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.nio.file.Files;
@@ -19,8 +20,9 @@ import java.util.stream.LongStream;
  * @author Q. T. Felix
  * @since 1.1.0
  */
-@Slf4j
 public class FileChunkProcessor {
+
+    private static final Logger log = LoggerFactory.getLogger(FileChunkProcessor.class);
 
     /**
      * 대용량 파일을 청크 단위로 처리하기 위한 메소드입니다.

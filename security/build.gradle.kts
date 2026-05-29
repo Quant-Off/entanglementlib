@@ -13,7 +13,6 @@ dependencies {
     testImplementation("org.openjdk.jmh:jmh-core:1.37")
     // Source: https://mvnrepository.com/artifact/org.openjdk.jmh/jmh-generator-annprocess
     testImplementation("org.openjdk.jmh:jmh-generator-annprocess:1.37")
-    jmhAnnotationProcessor("org.projectlombok:lombok:1.18.42")
 }
 
 sourceSets {

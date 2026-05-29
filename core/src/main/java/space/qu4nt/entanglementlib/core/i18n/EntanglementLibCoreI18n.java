@@ -1,6 +1,5 @@
 package space.qu4nt.entanglementlib.core.i18n;
 
-import lombok.Getter;
 import org.jetbrains.annotations.Nullable;
 import space.qu4nt.entanglementlib.core.exception.core.ELIBCoreIllegalArgumentException;
 
@@ -13,12 +12,21 @@ public class EntanglementLibCoreI18n {
 
     private static final String SYSTEM_DEFAULT_BASENAME = "entanglementlib-messages";
 
-    @Getter
     private static Locale locale;
-    @Getter
     private static ResourceBundle coreDefaultResourceBundle;
-    @Getter
     private static @Nullable ResourceBundle userResourceBundle;
+
+    public static Locale getLocale() {
+        return locale;
+    }
+
+    public static ResourceBundle getCoreDefaultResourceBundle() {
+        return coreDefaultResourceBundle;
+    }
+
+    public static @Nullable ResourceBundle getUserResourceBundle() {
+        return userResourceBundle;
+    }
 
     public static synchronized void initialize(final Locale locale, @Nullable String userResourceBasename) throws ELIBCoreIllegalArgumentException {
         EntanglementLibCoreI18n.locale = Objects.requireNonNull(locale, "locale is null");

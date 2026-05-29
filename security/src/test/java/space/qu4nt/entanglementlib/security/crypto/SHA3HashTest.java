@@ -3,6 +3,7 @@ package space.qu4nt.entanglementlib.security.crypto;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.condition.EnabledIfEnvironmentVariable;
 import space.qu4nt.entanglementlib.security.EntanglementLibSecurityConfig;
 import space.qu4nt.entanglementlib.security.EntanglementLibSecurityFacade;
 import space.qu4nt.entanglementlib.security.data.HeuristicArenaFactory;
@@ -10,7 +11,6 @@ import space.qu4nt.entanglementlib.security.crypto.hash.Hash;
 import space.qu4nt.entanglementlib.security.data.InternalNativeBridge;
 import space.qu4nt.entanglementlib.security.data.SDCScopeContext;
 import space.qu4nt.entanglementlib.security.data.SensitiveDataContainer;
-import space.qu4nt.entanglementlib.security.entlibnative.NativeComponent;
 import space.qu4nt.entanglementlib.security.entlibnative.NativeSpecContext;
 
 import java.lang.foreign.MemorySegment;
@@ -20,6 +20,8 @@ import java.util.HexFormat;
 
 import static org.junit.jupiter.api.Assertions.*;
 
+// 네이티브 바이너리 경로(ENTLIB_NATIVE_BIN)가 설정된 경우에만 수행되는 통합 테스트
+@EnabledIfEnvironmentVariable(named = "ENTLIB_NATIVE_BIN", matches = ".+")
 class SHA3HashTest {
 
     @BeforeAll
@@ -27,12 +29,7 @@ class SHA3HashTest {
         // 테스트 클래스 로드 시 1회만 네이티브 라이브러리를 초기화하여 성능 최적화
         EntanglementLibSecurityFacade.initialize(
                 EntanglementLibSecurityConfig.create(
-                        new NativeSpecContext(System.getenv("ENTLIB_NATIVE_BIN"), "entlib_native_ffi",
-                                NativeComponent.chain(
-                                        NativeComponent.withCalleeSecureBuffer(),
-                                        NativeComponent.withCallerSecureBuffer(),
-                                        NativeComponent.withHash(false))
-                        ),
+                        new NativeSpecContext(System.getenv("ENTLIB_NATIVE_BIN"), "entlib_native_ffi"),
                         HeuristicArenaFactory.ArenaMode.CONFINED)
         );
     }
