@@ -61,7 +61,7 @@ public class NativeComponent {
 
     static {
         final FunctionInfo defaultHashFuncLayout = FunctionInfo.of(null, STRUCT_ENTLIB_RESULT.getStructInfo().toStructLayout(), STRUCT_FFI_STANDARD.getStructInfo().toStructLayout(), STRUCT_FFI_STANDARD.getStructInfo().toStructLayout());
-        FUNC_HEX_ENCODE = NativeComponent.ofFunction(FunctionInfo.of("ffi_hex_encode", defaultHashFuncLayout));
+        FUNC_HEX_ENCODE = NativeComponent.ofFunction(FunctionInfo.of("entlib_ffi_hex_encode", defaultHashFuncLayout));
         FUNC_HEX_DECODE = NativeComponent.ofFunction(FunctionInfo.of("ffi_hex_decode", defaultHashFuncLayout));
     }
 
