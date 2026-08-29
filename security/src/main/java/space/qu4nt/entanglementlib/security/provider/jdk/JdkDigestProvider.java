@@ -8,6 +8,7 @@ import space.qu4nt.entanglementlib.core.exception.security.unchecked.ELIBSecurit
 import space.qu4nt.entanglementlib.security.data.SDCScopeContext;
 import space.qu4nt.entanglementlib.security.data.SensitiveDataContainer;
 import space.qu4nt.entanglementlib.security.provider.DigestProvider;
+import space.qu4nt.entanglementlib.security.provider.SDCCodec;
 
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
@@ -66,9 +67,9 @@ public final class JdkDigestProvider implements DigestProvider {
             final MessageDigest md = jcaProviderName == null
                     ? MessageDigest.getInstance(algorithm)
                     : MessageDigest.getInstance(algorithm, jcaProviderName);
-            in = SdcCodec.read(input);
+            in = SDCCodec.read(input);
             out = md.digest(in);
-            return SdcCodec.write(scope, out);
+            return SDCCodec.write(scope, out);
         } catch (NoSuchAlgorithmException | NoSuchProviderException e) {
             throw new ELIBSecurityProcessException("검증된 JDK 백엔드에서 '" + algorithm + "' 알고리즘을 사용할 수 없습니다.", e);
         } catch (ELIBSecurityProcessException e) {
@@ -76,7 +77,7 @@ public final class JdkDigestProvider implements DigestProvider {
         } catch (Throwable t) {
             throw new ELIBSecurityProcessException("검증된 JDK 다이제스트 연산 중 치명적 예외가 발생했습니다!", t);
         } finally {
-            SdcCodec.wipe(in, out);
+            SDCCodec.wipe(in, out);
         }
     }
 

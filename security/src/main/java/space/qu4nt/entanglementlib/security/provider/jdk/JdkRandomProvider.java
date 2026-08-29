@@ -7,6 +7,7 @@ import space.qu4nt.entanglementlib.core.exception.security.unchecked.ELIBSecurit
 import space.qu4nt.entanglementlib.security.data.SDCScopeContext;
 import space.qu4nt.entanglementlib.security.data.SensitiveDataContainer;
 import space.qu4nt.entanglementlib.security.provider.RandomProvider;
+import space.qu4nt.entanglementlib.security.provider.SDCCodec;
 
 import java.security.SecureRandom;
 
@@ -35,13 +36,13 @@ public final class JdkRandomProvider implements RandomProvider {
         try {
             buffer = new byte[(int) length];
             secureRandom.nextBytes(buffer);
-            return SdcCodec.write(scope, buffer);
+            return SDCCodec.write(scope, buffer);
         } catch (ELIBSecurityProcessException e) {
             throw e;
         } catch (Throwable t) {
             throw new ELIBSecurityProcessException("검증된 JDK 난수 생성 중 치명적 예외가 발생했습니다!", t);
         } finally {
-            SdcCodec.wipe(buffer);
+            SDCCodec.wipe(buffer);
         }
     }
 

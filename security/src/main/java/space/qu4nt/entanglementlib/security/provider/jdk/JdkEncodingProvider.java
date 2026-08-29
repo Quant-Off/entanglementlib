@@ -7,6 +7,7 @@ import space.qu4nt.entanglementlib.core.exception.security.unchecked.ELIBSecurit
 import space.qu4nt.entanglementlib.security.data.SDCScopeContext;
 import space.qu4nt.entanglementlib.security.data.SensitiveDataContainer;
 import space.qu4nt.entanglementlib.security.provider.EncodingProvider;
+import space.qu4nt.entanglementlib.security.provider.SDCCodec;
 
 import java.nio.charset.StandardCharsets;
 import java.util.Base64;
@@ -26,11 +27,11 @@ public final class JdkEncodingProvider implements EncodingProvider {
         byte[] in = null;
         byte[] out = null;
         try {
-            in = SdcCodec.read(input);
+            in = SDCCodec.read(input);
             out = Base64.getEncoder().encode(in);
-            return SdcCodec.write(scope, out);
+            return SDCCodec.write(scope, out);
         } finally {
-            SdcCodec.wipe(in, out);
+            SDCCodec.wipe(in, out);
         }
     }
 
@@ -40,13 +41,13 @@ public final class JdkEncodingProvider implements EncodingProvider {
         byte[] in = null;
         byte[] out = null;
         try {
-            in = SdcCodec.read(input);
+            in = SDCCodec.read(input);
             out = Base64.getDecoder().decode(in);
-            return SdcCodec.write(scope, out);
+            return SDCCodec.write(scope, out);
         } catch (IllegalArgumentException e) {
             throw new ELIBSecurityProcessException("유효하지 않은 Base64 입력입니다!", e);
         } finally {
-            SdcCodec.wipe(in, out);
+            SDCCodec.wipe(in, out);
         }
     }
 
@@ -56,11 +57,11 @@ public final class JdkEncodingProvider implements EncodingProvider {
         byte[] in = null;
         byte[] out = null;
         try {
-            in = SdcCodec.read(input);
+            in = SDCCodec.read(input);
             out = HEX.formatHex(in).getBytes(StandardCharsets.US_ASCII);
-            return SdcCodec.write(scope, out);
+            return SDCCodec.write(scope, out);
         } finally {
-            SdcCodec.wipe(in, out);
+            SDCCodec.wipe(in, out);
         }
     }
 
@@ -70,16 +71,16 @@ public final class JdkEncodingProvider implements EncodingProvider {
         byte[] in = null;
         byte[] out = null;
         try {
-            in = SdcCodec.read(input);
+            in = SDCCodec.read(input);
             if (in.length % 2 != 0)
                 throw new ELIBSecurityIllegalArgumentException("유효하지 않은 Hex 인코딩 데이터입니다 (홀수 길이)!");
             out = HEX.parseHex(new String(in, StandardCharsets.US_ASCII));
-            return SdcCodec.write(scope, out);
+            return SDCCodec.write(scope, out);
         } catch (IllegalArgumentException e) {
             // 홀수 길이 검증(ELIBSecurityIllegalArgumentException)은 별도 계층이므로 여기서 잡히지 않음
             throw new ELIBSecurityProcessException("유효하지 않은 Hex 입력입니다!", e);
         } finally {
-            SdcCodec.wipe(in, out);
+            SDCCodec.wipe(in, out);
         }
     }
 

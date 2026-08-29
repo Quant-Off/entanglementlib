@@ -8,6 +8,7 @@ import space.qu4nt.entanglementlib.core.exception.security.unchecked.ELIBSecurit
 import space.qu4nt.entanglementlib.security.data.SDCScopeContext;
 import space.qu4nt.entanglementlib.security.data.SensitiveDataContainer;
 import space.qu4nt.entanglementlib.security.provider.AeadProvider;
+import space.qu4nt.entanglementlib.security.provider.SDCCodec;
 
 import javax.crypto.AEADBadTagException;
 import javax.crypto.Cipher;
@@ -67,8 +68,8 @@ public final class JdkAeadProvider implements AeadProvider {
         byte[] inBytes = null;
         byte[] outBytes = null;
         try {
-            keyBytes = SdcCodec.read(key);
-            nonceBytes = SdcCodec.read(nonce);
+            keyBytes = SDCCodec.read(key);
+            nonceBytes = SDCCodec.read(nonce);
             if (keyBytes.length != KEY_BYTES)
                 throw new ELIBSecurityIllegalArgumentException("ChaCha20-Poly1305 키는 32바이트여야 합니다 (실제: " + keyBytes.length + ")");
             if (nonceBytes.length != NONCE_BYTES)
@@ -83,14 +84,14 @@ public final class JdkAeadProvider implements AeadProvider {
             cipher.init(mode, keySpec, ivSpec);
 
             if (aad != null) {
-                aadBytes = SdcCodec.read(aad);
+                aadBytes = SDCCodec.read(aad);
                 if (aadBytes.length > 0)
                     cipher.updateAAD(aadBytes);
             }
 
-            inBytes = SdcCodec.read(data);
+            inBytes = SDCCodec.read(data);
             outBytes = cipher.doFinal(inBytes);
-            return SdcCodec.write(scope, outBytes);
+            return SDCCodec.write(scope, outBytes);
         } catch (AEADBadTagException e) {
             throw new ELIBSecurityProcessException("ChaCha20-Poly1305 인증 태그 검증에 실패했습니다 (무결성 위반 또는 잘못된 키/Nonce/AAD)!", e);
         } catch (ELIBSecurityProcessException e) {
@@ -98,7 +99,7 @@ public final class JdkAeadProvider implements AeadProvider {
         } catch (Throwable t) {
             throw new ELIBSecurityProcessException("검증된 JDK AEAD 연산 중 치명적 예외가 발생했습니다!", t);
         } finally {
-            SdcCodec.wipe(keyBytes, nonceBytes, aadBytes, inBytes, outBytes);
+            SDCCodec.wipe(keyBytes, nonceBytes, aadBytes, inBytes, outBytes);
         }
     }
 }
