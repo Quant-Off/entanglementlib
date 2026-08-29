@@ -3,8 +3,8 @@ package space.qu4nt.entanglementlib.security.provider;
 import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import space.qu4nt.entanglementlib.security.provider.bcfips.BcFipsProviderFactory;
-import space.qu4nt.entanglementlib.security.provider.bcfips.BcFipsSupport;
+import space.qu4nt.entanglementlib.security.provider.bcfips.BCFipsProviderFactory;
+import space.qu4nt.entanglementlib.security.provider.bcfips.BCFipsSupport;
 import space.qu4nt.entanglementlib.security.provider.entlibnative.EntLibNativeAeadProvider;
 import space.qu4nt.entanglementlib.security.provider.entlibnative.EntLibNativeDigestProvider;
 import space.qu4nt.entanglementlib.security.provider.entlibnative.EntLibNativeEncodingProvider;
@@ -82,6 +82,10 @@ public final class CryptoProviders {
         return switch (config.effectiveDigestBackend()) {
             case JDK_VERIFIED -> new JdkDigestProvider(config.jcaProviderName());
             case ENTLIB_NATIVE -> new EntLibNativeDigestProvider();
+            case BOUNCY_CASTLE_FIPS -> {
+                BCFipsSupport.ensureAvailable();
+                yield BCFipsProviderFactory.digest();
+            }
         };
     }
 
@@ -90,6 +94,10 @@ public final class CryptoProviders {
         return switch (config.effectiveEncodingBackend()) {
             case JDK_VERIFIED -> new JdkEncodingProvider();
             case ENTLIB_NATIVE -> new EntLibNativeEncodingProvider();
+            case BOUNCY_CASTLE_FIPS -> {
+                BCFipsSupport.ensureAvailable();
+                yield BCFipsProviderFactory.encoding();
+            }
         };
     }
 
@@ -98,6 +106,10 @@ public final class CryptoProviders {
         return switch (config.effectiveAeadBackend()) {
             case JDK_VERIFIED -> new JdkAeadProvider(config.jcaProviderName());
             case ENTLIB_NATIVE -> new EntLibNativeAeadProvider();
+            case BOUNCY_CASTLE_FIPS -> {
+                BCFipsSupport.ensureAvailable();
+                yield BCFipsProviderFactory.aead();
+            }
         };
     }
 
@@ -106,6 +118,10 @@ public final class CryptoProviders {
         return switch (config.effectiveRandomBackend()) {
             case JDK_VERIFIED -> new JdkRandomProvider();
             case ENTLIB_NATIVE -> new EntLibNativeRandomProvider();
+            case BOUNCY_CASTLE_FIPS -> {
+                BCFipsSupport.ensureAvailable();
+                yield BCFipsProviderFactory.random();
+            }
         };
     }
 }

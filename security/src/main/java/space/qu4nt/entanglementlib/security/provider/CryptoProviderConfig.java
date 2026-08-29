@@ -16,13 +16,16 @@ import java.util.Objects;
 /// // 전체를 검증된 JDK 백엔드로 (기본값)
 /// CryptoProviderConfig.verifiedDefaults();
 ///
+/// // 전체를 BouncyCastle FIPS로 (SHAKE·SP 800-90A DRBG 지원)
+/// CryptoProviderConfig.bouncyCastleFipsDefaults();
+///
 /// // 전체를 entlib-native로
 /// CryptoProviderConfig.nativeDefaults();
 ///
 /// // 기능별 혼합 + 외부 JCA 공급자 + 커스텀 공급자 주입
 /// CryptoProviderConfig.builder()
 ///         .useVerifiedProviders()
-///         .aead(CryptoBackend.ENTLIB_NATIVE)
+///         .digest(CryptoBackend.BOUNCY_CASTLE_FIPS) // 다이제스트만 BC FIPS로 (SHAKE 필요)
 ///         .jcaProviderName("BC")
 ///         .random(myCustomRandomProvider)
 ///         .build();
@@ -66,6 +69,14 @@ public final class CryptoProviderConfig {
     /// 모든 보안 기능을 `entlib-native` 백엔드로 설정한 구성입니다. (미검증, 시험용)
     public static CryptoProviderConfig nativeDefaults() {
         return builder().useNativeProviders().build();
+    }
+
+    /// 모든 보안 기능을 BouncyCastle FIPS 백엔드로 설정한 구성입니다.
+    ///
+    /// 런타임 클래스패스에 `org.bouncycastle:bc-fips`가 필요합니다. AEAD(ChaCha20-Poly1305)는
+    /// FIPS 미승인 알고리즘이므로 `approved-only` 모드에서는 사용할 수 없습니다.
+    public static CryptoProviderConfig bouncyCastleFipsDefaults() {
+        return builder().useBouncyCastleFipsProviders().build();
     }
 
     CryptoBackend effectiveDigestBackend() {
@@ -155,6 +166,12 @@ public final class CryptoProviderConfig {
             return this;
         }
 
+        /// 전역 기본 백엔드를 BouncyCastle FIPS로 설정합니다.
+        public Builder useBouncyCastleFipsProviders() {
+            this.defaultBackend = CryptoBackend.BOUNCY_CASTLE_FIPS;
+            return this;
+        }
+
         /// 다이제스트 기능의 백엔드를 지정합니다.
         public Builder digest(final @NotNull CryptoBackend backend) {
             this.digestBackend = Objects.requireNonNull(backend, "backend");
@@ -209,6 +226,10 @@ public final class CryptoProviderConfig {
 
         /// 검증된 JDK 백엔드가 사용할 외부 JCA 공급자명을 지정합니다 (예: `BC`).
         /// `null`이면 JDK 기본 공급자를 사용합니다.
+        ///
+        /// # Note
+        /// [CryptoBackend#BOUNCY_CASTLE_FIPS] 백엔드는 JCA를 거치지 않고 경량 API를 직접 호출하므로
+        /// 이 값의 영향을 받지 않습니다.
         public Builder jcaProviderName(final @Nullable String jcaProviderName) {
             this.jcaProviderName = jcaProviderName;
             return this;

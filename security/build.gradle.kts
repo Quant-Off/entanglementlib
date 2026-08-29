@@ -6,6 +6,12 @@ dependencies {
     implementation(project(":core"))
     implementation(project(":annotations"))
 
+    // BouncyCastle FIPS (CryptoBackend.BOUNCY_CASTLE_FIPS 백엔드 전용)
+    // 에어갭 배포에서 BC 미포함 선택지를 남기기 위해 compileOnly 로 둔다
+    // https://mvnrepository.com/artifact/org.bouncycastle/bc-fips
+    compileOnly("org.bouncycastle:bc-fips:2.1.2")
+    testImplementation("org.bouncycastle:bc-fips:2.1.2")
+
     // JMH
 //    jmh("org.openjdk.jmh:jmh-core:1.37")
 //    jmh("org.openjdk.jmh:jmh-generator-annprocess:1.37")
