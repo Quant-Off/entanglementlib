@@ -1,0 +1,9 @@
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "noEmit": false,
+    "outDir": "./out-tsc/spec",
+    "types": ["vite/client", "node", "vitest/globals"]
+  },
+  "include": ["src", "tests"]
+}
