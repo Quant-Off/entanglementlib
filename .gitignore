@@ -12,7 +12,7 @@ public/native-sources/
 native-benchmark/target/
 native-benchmark/Cargo.lock
 *.psk
-iss-*.*
+/iss-*.*
 
 ### IntelliJ IDEA ###
 .idea/
