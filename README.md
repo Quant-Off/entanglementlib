@@ -55,31 +55,41 @@ All security features used across the FFI boundary (digests, encodings, AEAD, ra
 The default is **verified JDK backend**. Therefore, without any additional configuration, initialization uses the verified provider instead of unverified native code.
 
 ```java
-// 1) Default (full verified JDK backend)
-EntanglementLibSecurityFacade.initialize(
-        EntanglementLibSecurityConfig.create(null, HeuristicArenaFactory.ArenaMode.AUTO));
+import space.qu4nt.entanglementlib.security.EntanglementLibSecurityConfig;
+import space.qu4nt.entanglementlib.security.EntanglementLibSecurityFacade;
+import space.qu4nt.entanglementlib.security.data.HeuristicArenaFactory;
+import space.qu4nt.entanglementlib.security.provider.CryptoBackend;
+import space.qu4nt.entanglementlib.security.provider.CryptoProviderConfig;
 
-// 2) Full BouncyCastle FIPS (SHAKE and SP 800-90A DRBG support)
-EntanglementLibSecurityFacade.initialize(
-        EntanglementLibSecurityConfig.create(
-                null, HeuristicArenaFactory.ArenaMode.AUTO,
-                CryptoProviderConfig.bouncyCastleFipsDefaults()));
-
-// 3) Global + per-feature mix + external JCA provider + custom provider injection
-CryptoProviderConfig providers = CryptoProviderConfig.builder()
-        .useVerifiedProviders()                   // Set global default to verified JDK
-        .digest(CryptoBackend.BOUNCY_CASTLE_FIPS) // Digest only via BC FIPS (SHAKE needed)
-        .aead(CryptoBackend.ENTLIB_NATIVE)        // AEAD only via native (experimental)
-        .jcaProviderName("BC")                    // JCA provider name for the JDK backend
-        .random(myVerifiedRandomProvider)         // RNG via user-defined verified provider
-        .build();
-
-EntanglementLibSecurityFacade.initialize(
-        EntanglementLibSecurityConfig.create(
-                nativeSpecContext, HeuristicArenaFactory.ArenaMode.AUTO, providers));
-
-// 4) Full entlib-native (experimental)
-EntanglementLibSecurityConfig.create(nativeSpecContext, null, CryptoProviderConfig.nativeDefaults());
+class Main {
+    static void main() {
+        // 1) Default (full verified JDK backend)
+        EntanglementLibSecurityFacade.initialize(
+                EntanglementLibSecurityConfig.create(null, HeuristicArenaFactory.ArenaMode.AUTO));
+        
+        // 2) Full BouncyCastle FIPS (SHAKE and SP 800-90A DRBG support)
+        EntanglementLibSecurityFacade.initialize(
+                EntanglementLibSecurityConfig.create(
+                        null, HeuristicArenaFactory.ArenaMode.AUTO,
+                        CryptoProviderConfig.bouncyCastleFipsDefaults()));
+        
+        // 3) Global + per-feature mix + external JCA provider + custom provider injection
+        CryptoProviderConfig providers = CryptoProviderConfig.builder()
+                .useVerifiedProviders()                   // Set global default to verified JDK
+                .digest(CryptoBackend.BOUNCY_CASTLE_FIPS) // Digest only via BC FIPS (SHAKE needed)
+                .aead(CryptoBackend.ENTLIB_NATIVE)        // AEAD only via native (experimental)
+                .jcaProviderName("BC")                    // JCA provider name for the JDK backend
+                .random(myVerifiedRandomProvider)         // RNG via user-defined verified provider
+                .build();
+        
+        EntanglementLibSecurityFacade.initialize(
+                EntanglementLibSecurityConfig.create(
+                        nativeSpecContext, HeuristicArenaFactory.ArenaMode.AUTO, providers));
+        
+        // 4) Full entlib-native (experimental)
+        EntanglementLibSecurityConfig.create(nativeSpecContext, null, CryptoProviderConfig.nativeDefaults());
+    }
+}
 ```
 
 > [!TIP]
