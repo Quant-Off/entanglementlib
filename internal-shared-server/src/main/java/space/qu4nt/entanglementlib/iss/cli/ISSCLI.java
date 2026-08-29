@@ -13,6 +13,8 @@ import space.qu4nt.entanglementlib.iss.exception.ISSException;
 import space.qu4nt.entanglementlib.iss.internal.SDCBytes;
 import space.qu4nt.entanglementlib.iss.security.BindPolicy;
 import space.qu4nt.entanglementlib.iss.security.ISSPSK;
+import space.qu4nt.entanglementlib.iss.web.LhwServer;
+import space.qu4nt.entanglementlib.iss.web.LhwToken;
 import space.qu4nt.entanglementlib.security.crypto.rng.RNG;
 import space.qu4nt.entanglementlib.security.data.SDCScopeContext;
 import space.qu4nt.entanglementlib.security.data.SensitiveDataContainer;
@@ -33,8 +35,8 @@ import java.util.concurrent.CountDownLatch;
 
 /// 폐쇄망 내부 공유 서버(ISS) 명령행 도구입니다.
 ///
-/// 서브커맨드: serve, ping, put, get, del, list, status, gen-psk. PSK는 평문 인자로 받지 않고
-/// 파일(`--psk-file`) 또는 환경변수(`--psk-env`, hex)로만 받습니다.
+/// 서브커맨드: serve, ping, put, get, del, list, status, gen-psk, lhw. PSK는 평문 인자로 받지
+/// 않고 파일(`--psk-file`) 또는 환경변수(`--psk-env`, hex)로만 받습니다.
 ///
 /// @author Q. T. Felix
 public final class ISSCLI {
@@ -68,6 +70,7 @@ public final class ISSCLI {
                 case "list" -> list(parsed);
                 case "status" -> status(parsed);
                 case "gen-psk" -> genPsk(parsed);
+                case "lhw" -> lhw(parsed);
                 default -> {
                     System.err.println("알 수 없는 명령입니다: " + command);
                     printHelp();
@@ -190,6 +193,49 @@ public final class ISSCLI {
         }
     }
 
+    private static void lhw(final Args args) throws Exception {
+        ISS.initializeVerified();
+        final int port = args.requireInt("--port");
+        final String host = args.get("--host", "127.0.0.1");
+        final int httpPort = args.has("--http-port") ? args.requireInt("--http-port") : 5874;
+        final Path webDir = args.has("--web-dir") ? Path.of(args.get("--web-dir", null)) : null;
+
+        final SensitiveDataContainer psk = loadPsk(args);
+        final ISSClientConfig target = ISSClientConfig.builder()
+                .host(host)
+                .port(port)
+                .psk(psk)
+                .build();
+        final LhwToken.Issued issued = LhwToken.issue();
+        final LhwServer server = LhwServer.builder()
+                .target(target)
+                .token(issued.verifier())
+                .webDir(webDir)
+                .httpPort(httpPort)
+                .build();
+
+        final CountDownLatch latch = new CountDownLatch(1);
+        Runtime.getRuntime().addShutdownHook(new Thread(() -> {
+            server.close();
+            psk.close();
+            latch.countDown();
+        }));
+
+        server.start();
+        System.out.println("LHW 브리지 실행 중 http://127.0.0.1:" + server.port()
+                + " -> ISS " + host + ":" + port + " (Ctrl-C 로 종료)");
+        System.out.println("접속 토큰(1회 표시): " + issued.tokenHex());
+        if (webDir == null)
+            System.out.println("정적 웹 미지정(--web-dir). API 전용 모드로 동작합니다.");
+        try (ISSClient probe = ISSClient.connect(target)) {
+            probe.ping();
+            System.out.println("타겟 ISS 서버 응답 확인(pong)");
+        } catch (Exception e) {
+            System.out.println("경고: 타겟 ISS 서버에 아직 연결할 수 없습니다 -> " + e.getMessage());
+        }
+        latch.await();
+    }
+
     private static void withClient(final Args args, final ClientAction action) throws Exception {
         ISS.initializeVerified();
         final SensitiveDataContainer psk = loadPsk(args);
@@ -259,6 +305,8 @@ public final class ISSCLI {
                   iss list    --port N [--host H] (--psk-file F | --psk-env VAR)
                   iss status  --port N [--host H] (--psk-file F | --psk-env VAR)
                   iss gen-psk [--bytes 32] [--out FILE]
+                  iss lhw     --port N [--host 127.0.0.1] (--psk-file F | --psk-env VAR)
+                              [--http-port 5874] [--web-dir DIR]
                   iss --help | --version
 
                 PSK는 평문 인자로 받지 않습니다. 파일(raw 바이트) 또는 환경변수(hex)로만 입력합니다.

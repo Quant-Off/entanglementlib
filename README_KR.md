@@ -118,7 +118,7 @@ class Main {
 
 ## 폐쇄망 공유 서버
 
-`internal-shared-server`(ISS) 모듈은 폐쇄망에서 여러 내부 노드가 접속하는 보안 공유 서버입니다. 공개 인터넷 CA 신뢰 체인을 배제하고 사전 공유 키(PSK)로 양측을 상호 인증하며, 모든 레코드는 `ChaCha20-Poly1305`로 보호됩니다. 검증된 JDK 공급자만으로 동작하므로 네이티브 바이너리 배포 없이 사용할 수 있습니다. 코드레벨 임베드 API(`ISSServer`·`ISSClient`)와 CLI 두 경로로 제어합니다.
+`internal-shared-server`(ISS) 모듈은 폐쇄망에서 여러 내부 노드가 접속하는 보안 공유 서버입니다. 공개 인터넷 CA 신뢰 체인을 배제하고 사전 공유 키(PSK)로 양측을 상호 인증하며, 모든 레코드는 `ChaCha20-Poly1305`로 보호됩니다. 검증된 JDK 공급자만으로 동작하므로 네이티브 바이너리 배포 없이 사용할 수 있습니다. 코드레벨 임베드 API(`ISSServer`·`ISSClient`), CLI, 그리고 웹 콘솔(LHW) 세 경로로 제어합니다.
 
 > [!NOTE]
 > 키 확립에 DH/KEM을 사용하지 않으므로 순방향 비밀성(PFS)은 제공하지 않습니다. PSK가 노출되면 과거·미래 트래픽이 위험하므로 강한 PSK와 주기적 교체로 운용하세요. 서버는 기본적으로 루프백(127.0.0.1)에만 바인드하며, LAN 노출은 명시적 옵트인(opt-in)이 필요합니다.
@@ -155,6 +155,8 @@ iss del     --port N [--host H] (--psk-file F | --psk-env VAR) --key K
 iss list    --port N [--host H] (--psk-file F | --psk-env VAR)
 iss status  --port N [--host H] (--psk-file F | --psk-env VAR)
 iss gen-psk [--bytes 32] [--out FILE]
+iss lhw     --port N [--host 127.0.0.1] (--psk-file F | --psk-env VAR)
+            [--http-port 5874] [--web-dir DIR]
 iss --help | --version
 ```
 
@@ -168,6 +170,7 @@ iss --help | --version
 | `list`    | 저장된 키 목록 출력                                      |
 | `status`  | 서버 상태 조회                                         |
 | `gen-psk` | 보안 난수로 PSK 생성 (`--out` 없으면 hex 를 표준출력)           |
+| `lhw`     | 웹 콘솔용 루프백 HTTP 브리지 기동 (아래 웹 콘솔 절 참고)             |
 
 > [!IMPORTANT]
 > PSK는 평문 명령행 인자로 받지 않습니다(프로세스 목록 노출 방지). raw 바이트 키 파일(`--psk-file`) 또는 hex 환경변수(`--psk-env`)로만 입력하며, 최소 32바이트를 요구합니다. 로그는 표준오류로, 명령 결과 데이터는 표준출력으로 분리됩니다.
@@ -194,6 +197,33 @@ export ISS_PSK=$(iss gen-psk)
 iss ping --port 8443 --psk-env ISS_PSK
 ```
 
+### 웹 콘솔 (LHW)
+
+`internal-shared-server/iss-lhw`는 ISS를 위한 Local Hosted Web 콘솔입니다. Angular · Tailwind CSS로 작성했고 Vite+(`vp`) 모노레포로 빌드합니다. 브라우저는 ISS의 TCP 바이너리 프로토콜을 직접 말할 수 없으므로, `iss lhw` 브리지가 루프백 전용 HTTP(JSON)를 받아 검증된 `ISSClient` 경로(PSK 상호 인증 + ChaCha20-Poly1305 채널)로 중계합니다. PSK와 암호 구현은 JVM 밖으로 나가지 않습니다.
+
+```bash
+# 1) 웹 번들 빌드 (internal-shared-server/iss-lhw 에서, 최초 1회 pnpm install)
+cd internal-shared-server/iss-lhw && pnpm install
+vp -C apps/website build
+
+# 2) 브리지 기동 (타겟 ISS 서버는 별도로 serve 중이어야 함)
+iss lhw --port 8443 --psk-file infra.psk \
+        --web-dir internal-shared-server/iss-lhw/apps/website/dist
+
+# 3) 터미널에 1회 출력되는 접속 토큰을 http://127.0.0.1:5874 콘솔에 입력
+```
+
+브리지의 보안 통제는 다음과 같습니다.
+
+- 바인드는 항상 루프백입니다. 옵션으로도 해제할 수 없습니다.
+- 모든 API 요청은 기동 시 1회 발급되는 Bearer 토큰을 요구합니다. 브리지는 토큰 평문 대신 SHA3-256 다이제스트만 보관하고 상수 시간 비교로 검증합니다.
+- `Origin` 헤더가 있으면 루프백 오리진만 허용해 교차 출처 탭 접근을 차단합니다.
+- 저장 값은 목록에 노출되지 않고 명시적 열람 요청 시에만 전송되며, 모든 API 응답은 `Cache-Control: no-store`로 내려 브라우저 캐시 잔존을 막습니다. 토큰과 열람 값은 메모리에만 유지됩니다.
+- ISS 연결은 요청마다 새로 열어 매 요청이 PSK 상호 인증을 다시 통과합니다.
+- 정적 웹은 CSP · `nosniff` · 경로 이탈 차단과 함께 서빙됩니다. `--web-dir` 미지정 시 API 전용 모드로 동작합니다.
+
+개발 중에는 `vp -C apps/website dev`로 Vite 개발 서버(HMR)를 띄우면 `/api` 요청이 브리지(기본 5874, `LHW_PORT`로 변경)로 프록시됩니다. 상세는 [iss-lhw README](internal-shared-server/iss-lhw/README.md)를 참고하세요.
+
 ## 기여
 
 여러분의 피드백을 적극적으로 받을 준비가 되어 있습니다. 얽힘 라이브러리는 단순히 PQC 알고리즘을 제공하는 것만이 아닌, 체계적으로 사용자 환경의 인프라 보안을 감시하고 사용자에게 해결책을 찾아주는 유능한 도구로써 사용되도록 개발됩니다. 최신 릴리즈부턴 이 신념에 강력한 초점을 맞출 것입니다.
@@ -202,8 +232,8 @@ iss ping --port 8443 --psk-env ISS_PSK
 
 얽힘 라이브러리는 미래에 금융 및 보안 인프라 프로덕션에서 사용할 수 있도록 다음의 TODO를 명확히 하고자 합니다.
 
-- [ ] 폐쇄망 환경 유용한 사용을 위한 Local Hosted 웹 개발
-  - 현재 ISS는 CLI와 임베드 API(`ISSServer`·`ISSClient`)로만 제어합니다. 웹 기반 관리 콘솔은 아직 없습니다.
+- [x] 폐쇄망 환경 유용한 사용을 위한 Local Hosted 웹 개발
+  - Angular·Tailwind CSS 기반 웹 콘솔(`iss-lhw`)과 루프백 전용 HTTP 브리지(`iss lhw`)를 추가했습니다. 토큰 인증·오리진 검사·명시적 열람 정책으로 통제합니다.
 - [ ] TLS 통신 로직 추가
   - ISS의 PSK 상호 인증 + ChaCha20-Poly1305 보안 채널은 구현을 완료했습니다.
   - `security` 모듈에 `ExternalTLS` 파사드 골격을 추가했으나, ML-KEM 키 확립과 ChaCha20-Poly1305 레코드 AEAD, RNG nonce 생성이 네이티브 FFI에 노출되기 전까지 핸드셰이크는 비활성(스텁) 상태입니다.

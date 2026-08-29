@@ -118,7 +118,7 @@ class Main {
 
 ## Air-gapped Shared Server
 
-The `internal-shared-server` (ISS) module is a secure shared server that multiple internal nodes connect to within an air-gapped network. It excludes the public internet CA trust chain, mutually authenticates both sides with a pre-shared key (PSK), and protects every record with `ChaCha20-Poly1305`. Since it operates using only the verified JDK provider, it can be used without deploying native binaries. It is controlled through two paths: the code-level embedded API (`ISSServer` / `ISSClient`) and the CLI.
+The `internal-shared-server` (ISS) module is a secure shared server that multiple internal nodes connect to within an air-gapped network. It excludes the public internet CA trust chain, mutually authenticates both sides with a pre-shared key (PSK), and protects every record with `ChaCha20-Poly1305`. Since it operates using only the verified JDK provider, it can be used without deploying native binaries. It is controlled through three paths: the code-level embedded API (`ISSServer` / `ISSClient`), the CLI, and the web console (LHW).
 
 > [!NOTE]
 > Because it does not use DH/KEM for key establishment, it does not provide forward secrecy (PFS). If the PSK is exposed, past and future traffic is at risk, so operate it with a strong PSK and periodic rotation. By default the server binds only to loopback (127.0.0.1); LAN exposure requires explicit opt-in.
@@ -155,6 +155,8 @@ iss del     --port N [--host H] (--psk-file F | --psk-env VAR) --key K
 iss list    --port N [--host H] (--psk-file F | --psk-env VAR)
 iss status  --port N [--host H] (--psk-file F | --psk-env VAR)
 iss gen-psk [--bytes 32] [--out FILE]
+iss lhw     --port N [--host 127.0.0.1] (--psk-file F | --psk-env VAR)
+            [--http-port 5874] [--web-dir DIR]
 iss --help | --version
 ```
 
@@ -168,6 +170,7 @@ iss --help | --version
 | `list`    | Print the list of stored keys                                                 |
 | `status`  | Query the server status                                                       |
 | `gen-psk` | Generate a PSK from a secure RNG (prints hex to stdout if no `--out`)         |
+| `lhw`     | Start the loopback HTTP bridge for the web console (see the Web Console section) |
 
 > [!IMPORTANT]
 > The PSK is not accepted as a plaintext command-line argument (to prevent exposure in the process list). It is supplied only via a raw-byte key file (`--psk-file`) or a hex environment variable (`--psk-env`), and a minimum of 32 bytes is required. Logs go to standard error, while command result data is separated to standard output.
@@ -194,6 +197,33 @@ export ISS_PSK=$(iss gen-psk)
 iss ping --port 8443 --psk-env ISS_PSK
 ```
 
+### Web Console (LHW)
+
+`internal-shared-server/iss-lhw` is the Local Hosted Web console for ISS, written with Angular and Tailwind CSS and built as a Vite+ (`vp`) monorepo. Browsers cannot speak the ISS TCP binary protocol directly, so the `iss lhw` bridge accepts loopback-only HTTP (JSON) and relays it through the verified `ISSClient` path (PSK mutual authentication + ChaCha20-Poly1305 channel). The PSK and the cryptography never leave the JVM.
+
+```bash
+# 1) Build the web bundle (inside internal-shared-server/iss-lhw; run pnpm install once)
+cd internal-shared-server/iss-lhw && pnpm install
+vp -C apps/website build
+
+# 2) Start the bridge (the target ISS server must be serving separately)
+iss lhw --port 8443 --psk-file infra.psk \
+        --web-dir internal-shared-server/iss-lhw/apps/website/dist
+
+# 3) Enter the one-time access token printed to the terminal at http://127.0.0.1:5874
+```
+
+The bridge enforces the following security controls:
+
+- The bind is always loopback. There is no option to disable this.
+- Every API request requires the Bearer token issued once at startup. The bridge keeps only a SHA3-256 digest of the token (never the plaintext) and verifies it with a constant-time comparison.
+- When an `Origin` header is present, only loopback origins are allowed, blocking cross-origin tabs.
+- Stored values are never exposed in listings; they are transmitted only on an explicit reveal request, and every API response carries `Cache-Control: no-store` to prevent browser cache residue. The token and revealed values live in memory only.
+- The ISS connection is opened fresh per request, so every request re-passes PSK mutual authentication.
+- Static files are served with CSP, `nosniff`, and path-traversal protection. Without `--web-dir` the bridge runs in API-only mode.
+
+During development, run `vp -C apps/website dev` for the Vite dev server (HMR); `/api` requests are proxied to the bridge (default 5874, override with `LHW_PORT`). See the [iss-lhw README](internal-shared-server/iss-lhw/README.md) for details.
+
 ## Contributing
 
 We are ready to actively receive your feedback. EntanglementLib is developed not merely to provide PQC algorithms, but to serve as a capable tool that systematically monitors infrastructure security in user environments and provides solutions. Recent releases put a strong emphasis on this belief.
@@ -202,8 +232,8 @@ We are ready to actively receive your feedback. EntanglementLib is developed not
 
 EntanglementLib aims to clear the following TODOs so it can be used in financial and security infrastructure production in the future.
 
-- [ ] Local-hosted web development for useful usage in air-gapped environments
-  - ISS is currently controlled only through the CLI and the embedded API (`ISSServer` / `ISSClient`). A web-based management console does not exist yet.
+- [x] Local-hosted web development for useful usage in air-gapped environments
+  - Added the Angular / Tailwind CSS web console (`iss-lhw`) and the loopback-only HTTP bridge (`iss lhw`), governed by token authentication, origin checks, and an explicit-reveal policy.
 - [ ] Additional TLS communication logic
   - The ISS PSK mutual-authentication + ChaCha20-Poly1305 secure channel has been fully implemented.
   - An `ExternalTLS` facade skeleton was added to the `security` module, but the handshake remains inactive (a stub) until ML-KEM key establishment, ChaCha20-Poly1305 record AEAD, and RNG nonce generation are exposed in the native FFI.
